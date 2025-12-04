@@ -1,0 +1,1813 @@
+{
+  "header": {
+    "brand": "NORML ACADEMY",
+    "score_label": "NOTE"
+  },
+  "start": {
+    "title": "Stop aux Idées Reçues",
+    "subtitle": "La prohibition échoue. Testez votre lucidité.",
+    "btn": "Relever le défi",
+    "choose_level": "Choisissez votre niveau :"
+  },
+  "levels": {
+    "easy": "Curieux",
+    "medium": "Adhérent",
+    "hard": "Expert"
+  },
+  "game": {
+    "correct": "✅ Exact !",
+    "wrong": "❌ Faux !",
+    "argument_label": "Explication :",
+    "btn_next": "Suivant →",
+    "btn_results": "Voir mon Score",
+    "point_popup": "+1 PT"
+  },
+  "end": {
+    "btn_retry": "Rejouer une partie",
+    "btn_join": "Soutenir NORML",
+    "btn_save": "Enregistrer mon score",
+    "btn_skip": "Ne pas enregistrer et Rejouer",
+    "leaderboard_title": "Tableau d'Honneur",
+    "placeholder_name": "Ton Pseudo",
+    "placeholder_id": "N° Adhérent (Optionnel)",
+    "score_label": "NOTE FINALE",
+    "top_10": "TOP 10",
+    "col_rank": "#",
+    "col_name": "Militant",
+    "col_score": "Note",
+    "ranks": {
+      "expert": {
+        "title": "Ambassadeur de la Régulation",
+        "desc": "Excellent ! Vous maîtrisez le sujet sur le bout des doigts. Aidez-nous à diffuser ces vérités !"
+      },
+      "intermediate": {
+        "title": "Citoyen Éclairé",
+        "desc": "Bien joué. Vous avez de bonnes bases, mais quelques préjugés persistent. Nos articles sont là pour vous."
+      },
+      "beginner": {
+        "title": "Victime de la Prohibition",
+        "desc": "Ne vous en faites pas, on nous ment depuis 50 ans. C'est le moment de découvrir la vérité avec NORML."
+      }
+    }
+  },
+  "questions_pool": {
+    "easy": [
+      {
+        "category": "✨ Pop Culture",
+        "question": "Dans la culture cannabique, que signifie le code '420' ?",
+        "options": [
+          "Une référence de loi",
+          "L'heure de consommer (16h20)",
+          "Un nombre de molécules",
+          "Une variété de plante"
+        ],
+        "correct": 1,
+        "explanation": "C'est le code universel de la culture cannabique, désignant 16h20 (l'heure de consommer) ou le 20 avril (4/20), jour de fête internationale."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quel artiste a sorti l'album et la chanson 'Legalize It' en 1976 ?",
+        "options": [
+          "Bob Marley",
+          "Peter Tosh",
+          "Snoop Dogg",
+          "Tryo"
+        ],
+        "correct": 1,
+        "explanation": "Peter Tosh, ancien membre des Wailers, a sorti cet hymne en 1976 pour dénoncer la prohibition et vanter les usages médicaux."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Dans quel film culte le personnage du 'Dude' passe-t-il son temps à fumer en peignoir ?",
+        "options": [
+          "Pulp Fiction",
+          "The Big Lebowski",
+          "Trainspotting",
+          "La Haine"
+        ],
+        "correct": 1,
+        "explanation": "Le film 'The Big Lebowski' des frères Coen. Le 'Dude' est devenu une icône de la culture stoner, pacifiste et relax."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Parmi ces rappeurs, lequel a lancé sa propre marque de cannabis légal ?",
+        "options": [
+          "Eminem",
+          "Jay-Z",
+          "Snoop Dogg",
+          "Tous les trois"
+        ],
+        "correct": 3,
+        "explanation": "C'est un vrai business ! Snoop (Leafs By Snoop), Jay-Z (Monogram) et Eminem ont tous investi dans l'industrie légale aux USA."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quelle est la règle de convivialité connue sous le nom de 'Puff Puff Pass' ?",
+        "options": [
+          "Fumer le plus vite possible",
+          "Tirer 2 fois et faire tourner",
+          "Ne jamais partager",
+          "Éteindre le joint après une latte"
+        ],
+        "correct": 1,
+        "explanation": "C'est la règle d'or du partage social : on tire deux bouffées et on passe immédiatement au voisin pour ne pas monopoliser."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Botaniquement, quelle est la différence entre le Chanvre et le Cannabis ?",
+        "options": [
+          "C'est la même plante",
+          "Le chanvre ne se fume pas",
+          "Le cannabis est chimique",
+          "Ce sont deux espèces différentes"
+        ],
+        "correct": 0,
+        "explanation": "C'est exactement la même espèce : Cannabis Sativa L. On dit 'Chanvre' pour l'usage industriel (fibres) et 'Cannabis' pour l'usage récréatif/médical (fleurs)."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Que signifie l'acronyme CBD ?",
+        "options": [
+          "Cannabidiol",
+          "Cannabinoïde",
+          "Central Bud",
+          "Cannabis Danger"
+        ],
+        "correct": 0,
+        "explanation": "Le Cannabidiol (CBD) est un phytocannabinoïde non psychotrope de la plante, connu pour ses vertus relaxantes, anti-inflammatoires et anxiolytiques."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "La molécule de THC est-elle soluble dans l'eau ?",
+        "options": [
+          "Oui, très soluble",
+          "Non, elle est lipophile (aime le gras)",
+          "Un petit peu",
+          "Ça dépend de la température"
+        ],
+        "correct": 1,
+        "explanation": "Non, le THC est hydrophobe. Il faut obligatoirement un corps gras (beurre, lait, huile) pour le cuisiner et l'extraire, sinon il reste dans la plante."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quelle partie de la plante de cannabis fume-t-on généralement ?",
+        "options": [
+          "Les grandes feuilles",
+          "Les fleurs femelles (têtes)",
+          "Les racines",
+          "Les tiges"
+        ],
+        "correct": 1,
+        "explanation": "Les principes actifs (cannabinoïdes) sont concentrés dans les trichomes des fleurs femelles non fécondées (Sinsemilla)."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Sur le plan de la reproduction, le cannabis est une plante :",
+        "options": [
+          "Monoïque",
+          "Dioïque (Mâle et Femelle séparés)",
+          "Hermaphrodite uniquement",
+          "Asexuée"
+        ],
+        "correct": 1,
+        "explanation": "C'est une plante dioïque : il faut un pied mâle et un pied femelle. Seule la femelle produit les fleurs riches en résine que l'on consomme."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Est-il possible de faire une overdose mortelle de cannabis ?",
+        "options": [
+          "Oui, si on fume trop",
+          "Non, c'est impossible",
+          "Seulement en mélange avec l'alcool",
+          "Oui, avec du CBD"
+        ],
+        "correct": 1,
+        "explanation": "C'est biologiquement impossible : le tronc cérébral (qui gère la respiration) ne possède pas de récepteurs cannabinoïdes. On peut s'endormir, mais pas arrêter de respirer."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Est-il vrai que le cannabis tue les neurones ?",
+        "options": [
+          "Oui, massivement",
+          "Non, c'est un mythe invalidé",
+          "Seulement le CBD",
+          "Oui, chez l'adulte"
+        ],
+        "correct": 1,
+        "explanation": "C'est un vieux mythe basé sur une étude biaisée. Le cannabis est même neuroprotecteur, bien qu'il puisse altérer la maturation cérébrale chez l'adolescent."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Parmi les effets suivants, lequel est typiquement associé au THC ?",
+        "options": [
+          "Euphorie et relaxation",
+          "Sommeil immédiat",
+          "Hallucinations fortes",
+          "Rage incontrôlable"
+        ],
+        "correct": 0,
+        "explanation": "Le THC provoque généralement une euphorie, une relaxation et une modification sensorielle légère. Les hallucinations visuelles sont très rares."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Est-ce que le CBD rend les yeux rouges ?",
+        "options": [
+          "Oui, systématiquement",
+          "Non, c'est le THC",
+          "Parfois",
+          "Très rouges"
+        ],
+        "correct": 1,
+        "explanation": "C'est le THC qui est vasodilatateur et fait baisser la pression intraoculaire (d'où les yeux rouges). Le CBD n'a pas cet effet."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Combien de temps faut-il pour ressentir les effets d'un joint ?",
+        "options": [
+          "1 heure",
+          "Quelques minutes",
+          "Instantané",
+          "20 minutes"
+        ],
+        "correct": 1,
+        "explanation": "Par inhalation, les effets arrivent en quelques minutes. Par ingestion (gâteau), cela peut prendre 1h à 2h, ce qui cause souvent des surdosages involontaires."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quel est le montant de l'Amende Forfaitaire Délictuelle (AFD) pour usage ?",
+        "options": [
+          "35 €",
+          "135 €",
+          "200 €",
+          "1500 €"
+        ],
+        "correct": 2,
+        "explanation": "L'amende est de 200 € (minorée à 150 € si payée sous 15 jours). Attention, le paiement vaut reconnaissance de culpabilité et inscription au casier judiciaire."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "L'usage simple de cannabis est-il un délit en France ?",
+        "options": [
+          "Non, une simple contravention",
+          "Oui, passible de prison",
+          "Non, c'est légal",
+          "Juste un rappel à la loi"
+        ],
+        "correct": 1,
+        "explanation": "C'est toujours un délit passible d'un an de prison (théorique) et 3750 € d'amende, même si l'amende forfaitaire est privilégiée aujourd'hui."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "A-t-on le droit d'acheter des graines de cannabis en France ?",
+        "options": [
+          "Non, c'est interdit",
+          "Oui, comme graines de collection",
+          "Seulement aux agriculteurs",
+          "Oui, pour les manger"
+        ],
+        "correct": 1,
+        "explanation": "La vente de graines est légale (souvent vendues comme 'souvenirs de collection'), mais les faire germer est strictement interdit sans autorisation."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "La police a-t-elle le droit de fouiller votre téléphone en garde à vue ?",
+        "options": [
+          "Non, c'est privé",
+          "Oui, c'est quasi-systématique",
+          "Jamais",
+          "Seulement avec un juge"
+        ],
+        "correct": 1,
+        "explanation": "En garde à vue pour stupéfiants, l'exploitation du téléphone est courante pour chercher des preuves de trafic (contacts, photos, messages)."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Le CBD est-il considéré comme un stupéfiant ?",
+        "options": [
+          "Oui",
+          "Non (Arrêt Kanavape)",
+          "Seulement les fleurs",
+          "Ça dépend"
+        ],
+        "correct": 1,
+        "explanation": "Non. La Cour de Justice de l'UE a confirmé en 2020 que le CBD n'est pas un stupéfiant car il n'a pas d'effet nocif sur la santé."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quel pays du G7 a légalisé le cannabis en 2018 ?",
+        "options": [
+          "La France",
+          "Le Canada",
+          "Le Japon",
+          "L'Italie"
+        ],
+        "correct": 1,
+        "explanation": "Le Canada a été le premier pays du G7 à légaliser le cannabis récréatif et médical au niveau fédéral, créant un marché totalement régulé."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Depuis le 1er avril 2024, quelle est la situation en Allemagne ?",
+        "options": [
+          "Tout est interdit",
+          "La possession et culture sont légales",
+          "La vente est légale partout",
+          "Rien n'a changé"
+        ],
+        "correct": 1,
+        "explanation": "L'Allemagne a légalisé la possession de 25g et la culture de 3 plants à domicile pour les adultes, ainsi que les Cannabis Clubs."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Dans quel pays le cannabis est-il totalement légal ?",
+        "options": [
+          "France",
+          "Canada",
+          "Japon",
+          "Russie"
+        ],
+        "correct": 1,
+        "explanation": "Le Canada a légalisé le cannabis récréatif et médical au niveau fédéral en 2018."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quelle décision historique l'ONU a-t-elle prise en décembre 2020 ?",
+        "options": [
+          "Retrait du Tableau IV (Drogues dangereuses)",
+          "Ajout au Tableau I",
+          "Rien",
+          "Interdiction totale"
+        ],
+        "correct": 0,
+        "explanation": "L'ONU a retiré le cannabis du Tableau IV de la Convention de 1961 (drogues les plus dangereuses), reconnaissant officiellement son utilité médicale."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Que signifie l'acronyme AFD pour la police ?",
+        "options": [
+          "Une agence",
+          "Amende Forfaitaire Délictuelle",
+          "Une association",
+          "Une aide"
+        ],
+        "correct": 1,
+        "explanation": "C'est l'Amende Forfaitaire Délictuelle : la sanction rapide et automatisée utilisée par la police pour l'usage de stupéfiants."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Selon le CAE, que permettrait la légalisation en France ?",
+        "options": [
+          "De perdre de l'argent",
+          "De créer des emplois et des taxes",
+          "De ne rien changer",
+          "De financer la police"
+        ],
+        "correct": 1,
+        "explanation": "Cela créerait entre 30 000 et 80 000 emplois et rapporterait environ 2 milliards d'euros par an de recettes fiscales à l'État."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Le prix du gramme au marché noir a-t-il baissé en 10 ans ?",
+        "options": [
+          "Oui",
+          "Non, il a augmenté",
+          "Il est stable",
+          "C'est gratuit"
+        ],
+        "correct": 1,
+        "explanation": "Le prix a augmenté, tout comme la teneur en THC. Les consommateurs paient plus cher pour des produits plus forts (et parfois frelatés)."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "À combien estime-t-on le coût annuel de la répression en France ?",
+        "options": [
+          "0 €",
+          "100 Millions  €",
+          "1,1 Milliard  €",
+          "500 Millions  €"
+        ],
+        "correct": 2,
+        "explanation": "Environ 1,1 Md€ par an sont dépensés en frais de police et justice pour lutter contre le cannabis, pour un résultat nul sur la consommation."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quel secteur industriel bénéficierait du chanvre ?",
+        "options": [
+          "Le bâtiment",
+          "Le textile",
+          "La plasturgie",
+          "Tous ces secteurs"
+        ],
+        "correct": 3,
+        "explanation": "Le chanvre est une plante multi-usage : isolation (béton de chanvre), vêtements, bioplastiques, papier, alimentation, cosmétique..."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "À qui profite l'argent du marché noir ?",
+        "options": [
+          "À l'État",
+          "Aux réseaux criminels",
+          "Aux hôpitaux",
+          "Aux routes"
+        ],
+        "correct": 1,
+        "explanation": "Les milliards d'euros du marché noir échappent totalement à l'impôt et financent les réseaux mafieux et l'insécurité dans les quartiers."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Quelle proportion d'adultes a déjà expérimenté le cannabis en France ?",
+        "options": [
+          "10 %",
+          "25 %",
+          "47,3 %",
+          "80 %"
+        ],
+        "correct": 2,
+        "explanation": "47,3 % selon l'OFDT (2023). Près d'un adulte sur deux a déjà essayé, ce qui montre que la pénalisation de l'usage est déconnectée de la réalité sociale."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Le cannabis rend-il intrinsèquement violent ?",
+        "options": [
+          "Oui, très violent",
+          "Non, l'effet est plutôt sédatif",
+          "Exactement comme l'alcool",
+          "Ça dépend de la lune"
+        ],
+        "correct": 1,
+        "explanation": "Contrairement à l'alcool qui est désinhibiteur et peut rendre agressif, le cannabis a généralement un effet apaisant et introspectif."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Qui sont les plus gros consommateurs de cannabis en Europe ?",
+        "options": [
+          "Les Hollandais",
+          "Les Français",
+          "Les Espagnols",
+          "Les Allemands"
+        ],
+        "correct": 1,
+        "explanation": "Les Français sont les champions d'Europe de la consommation, bien devant les Pays-Bas où la vente est pourtant tolérée dans les coffeeshops."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Que provoque la stigmatisation de l'usager ?",
+        "options": [
+          "De l'aide",
+          "De l'exclusion sociale",
+          "Plus de justice",
+          "Une meilleure santé"
+        ],
+        "correct": 1,
+        "explanation": "Étiqueter l'usager comme délinquant l'isole, l'empêche de parler de sa consommation à ses proches ou médecins, et nuit à son insertion."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Le cannabis est-il la drogue illicite la plus consommée ?",
+        "options": [
+          "Oui, de loin",
+          "Non",
+          "Juste après la cocaïne",
+          "Moins que l'héroïne"
+        ],
+        "correct": 0,
+        "explanation": "C'est de très loin la substance illicite la plus consommée en France et dans le monde, loin devant la cocaïne ou l'ecstasy."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "En quoi consiste la vaporisation ?",
+        "options": [
+          "Fumer avec de l'eau",
+          "Chauffer la plante sans la brûler",
+          "Une cigarette électronique",
+          "Manger le produit"
+        ],
+        "correct": 1,
+        "explanation": "C'est chauffer la plante (env. 180°C) pour extraire les principes actifs sous forme de vapeur, sans combustion. Pas de goudrons, pas de monoxyde de carbone."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Qu'appelle-t-on le 'verre pilé' au marché noir ?",
+        "options": [
+          "Une variété",
+          "Un produit de coupe dangereux",
+          "Un bang en verre",
+          "Un effet visuel"
+        ],
+        "correct": 1,
+        "explanation": "Au marché noir, l'herbe est parfois coupée avec des micro-billes de verre ou de la laque pour alourdir le poids. Un risque sanitaire majeur pour les poumons."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Un test salivaire routier détecte-t-il le CBD ?",
+        "options": [
+          "Oui",
+          "Non",
+          "Seulement si on le fume",
+          "Ça dépend"
+        ],
+        "correct": 1,
+        "explanation": "Non, les tests ciblent spécifiquement le THC. Mais attention : beaucoup de fleurs CBD contiennent des traces de THC suffisantes pour positiver un test."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Pourquoi est-il déconseillé de mélanger tabac et cannabis ?",
+        "options": [
+          "C'est moins bon",
+          "La nicotine rend très addictif",
+          "Le tabac annule l'effet",
+          "C'est illégal"
+        ],
+        "correct": 1,
+        "explanation": "La nicotine est extrêmement addictive. Le mélange crée une dépendance physique forte au joint que le cannabis seul ne créerait pas forcément."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Qu'est-ce qu'un 'Bad Trip' ?",
+        "options": [
+          "Un voyage raté",
+          "Une angoisse passagère",
+          "Une lésion cérébrale",
+          "Une maladie mentale"
+        ],
+        "correct": 1,
+        "explanation": "C'est une réaction d'anxiété, de panique ou de paranoïa due à une surdose ou un mauvais contexte. C'est très désagréable mais temporaire et sans danger physique."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Sur quel support la première Bible de Gutenberg a-t-elle été imprimée ?",
+        "options": [
+          "Du papyrus",
+          "Du papier de chanvre",
+          "De la peau",
+          "Du plastique"
+        ],
+        "correct": 1,
+        "explanation": "Le papier de chanvre était le standard de l'époque pour sa résistance et sa longévité exceptionnelle. Il a servi à imprimer les premiers livres."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "En quelle matière étaient les voiles de Christophe Colomb ?",
+        "options": [
+          "Coton",
+          "Soie",
+          "Chanvre",
+          "Nylon"
+        ],
+        "correct": 2,
+        "explanation": "Le mot 'Canvas' (toile) vient de Cannabis. Le chanvre était indispensable à la marine pour sa résistance à l'eau salée."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quand Napoléon a-t-il interdit le haschich en Égypte ?",
+        "options": [
+          "En 1800",
+          "En 1900",
+          "En 1750",
+          "Jamais"
+        ],
+        "correct": 0,
+        "explanation": "En 1800, lors de la campagne d'Égypte, pour empêcher ses soldats de consommer ce produit local. C'est historiquement l'une des premières lois prohibitionnistes."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quelle reine célèbre utilisait du cannabis pour ses douleurs ?",
+        "options": [
+          "Marie-Antoinette",
+          "Victoria",
+          "Elisabeth II",
+          "Cléopâtre"
+        ],
+        "correct": 1,
+        "explanation": "La reine Victoria (Royaume-Uni) l'utilisait sous forme de teinture, prescrite par son médecin Sir Russell Reynolds, pour soulager ses douleurs menstruelles."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quelle est l'origine géographique du chanvre ?",
+        "options": [
+          "Amérique du Sud",
+          "Asie Centrale",
+          "Afrique",
+          "Europe"
+        ],
+        "correct": 1,
+        "explanation": "Le berceau botanique du cannabis se situe en Asie Centrale (vers la Mongolie et l'Himalaya), il y a des milliers d'années."
+      },
+      {
+        "category": "🌱 Botanique",
+        "question": "Les graines de chanvre sont-elles comestibles ?",
+        "options": [
+          "Non, toxiques",
+          "Oui, c'est un super-aliment",
+          "Juste les feuilles",
+          "Ça drogue"
+        ],
+        "correct": 1,
+        "explanation": "La graine (chènevis) est riche en protéines et oméga 3/6. L'huile alimentaire est excellente pour la santé."
+      },
+      {
+        "category": "🌱 Botanique",
+        "question": "Quelle température est idéale pour vaporiser ?",
+        "options": [
+          "100 °C",
+          "180 °C",
+          "300 °C",
+          "800 °C"
+        ],
+        "correct": 1,
+        "explanation": "Autour de 180 °C. Au-delà de 230 °C, la combustion commence et des toxines apparaissent."
+      },
+      {
+        "category": "🚘 Route",
+        "question": "Combien de temps le THC peut-il rester dans la salive (usage chronique) ?",
+        "options": [
+          "1 heure",
+          "Jusqu'à 8 jours",
+          "12 heures",
+          "1 mois"
+        ],
+        "correct": 1,
+        "explanation": "Pour un usage occasionnel c'est 24h, mais pour un usage chronique cela peut aller jusqu'à 8 jours, bien après la fin des effets."
+      },
+      {
+        "category": "👶 Jeunes",
+        "question": "L'usage de cannabis chez les adolescents est-il recommandé ?",
+        "options": [
+          "Oui, ça calme",
+          "Non, cerveau en construction",
+          "C'est sans danger",
+          "Mieux que l'alcool"
+        ],
+        "correct": 1,
+        "explanation": "Le cerveau mature jusqu'à 25 ans. Le THC peut perturber ce processus (mémoire, motivation). L'usage précoce est déconseillé."
+      },
+      {
+        "category": "👮 Police",
+        "question": "Que signifie l'acronyme AFD ?",
+        "options": [
+          "Une agence",
+          "Amende Forfaitaire Délictuelle",
+          "Une association",
+          "Une aide"
+        ],
+        "correct": 1,
+        "explanation": "C'est l'Amende Forfaitaire Délictuelle : la sanction rapide policière pour usage de stupéfiants."
+      }
+    ],
+    "medium": [
+      {
+        "category": "✨ Pop Culture",
+        "question": "Mathieu Kassovitz a déclaré lors d'un débat :",
+        "options": [
+          "La drogue c'est mal",
+          "Je fume, je suis productif et je paie mes impôts",
+          "Il faut tout interdire",
+          "Je ne fume pas"
+        ],
+        "correct": 1,
+        "explanation": "Il a combattu le stéréotype du fumeur passif en affirmant publiquement que la consommation responsable est compatible avec une vie active et citoyenne."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quel célèbre poète a écrit 'Les Paradis Artificiels' ?",
+        "options": [
+          "Victor Hugo",
+          "Charles Baudelaire",
+          "Émile Zola",
+          "Jules Verne"
+        ],
+        "correct": 1,
+        "explanation": "Charles Baudelaire. Il y décrit ses expériences (souvent critiques) avec le haschich au Club des Hashischins, bien qu'il en conclue que la création artificielle est inférieure."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quel musicien a dit : 'C'est mille fois mieux que le whisky' ?",
+        "options": [
+          "Louis Armstrong",
+          "Ray Charles",
+          "Elvis Presley",
+          "Serge Gainsbourg"
+        ],
+        "correct": 0,
+        "explanation": "Louis Armstrong, légende du Jazz. Il a consommé toute sa vie, a été arrêté en 1930, et considérait l'herbe comme 'une médecine'."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Steve Jobs a déclaré que le cannabis le rendait :",
+        "options": [
+          "Paranoïaque",
+          "Détendu et créatif",
+          "Fou",
+          "Triste"
+        ],
+        "correct": 1,
+        "explanation": "Le fondateur d'Apple a assumé son usage dans sa jeunesse, le considérant comme une expérience utile à sa créativité."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Pour quel rôle insolite Snoop Dogg a-t-il embauché quelqu'un à plein temps ?",
+        "options": [
+          "Rouleur de joints",
+          "Cultivateur",
+          "Goûteur",
+          "Jardinier"
+        ],
+        "correct": 0,
+        "explanation": "Il emploie un 'rouleur professionnel' à plein temps, payé environ 50 000$ par an pour lui fournir des joints parfaits à la demande."
+      },
+      {
+        "category": "🧠 Bio",
+        "question": "En biologie, qu'est-ce que l'anandamide ?",
+        "options": [
+          "Un engrais",
+          "Un endocannabinoïde",
+          "Une variété de Sativa",
+          "Un pesticide"
+        ],
+        "correct": 1,
+        "explanation": "C'est le 'THC naturel' produit par notre corps. Son nom vient du sanskrit 'Ananda' (Félicité). Elle a été découverte en 1992."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Comment le CBD agit-il sur les récepteurs CB1 ?",
+        "options": [
+          "Comme agoniste",
+          "Comme modulateur allostérique négatif",
+          "Il les détruit",
+          "Il est neutre"
+        ],
+        "correct": 1,
+        "explanation": "Il ne se fixe pas au même endroit que le THC. Il change la forme du récepteur pour qu'il capte moins le THC, calmant ainsi ses effets (anxiété)."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Dans quels tissus trouve-t-on majoritairement les récepteurs CB2 ?",
+        "options": [
+          "Le cerveau",
+          "Le système immunitaire",
+          "Les os",
+          "Les cheveux"
+        ],
+        "correct": 1,
+        "explanation": "Alors que les CB1 sont dans le cerveau, les CB2 sont surtout dans les cellules immunitaires (rate, globules blancs) où ils gèrent l'inflammation."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Le 'Syndrome Amotivationnel' est-il scientifiquement prouvé ?",
+        "options": [
+          "Oui, absolument",
+          "C'est un concept controversé",
+          "Oui, systématique",
+          "C'est la loi"
+        ],
+        "correct": 1,
+        "explanation": "Ce syndrome est souvent confondu avec l'effet sédatif immédiat ou une dépression sous-jacente. Aucune preuve de lien causal permanent n'a été établie."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Le cannabis permet-il de guérir le cancer chez l'homme ?",
+        "options": [
+          "Oui, il guérit tout",
+          "Non, c'est un soin de support",
+          "Il le provoque",
+          "Aucun effet"
+        ],
+        "correct": 1,
+        "explanation": "Il ne guérit pas le cancer (à ce jour), mais c'est un excellent soin de support pour aider à supporter la chimiothérapie (nausées, douleur, appétit)."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Le système endocannabinoïde régule :",
+        "options": [
+          "L'homéostasie",
+          "La digestion seule",
+          "La vue",
+          "Rien"
+        ],
+        "correct": 0,
+        "explanation": "Il régule l'équilibre global du corps (sommeil, appétit, humeur, douleur, immunité)."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Le THCA (forme acide) est-il psychotrope ?",
+        "options": [
+          "Oui, très",
+          "Non",
+          "Si fumé",
+          "Un peu"
+        ],
+        "correct": 1,
+        "explanation": "Non. Il doit être chauffé (décarboxylé) pour perdre son groupe acide et devenir du THC actif."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Le CBD peut-il interagir avec d'autres médicaments ?",
+        "options": [
+          "Non",
+          "Oui (au niveau du foie)",
+          "Seulement l'aspirine",
+          "Jamais"
+        ],
+        "correct": 1,
+        "explanation": "Oui, il peut occuper les enzymes du foie (Cytochrome P450) et ralentir l'élimination d'autres médicaments, augmentant leur concentration sanguine."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quel nutriment la plante consomme-t-elle principalement en floraison (NPK) ?",
+        "options": [
+          "Azote",
+          "Phosphore et Potassium",
+          "Calcium",
+          "Fer"
+        ],
+        "correct": 1,
+        "explanation": "En croissance, la plante veut de l'Azote (N). En floraison, elle a besoin de beaucoup de Phosphore (P) et de Potassium (K) pour développer ses fleurs."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Qu'est-ce que l'effet d'entourage ?",
+        "options": [
+          "Fumer entre amis",
+          "Synergie Cannabinoïdes + Terpènes",
+          "L'effet du tabac",
+          "Un mythe"
+        ],
+        "correct": 1,
+        "explanation": "C'est la théorie selon laquelle la plante entière est plus efficace que la molécule isolée car les terpènes et les différents cannabinoïdes se renforcent mutuellement."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Une carence en Azote (N) se manifeste par :",
+        "options": [
+          "Feuilles jaunes en bas",
+          "Feuilles violettes",
+          "Taches brunes",
+          "Feuilles blanches"
+        ],
+        "correct": 0,
+        "explanation": "La plante sacrifie les vieilles feuilles pour nourrir les jeunes pousses. Les feuilles du bas jaunissent et tombent."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Comment la loi de 1970 considère-t-elle l'usager ?",
+        "options": [
+          "Un client",
+          "Un malade et un délinquant",
+          "Une victime",
+          "Un citoyen libre"
+        ],
+        "correct": 1,
+        "explanation": "C'est toute l'ambiguïté : elle le punit comme un délinquant tout en proposant de le soigner comme un malade (injonction thérapeutique)."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "La vente de fleur de CBD est-elle légale en France ?",
+        "options": [
+          "Non",
+          "Oui (Confirmé par le Conseil d'État)",
+          "C'est flou",
+          "Seulement l'huile"
+        ],
+        "correct": 1,
+        "explanation": "Oui. Le Conseil d'État a définitivement annulé l'arrêté d'interdiction de vente des fleurs fin 2022, validant leur légalité tant que THC < 0,3 %."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "En quoi consiste le délit de 'Présentation sous un jour favorable' ?",
+        "options": [
+          "Une pub",
+          "Interdiction de valoriser les drogues",
+          "Le droit de vote",
+          "Une technique de vente"
+        ],
+        "correct": 1,
+        "explanation": "L'art L3421-4 interdit de présenter l'usage de stupéfiants favorablement (ex : t-shirt feuille de canna). C'est un frein majeur à la prévention."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quel article du Code de la Santé interdit le cannabis ?",
+        "options": [
+          "R.5132-86",
+          "L.1234-5",
+          "Art 49.3",
+          "Code Civil"
+        ],
+        "correct": 0,
+        "explanation": "L'article R.5132-86 interdit la production, la fabrication, le transport, l'importation, l'exportation, la détention... de cannabis."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quand le HHC a-t-il été interdit en France ?",
+        "options": [
+          "2020",
+          "Juin 2023",
+          "Jamais",
+          "2018"
+        ],
+        "correct": 1,
+        "explanation": "L'ANSM a classé le HHC (cannabinoïde semi-synthétique) et ses dérivés comme stupéfiants le 13 juin 2023, suite à des signalements d'effets graves."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quelle mesure le Portugal a-t-il prise en 2001 ?",
+        "options": [
+          "Légalisation totale",
+          "Décriminalisation de l'usage",
+          "Augmentation des peines",
+          "Interdiction de l'alcool"
+        ],
+        "correct": 1,
+        "explanation": "Ils ont décriminalisé TOUTES les drogues. L'addiction est traitée comme un problème de santé publique, pas de police. Les résultats sont excellents."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Qu'a légalisé le Luxembourg en 2023 ?",
+        "options": [
+          "La vente en magasin",
+          "L'autoculture (4 plants) et consommation",
+          "L'importation",
+          "Rien du tout"
+        ],
+        "correct": 1,
+        "explanation": "Le Luxembourg a légalisé la culture de 4 plants par foyer et la consommation à domicile, sans vente commerciale pour l'instant."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "D'où vient le modèle des 'Cannabis Social Clubs' ?",
+        "options": [
+          "USA",
+          "Espagne",
+          "Pays-Bas",
+          "France"
+        ],
+        "correct": 1,
+        "explanation": "Né en Espagne, ce modèle associatif permet aux membres de cultiver collectivement pour leur usage personnel, sans but lucratif."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quels états US ont légalisé en premier par référendum (2012) ?",
+        "options": [
+          "New York et Texas",
+          "Colorado et Washington",
+          "Californie et Floride",
+          "Oregon et Utah"
+        ],
+        "correct": 1,
+        "explanation": "Le Colorado et l'État de Washington ont ouvert la voie historique de la légalisation récréative aux États-Unis en 2012."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "En 2022, quel pays d'Asie a dépénalisé le cannabis ?",
+        "options": [
+          "Chine",
+          "Thaïlande",
+          "Japon",
+          "Corée"
+        ],
+        "correct": 1,
+        "explanation": "La Thaïlande a retiré le cannabis de la liste des stupéfiants en juin 2022, entraînant un boom économique immédiat (bien que la loi évolue encore)."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "À quoi sert la chènevotte (coeur de la tige) ?",
+        "options": [
+          "Vêtements",
+          "Béton de chanvre (Construction)",
+          "Huile",
+          "Papier"
+        ],
+        "correct": 1,
+        "explanation": "Mélangée à de la chaux, elle forme un béton isolant léger et écologique, qui régule l'humidité des maisons."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quel est le rapport du coût social Alcool vs Cannabis ?",
+        "options": [
+          "Équivalent",
+          "Cannabis > Alcool",
+          "Alcool (118Md) >> Cannabis (8Md)",
+          "Nul"
+        ],
+        "correct": 2,
+        "explanation": "L'alcool coûte 118 Milliards/an à la société française (soins, morts, pertes). Le cannabis coûte 8 Milliards. L'écart est abyssal."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "À combien estime-t-on le chiffre d'affaires du marché noir en France ?",
+        "options": [
+          "100 M€",
+          "1 Md€",
+          "3 à 4 Mds€",
+          "10 Mds€"
+        ],
+        "correct": 2,
+        "explanation": "Une manne financière gigantesque (3-4 Milliards €) qui échappe totalement à l'impôt et finance les réseaux criminels."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Que dit l'étude canadienne Brubacher (2019) sur les accidents ?",
+        "options": [
+          "Hausse des accidents",
+          "Pas de hausse statistique",
+          "Baisse massive",
+          "Arrêt de la conduite"
+        ],
+        "correct": 1,
+        "explanation": "L'étude sur les blessés de la route en Colombie-Britannique n'a pas montré de hausse significative des accidents après la légalisation."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quel est le montant des recettes fiscales potentielles selon le CAE ?",
+        "options": [
+          "100M",
+          "500M",
+          "2 à 2.8 Mds €",
+          "10 Mds"
+        ],
+        "correct": 2,
+        "explanation": "Le Conseil d'Analyse Économique estime qu'une légalisation rapporterait entre 2 et 2.8 milliards d'euros par an à l'État français."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "À quoi fait référence le 'Chemsex' ?",
+        "options": [
+          "Sexe sous produits de synthèse",
+          "Chanvre bio",
+          "Légalisation",
+          "Musique"
+        ],
+        "correct": 0,
+        "explanation": "C'est une pratique à risque associant sexe et drogues de synthèse (3-MMC, GBL), souvent confondue à tort avec l'usage de cannabis."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Quelle disparité raciale observe-t-on dans les arrestations aux USA ?",
+        "options": [
+          "Aucune",
+          "Les noirs sont arrêtés 3.7x plus",
+          "Les blancs sont plus arrêtés",
+          "Pas de statistiques"
+        ],
+        "correct": 1,
+        "explanation": "Pour une consommation égale, les minorités subissent une répression disproportionnée. C'est un argument clé de la justice sociale."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "La théorie de la 'Porte d'entrée' est-elle valide ?",
+        "options": [
+          "Oui, c'est prouvé",
+          "Non, invalidée sociologiquement",
+          "Oui, chimiquement",
+          "Vraie"
+        ],
+        "correct": 1,
+        "explanation": "C'est l'interdiction qui crée la porte en forçant le contact avec le marché noir qui vend aussi des drogues dures."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Qu'est-ce que la stigmatisation de l'usager provoque ?",
+        "options": [
+          "De l'aide",
+          "Un frein au soin et à l'insertion",
+          "Plus de justice",
+          "Une meilleure santé"
+        ],
+        "correct": 1,
+        "explanation": "Étiqueter l'usager comme 'drogué' l'empêche de parler de sa consommation à ses proches ou médecins, aggravant les risques."
+      },
+      {
+        "category": "🗣️ Société",
+        "question": "Le cannabis est-il la drogue illicite la plus consommée ?",
+        "options": [
+          "Oui, de loin",
+          "Non",
+          "Juste après la cocaïne",
+          "Moins que l'héroïne"
+        ],
+        "correct": 0,
+        "explanation": "C'est de très loin la substance illicite la plus consommée en France et dans le monde, loin devant la cocaïne ou l'ecstasy."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "En quoi consiste la vaporisation ?",
+        "options": [
+          "Fumer avec de l'eau",
+          "Chauffer la plante sans la brûler",
+          "Une cigarette électronique",
+          "Manger le produit"
+        ],
+        "correct": 1,
+        "explanation": "C'est chauffer la plante (env. 180°C) pour extraire les principes actifs sous forme de vapeur, sans combustion. Pas de goudrons, pas de monoxyde de carbone."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Qu'appelle-t-on le 'verre pilé' au marché noir ?",
+        "options": [
+          "Une variété",
+          "Un produit de coupe dangereux",
+          "Un bang en verre",
+          "Un effet visuel"
+        ],
+        "correct": 1,
+        "explanation": "Au marché noir, l'herbe est parfois coupée avec des micro-billes de verre ou de la laque pour alourdir le poids. Un risque sanitaire majeur pour les poumons."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Un test salivaire routier détecte-t-il le CBD ?",
+        "options": [
+          "Oui",
+          "Non",
+          "Seulement si on le fume",
+          "Ça dépend"
+        ],
+        "correct": 1,
+        "explanation": "Non, les tests ciblent spécifiquement le THC. Mais attention : beaucoup de fleurs CBD contiennent des traces de THC suffisantes pour positiver un test."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Pourquoi est-il déconseillé de mélanger tabac et cannabis ?",
+        "options": [
+          "C'est moins bon",
+          "La nicotine rend très addictif",
+          "Le tabac annule l'effet",
+          "C'est illégal"
+        ],
+        "correct": 1,
+        "explanation": "La nicotine est extrêmement addictive. Le mélange crée une dépendance physique forte au joint que le cannabis seul ne créerait pas forcément."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Qu'est-ce qu'un 'Bad Trip' ?",
+        "options": [
+          "Un voyage raté",
+          "Une angoisse passagère",
+          "Une lésion cérébrale",
+          "Une maladie mentale"
+        ],
+        "correct": 1,
+        "explanation": "C'est une réaction d'anxiété, de panique ou de paranoïa due à une surdose ou un mauvais contexte. C'est très désagréable mais temporaire et sans danger physique."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Sur quel support la première Bible de Gutenberg a-t-elle été imprimée ?",
+        "options": [
+          "Du papyrus",
+          "Du papier de chanvre",
+          "De la peau",
+          "Du plastique"
+        ],
+        "correct": 1,
+        "explanation": "Le papier de chanvre était le standard de l'époque pour sa résistance et sa longévité exceptionnelle. Il a servi à imprimer les premiers livres."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "En quelle matière étaient les voiles de Christophe Colomb ?",
+        "options": [
+          "Coton",
+          "Soie",
+          "Chanvre",
+          "Nylon"
+        ],
+        "correct": 2,
+        "explanation": "Le mot 'Canvas' (toile) vient de Cannabis. Le chanvre était indispensable à la marine pour sa résistance à l'eau salée."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quand Napoléon a-t-il interdit le haschich en Égypte ?",
+        "options": [
+          "En 1800",
+          "En 1900",
+          "En 1750",
+          "Jamais"
+        ],
+        "correct": 0,
+        "explanation": "En 1800, lors de la campagne d'Égypte, pour empêcher ses soldats de consommer ce produit local. C'est historiquement l'une des premières lois prohibitionnistes."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quelle reine célèbre utilisait du cannabis pour ses douleurs ?",
+        "options": [
+          "Marie-Antoinette",
+          "Victoria",
+          "Elisabeth II",
+          "Cléopâtre"
+        ],
+        "correct": 1,
+        "explanation": "La reine Victoria (Royaume-Uni) l'utilisait sous forme de teinture, prescrite par son médecin Sir Russell Reynolds, pour soulager ses douleurs menstruelles."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quelle est l'origine géographique du chanvre ?",
+        "options": [
+          "Amérique du Sud",
+          "Asie Centrale",
+          "Afrique",
+          "Europe"
+        ],
+        "correct": 1,
+        "explanation": "Le berceau botanique du cannabis se situe en Asie Centrale (vers la Mongolie et l'Himalaya), il y a des milliers d'années."
+      }
+    ],
+    "hard": [
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quel médecin français a dit : \"La prohibition est une non-assistance à personne en danger\" ?",
+        "options": [
+          "Dr Karine Lacombe",
+          "Dr William Lowenstein",
+          "Dr Michel Cymes",
+          "Dr Didier Raoult"
+        ],
+        "correct": 1,
+        "explanation": "Le Dr William Lowenstein, addictologue et président de SOS Addictions. Il dénonce les effets sanitaires désastreux de la loi de 70."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "En 2023, qu'a préconisé l'avis du CESE sur le cannabis ?",
+        "options": [
+          "La prison à vie",
+          "La légalisation encadrée",
+          "Le statut quo",
+          "L'amende forfaitaire"
+        ],
+        "correct": 1,
+        "explanation": "Le Conseil Économique, Social et Environnemental a voté un avis officiel recommandant la fin de la prohibition pour raisons sanitaires."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quel père fondateur des États-Unis cultivait du chanvre ?",
+        "options": [
+          "George Washington",
+          "Abraham Lincoln",
+          "Benjamin Franklin",
+          "JFK"
+        ],
+        "correct": 0,
+        "explanation": "George Washington. Il cultivait du chanvre industriel sur sa plantation de Mount Vernon pour la fibre (cordages, toiles)."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Sous quel pseudonyme l'astronome Carl Sagan a-t-il défendu le cannabis ?",
+        "options": [
+          "Mr. X",
+          "Dr. Weed",
+          "Prof C",
+          "Astro"
+        ],
+        "correct": 0,
+        "explanation": "Il a écrit un essai célèbre dans le livre 'Marihuana Reconsidered' (1971) sous le nom de Mr. X pour protéger sa carrière."
+      },
+      {
+        "category": "✨ Pop Culture",
+        "question": "Quelle déclaration a faite Kofi Annan (ONU) en 2011 ?",
+        "options": [
+          "Guerre totale",
+          "La guerre à la drogue a échoué",
+          "Prison pour tous",
+          "Rien"
+        ],
+        "correct": 1,
+        "explanation": "En tant que membre de la Global Commission on Drug Policy, il a appelé à la fin de la guerre aux drogues et à la régulation."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quelle enzyme est responsable de la dégradation de l'anandamide ?",
+        "options": [
+          "L'insuline",
+          "La FAAH",
+          "La MAGL",
+          "Le Cytochrome"
+        ],
+        "correct": 1,
+        "explanation": "La FAAH (Fatty Acid Amide Hydrolase) détruit l'anandamide. Le CBD inhibe cette enzyme, augmentant ainsi notre taux naturel d'anandamide."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quelle enzyme dégrade le 2-AG (2-arachidonoylglycérol) ?",
+        "options": [
+          "FAAH",
+          "MAGL",
+          "COX-2",
+          "TRPV"
+        ],
+        "correct": 1,
+        "explanation": "C'est la Monoacylglycérol Lipase (MAGL). Le 2-AG est l'autre endocannabinoïde majeur avec l'anandamide."
+      },
+      {
+        "category": "🌡️ Physique",
+        "question": "Quel est le point d'ébullition précis du THC ?",
+        "options": [
+          "100°C",
+          "157°C",
+          "180°C",
+          "220°C"
+        ],
+        "correct": 1,
+        "explanation": "Le THC se vaporise à 157°C. Le CBD un peu plus haut (160-180°C). D'où l'importance de la température dans les vaporisateurs."
+      },
+      {
+        "category": "🧠 Bio",
+        "question": "Au niveau cellulaire, à quel type de protéine le récepteur CB1 est-il couplé ?",
+        "options": [
+          "Nucléaire",
+          "Protéine G (Gi/o)",
+          "Ionique",
+          "Hormone"
+        ],
+        "correct": 1,
+        "explanation": "C'est un récepteur membranaire couplé aux protéines G (GPCR), qui inhibe l'adénylate cyclase (frein synaptique)."
+      },
+      {
+        "category": "🧪 Chimie",
+        "question": "Quelle est la stéréoisomérie du THC naturel ?",
+        "options": [
+          "(-)-trans",
+          "(+)-cis",
+          "Delta-8",
+          "Racémique"
+        ],
+        "correct": 0,
+        "explanation": "La forme naturelle produite par la plante est l'isomère (-)-trans-delta-9-tétrahydrocannabinol. Les autres formes sont moins actives."
+      },
+      {
+        "category": "🧪 Chimie",
+        "question": "Quel récepteur de la sérotonine est activé par le CBD ?",
+        "options": [
+          "5-HT1A",
+          "D2",
+          "CB1",
+          "Opioïde"
+        ],
+        "correct": 0,
+        "explanation": "Le CBD est un agoniste des récepteurs 5-HT1A de la sérotonine, ce qui explique ses puissants effets anxiolytiques et antidépresseurs."
+      },
+      {
+        "category": "🧪 Chimie",
+        "question": "Quel terpène est connu pour son effet sédatif ('Couch-lock') ?",
+        "options": [
+          "Limonène",
+          "Myrcène",
+          "Pinène",
+          "Terpinolène"
+        ],
+        "correct": 1,
+        "explanation": "Le Myrcène (présent dans le houblon et la mangue) favorise la pénétration du THC dans le cerveau et a un fort effet relaxant."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quelle est la demi-vie d'élimination du THC dans les tissus ?",
+        "options": [
+          "2h",
+          "24h",
+          "7 jours",
+          "1 mois"
+        ],
+        "correct": 2,
+        "explanation": "Le THC est lipophile. Il se stocke dans les graisses et se relargue très lentement, d'où les tests positifs longtemps après."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Quels trichomes contiennent le plus de résine ?",
+        "options": [
+          "Sessiles",
+          "Capitulés-pédiculés",
+          "Bulbeux",
+          "Cystolithiques"
+        ],
+        "correct": 1,
+        "explanation": "Ceux en forme de champignon (capitulés-pédiculés) sont les plus gros et les plus riches en cannabinoïdes."
+      },
+      {
+        "category": "🧪 Science",
+        "question": "Que signifie l'effet biphasique du THC ?",
+        "options": [
+          "Effet double",
+          "Effet inverse selon la dose",
+          "Effet nul",
+          "Effet constant"
+        ],
+        "correct": 1,
+        "explanation": "À petite dose, le THC peut relaxer/euphoriser. À forte dose, il peut faire l'inverse : angoisser ou rendre paranoïaque."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Pour quelle maladie rare le syndrome de Lennox-Gastaut est-il connu ?",
+        "options": [
+          "Allergie",
+          "Épilepsie réfractaire",
+          "Sevrage",
+          "Cancer"
+        ],
+        "correct": 1,
+        "explanation": "C'est une forme d'épilepsie infantile très grave. L'Epidiolex (CBD) a montré une efficacité remarquable pour réduire les crises."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Quel effet a le THC sur le glaucome ?",
+        "options": [
+          "Augmente la pression",
+          "Baisse la pression intraoculaire",
+          "Rend aveugle",
+          "Aucun"
+        ],
+        "correct": 1,
+        "explanation": "Le THC baisse la pression dans l'œil. C'est une des premières applications médicales découvertes, mais l'effet est court."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Quel effet a le THC sur la Sclérose en Plaques ?",
+        "options": [
+          "Rien",
+          "Réduit la spasticité",
+          "Guérit",
+          "Aggrave"
+        ],
+        "correct": 1,
+        "explanation": "Il réduit la spasticité (raideur musculaire douloureuse). C'est l'indication principale du médicament Sativex."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "En quelle année le système endocannabinoïde a-t-il été découvert ?",
+        "options": [
+          "1964",
+          "1988-1992",
+          "2000",
+          "1930"
+        ],
+        "correct": 1,
+        "explanation": "Le récepteur CB1 a été identifié en 1988, puis l'anandamide en 1992, par l'équipe du Pr Mechoulam."
+      },
+      {
+        "category": "🧠 Santé",
+        "question": "Quel est l'effet potentiel du CBD sur la schizophrénie ?",
+        "options": [
+          "Il l'aggrave",
+          "Effet antipsychotique",
+          "Aucun effet",
+          "Il la provoque"
+        ],
+        "correct": 1,
+        "explanation": "Des études (Leweke) montrent que le CBD pur à haute dose a des effets antipsychotiques similaires aux médicaments standards, avec moins d'effets secondaires."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quelle est la peine maximale pour trafic de stupéfiants en bande organisée ?",
+        "options": [
+          "10 ans",
+          "20 ans",
+          "30 ans + 7.5M€",
+          "Perpétuité"
+        ],
+        "correct": 2,
+        "explanation": "30 ans de réclusion criminelle et 7,5 millions d'euros d'amende (Art 222-37). Une peine théorique extrêmement lourde."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Que stipule l'article 3 de la Convention de Vienne de 1988 ?",
+        "options": [
+          "Soins",
+          "Obligation de sanction pénale",
+          "Légalisation",
+          "Commerce"
+        ],
+        "correct": 1,
+        "explanation": "Elle oblige les États signataires à conférer le caractère d'infraction pénale à la détention et l'achat, même pour usage personnel."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Sur quoi portait l'arrêt 'S. et Marper c. Royaume-Uni' de la CEDH en 2008 ?",
+        "options": [
+          "ADN",
+          "Cannabis légal",
+          "Prison",
+          "Amende"
+        ],
+        "correct": 0,
+        "explanation": "Il concerne la conservation des empreintes génétiques (souvent prélevées sur les usagers). La CEDH a jugé la conservation indéfinie illégale."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quelle quantité de cannabis peut-on posséder à domicile en Allemagne (2024) ?",
+        "options": [
+          "10g",
+          "25g",
+          "50g",
+          "100g"
+        ],
+        "correct": 2,
+        "explanation": "La loi 'CanG' autorise la possession de 50g de cannabis séché à domicile et 25g sur la voie publique."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Que réglemente la Convention de 1971 (contrairement à celle de 1961) ?",
+        "options": [
+          "Les plantes",
+          "Les substances psychotropes (THC)",
+          "Les médicaments",
+          "Les armes"
+        ],
+        "correct": 1,
+        "explanation": "Elle classe les psychotropes. Absurdité juridique : le THC (molécule) est classé ici, séparément de la plante (classée en 1961)."
+      },
+      {
+        "category": "⚖️ Droit",
+        "question": "Quand a débuté l'expérimentation du cannabis médical en France ?",
+        "options": [
+          "2018",
+          "Mars 2021",
+          "2025",
+          "Jamais"
+        ],
+        "correct": 1,
+        "explanation": "Elle a débuté en mars 2021 avec 3000 patients souffrant de pathologies graves (douleurs réfractaires, épilepsie, soins palliatifs)."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quel fut le premier État-nation au monde à légaliser le cannabis (2013) ?",
+        "options": [
+          "Pays-Bas",
+          "Uruguay",
+          "Canada",
+          "USA"
+        ],
+        "correct": 1,
+        "explanation": "L'Uruguay, sous la présidence de Pepe Mujica, a été le premier pays à réguler toute la chaîne de production et de vente."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Combien d'États américains ont légalisé l'usage adulte (en 2024) ?",
+        "options": [
+          "5",
+          "10",
+          "24",
+          "50"
+        ],
+        "correct": 2,
+        "explanation": "24 États plus le district de Columbia (Washington DC). Plus de la moitié de la population américaine vit en zone légale."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quand Malte a-t-il légalisé le cannabis ?",
+        "options": [
+          "2015",
+          "Décembre 2021",
+          "2025",
+          "Jamais"
+        ],
+        "correct": 1,
+        "explanation": "Malte a été le premier pays de l'Union Européenne à légaliser l'usage, la culture et les associations de consommateurs."
+      },
+      {
+        "category": "🏛️ Politique",
+        "question": "Quelle décision l'ONU a-t-elle prise en décembre 2020 ?",
+        "options": [
+          "Retrait du Tableau IV",
+          "Ajout au Tableau I",
+          "Rien",
+          "Interdiction totale"
+        ],
+        "correct": 0,
+        "explanation": "L'ONU a retiré le cannabis du Tableau IV de la Convention de 1961 (drogues les plus dangereuses), reconnaissant officiellement son utilité médicale."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quelle est la conductivité thermique du béton de chanvre ?",
+        "options": [
+          "Haute",
+          "Faible (bon isolant)",
+          "Nulle",
+          "Variable"
+        ],
+        "correct": 1,
+        "explanation": "Il a une faible conductivité thermique (lambda), ce qui en fait un excellent isolant qui garde la chaleur en hiver et la fraîcheur en été."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quel est le montant des recettes fiscales potentielles selon le CAE ?",
+        "options": [
+          "100M",
+          "500M",
+          "2 à 2.8 Mds €",
+          "10 Mds"
+        ],
+        "correct": 2,
+        "explanation": "Le Conseil d'Analyse Économique estime qu'une légalisation rapporterait entre 2 et 2.8 milliards d'euros par an à l'État français."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quel est le coût social annuel du tabac en France ?",
+        "options": [
+          "Égal au cannabis",
+          "120 Mds (>> Cannabis)",
+          "Moins que le cannabis",
+          "Nul"
+        ],
+        "correct": 1,
+        "explanation": "Le tabac coûte 120 milliards par an à la société (Kopp 2015). L'alcool 118 Mds. Le cannabis seulement 8 Mds."
+      },
+      {
+        "category": "💰 Economie",
+        "question": "Quelle est la conclusion de l'étude canadienne Brubacher (2019) sur la route ?",
+        "options": [
+          "Hausse des accidents",
+          "Pas de hausse statistique",
+          "Baisse massive",
+          "Arrêt de la conduite"
+        ],
+        "correct": 1,
+        "explanation": "L'étude sur les blessés de la route en Colombie-Britannique n'a pas montré de hausse significative des accidents après la légalisation."
+      },
+      {
+        "category": "🏭 Industrie",
+        "question": "Quel est l'avantage du papier de chanvre par rapport au bois ?",
+        "options": [
+          "Plus de lignine",
+          "Moins de lignine",
+          "Pareil",
+          "Aucune"
+        ],
+        "correct": 1,
+        "explanation": "Le chanvre contient moins de lignine que le bois. Il nécessite donc beaucoup moins de produits chimiques polluants pour être blanchi."
+      },
+      {
+        "category": "🌿 Botanique",
+        "question": "Dans quel ordre botanique le cannabis était-il classé avant les Rosales ?",
+        "options": [
+          "Urticales",
+          "Rosales",
+          "Solanales",
+          "Malvales"
+        ],
+        "correct": 0,
+        "explanation": "Il était classé dans l'ordre des Urticales (comme les orties) avant d'être reclassé dans les Rosales par la classification phylogénétique."
+      },
+      {
+        "category": "🌱 Culture",
+        "question": "En culture, que signifie l'acronyme LST ?",
+        "options": [
+          "Low Stress Training",
+          "Light System",
+          "Last Time",
+          "Lemon"
+        ],
+        "correct": 0,
+        "explanation": "C'est une technique de palissage doux : on plie les branches pour exposer la plante à la lumière sans la stresser."
+      },
+      {
+        "category": "🌱 Culture",
+        "question": "Quel stade de développement la lumière bleue favorise-t-elle ?",
+        "options": [
+          "La croissance",
+          "La floraison",
+          "Les racines",
+          "La sénescence"
+        ],
+        "correct": 0,
+        "explanation": "Le spectre bleu (printemps/été) favorise la croissance végétative (feuilles/tiges). Le spectre rouge (automne) favorise la floraison."
+      },
+      {
+        "category": "🌱 Culture",
+        "question": "Quel champignon symbiotique utilise-t-on souvent en culture (coco) ?",
+        "options": [
+          "Trichoderma harzianum",
+          "Mildiou",
+          "Botrytis",
+          "Levure"
+        ],
+        "correct": 0,
+        "explanation": "Le Trichoderma harzianum est un champignon bénéfique qui protège les racines et améliore l'absorption des nutriments."
+      },
+      {
+        "category": "🌱 Culture",
+        "question": "Quelle carence jaunit les feuilles du bas en premier ?",
+        "options": [
+          "Azote (N)",
+          "Fer",
+          "Calcium",
+          "Soufre"
+        ],
+        "correct": 0,
+        "explanation": "L'azote est un élément mobile. En cas de manque, la plante le déplace des feuilles âgées (bas) vers les jeunes pousses (haut)."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "À quelle famille chimique appartient le 'Spice' (K2) ?",
+        "options": [
+          "Phytocannabinoïdes",
+          "Indoles / Indazoles",
+          "Opiacés",
+          "Amphétamines"
+        ],
+        "correct": 1,
+        "explanation": "Ce sont des cannabinoïdes de synthèse (JWH-018, etc.) de la famille des aminoalkylindoles, bien plus puissants et dangereux que le THC."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Selon l'étude SAM, quel est le facteur de risque du cannabis au volant ?",
+        "options": [
+          "x1.8",
+          "x10",
+          "x20",
+          "x0.5"
+        ],
+        "correct": 0,
+        "explanation": "Le sur-risque est de 1.8 (faible) comparé à l'alcool (x8.5 à 0.5g/L). Mais le mélange Alcool + Cannabis multiplie le risque par 14."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Quel est le risque principal d'une huile BHO mal purgée ?",
+        "options": [
+          "Rien",
+          "Inhalation de solvant",
+          "Trop fort",
+          "Mauvais goût"
+        ],
+        "correct": 1,
+        "explanation": "Le Butane Hash Oil utilise du gaz. S'il est mal purgé, on inhale du gaz butane (neurotoxique). La fabrication est aussi explosive."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "Les faux positifs aux tests salivaires existent-ils ?",
+        "options": [
+          "Non",
+          "Oui (Rares : 2-10%)",
+          "50% des cas",
+          "Toujours"
+        ],
+        "correct": 1,
+        "explanation": "Oui, certains médicaments ou aliments peuvent créer des faux positifs. D'où l'importance d'exiger une prise de sang en cas de doute."
+      },
+      {
+        "category": "🛡️ Prévention & RDR",
+        "question": "À quelle température le Benzène se forme-t-il ?",
+        "options": [
+          "150°C",
+          "205°C",
+          "300°C",
+          "500°C"
+        ],
+        "correct": 1,
+        "explanation": "Ce toxique cancérigène se forme à partir de 205°C. D'où l'importance de régler son vaporisateur en dessous."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Où se réunissait le 'Club des Hashischins' ?",
+        "options": [
+          "Hôtel Pimodan (Lauzun)",
+          "Louvre",
+          "Montmartre",
+          "Bastille"
+        ],
+        "correct": 0,
+        "explanation": "Sur l'île Saint-Louis à Paris. Baudelaire, Gautier, Balzac s'y réunissaient pour expérimenter le Dawamesk."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quand a eu lieu la première Guerre de l'Opium ?",
+        "options": [
+          "1839-1842",
+          "1900-1905",
+          "1750-1755",
+          "1950"
+        ],
+        "correct": 0,
+        "explanation": "Elle opposait la Chine au Royaume-Uni, qui voulait imposer son commerce d'opium. Un tournant dans l'histoire des drogues."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "En quelle année le cannabis a-t-il été inscrit à la pharmacopée US ?",
+        "options": [
+          "1851",
+          "1900",
+          "1937",
+          "Jamais"
+        ],
+        "correct": 0,
+        "explanation": "Il y est entré en 1851 et y est resté jusqu'en 1942, couramment prescrit pour de nombreuses affections avant la prohibition."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Qui a isolé le cannabidiol (CBD) pour la première fois en 1940 ?",
+        "options": [
+          "Roger Adams",
+          "Raphael Mechoulam",
+          "Pasteur",
+          "Hoffmann"
+        ],
+        "correct": 0,
+        "explanation": "C'est l'américain Roger Adams qui l'a isolé en premier, bien avant que Mechoulam n'en détermine la structure exacte."
+      },
+      {
+        "category": "📜 Histoire",
+        "question": "Quand date le plus ancien codex (Shennong) mentionnant le cannabis ?",
+        "options": [
+          "-2737 av.JC",
+          "1000 ap.JC",
+          "1900",
+          "-500"
+        ],
+        "correct": 0,
+        "explanation": "Le Pen Ts'ao Ching, attribué à l'empereur Shennong en 2737 avant notre ère, est la première trace écrite de l'usage médical du cannabis."
+      }
+    ]
+  }
+}

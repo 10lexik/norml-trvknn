@@ -1,0 +1,57 @@
+{
+  "header": {
+    "brand": "NORML ACADEMY",
+    "score_label": "SCORE"
+  },
+  "start": {
+    "title": "Busting Myths",
+    "subtitle": "Prohibition is failing. Test your knowledge.",
+    "btn": "Start Quiz",
+    "choose_level": "Choose your level:"
+  },
+  "levels": {
+    "easy": "Curious",
+    "medium": "Member",
+    "hard": "Expert"
+  },
+  "game": {
+    "correct": "Correct!",
+    "wrong": "Wrong!",
+    "argument_label": "Fact:",
+    "btn_next": "Next",
+    "btn_results": "Results",
+    "point_popup": "+1 PT"
+  },
+  "end": {
+    "btn_retry": "Play Again",
+    "btn_join": "Join NORML",
+    "btn_save": "Save Score",
+    "btn_skip": "Skip & Replay",
+    "leaderboard_title": "Leaderboard",
+    "placeholder_name": "Name",
+    "placeholder_id": "ID",
+    "top_10": "TOP 10",
+    "col_rank": "#",
+    "col_name": "Name",
+    "col_score": "Score",
+    "ranks": {
+      "expert": {
+        "title": "Expert",
+        "desc": "Perfect!"
+      },
+      "intermediate": {
+        "title": "Intermediate",
+        "desc": "Good job."
+      },
+      "beginner": {
+        "title": "Beginner",
+        "desc": "Keep learning."
+      }
+    }
+  },
+  "questions_pool": {
+    "easy": [],
+    "medium": [],
+    "hard": []
+  }
+}

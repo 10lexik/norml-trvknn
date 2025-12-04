@@ -1,0 +1,57 @@
+{
+  "header": {
+    "brand": "ACADEMIA NORML",
+    "score_label": "PUNTOS"
+  },
+  "start": {
+    "title": "Romper Mitos",
+    "subtitle": "La prohibición falla. Ponte a prueba.",
+    "btn": "Comenzar",
+    "choose_level": "Elige tu nivel:"
+  },
+  "levels": {
+    "easy": "Curioso",
+    "medium": "Miembro",
+    "hard": "Experto"
+  },
+  "game": {
+    "correct": "Correcto",
+    "wrong": "Falso",
+    "argument_label": "Realidad:",
+    "btn_next": "Siguiente",
+    "btn_results": "Resultados",
+    "point_popup": "+1 PT"
+  },
+  "end": {
+    "btn_retry": "Reintentar",
+    "btn_join": "Unirse",
+    "btn_save": "Guardar",
+    "btn_skip": "Saltar y Jugar",
+    "leaderboard_title": "Clasificación",
+    "placeholder_name": "Apodo",
+    "placeholder_id": "ID",
+    "top_10": "TOP 10",
+    "col_rank": "#",
+    "col_name": "Nombre",
+    "col_score": "Puntos",
+    "ranks": {
+      "expert": {
+        "title": "Experto",
+        "desc": "¡Perfecto!"
+      },
+      "intermediate": {
+        "title": "Intermedio",
+        "desc": "Buen trabajo."
+      },
+      "beginner": {
+        "title": "Principiante",
+        "desc": "Sigue aprendiendo."
+      }
+    }
+  },
+  "questions_pool": {
+    "easy": [],
+    "medium": [],
+    "hard": []
+  }
+}
