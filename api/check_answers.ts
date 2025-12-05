@@ -1,13 +1,20 @@
 import { MongoClient } from 'mongodb';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// ... (Code de connexion DB identique) ...
+const uri = process.env.MONGODB_URI!;
+let client: MongoClient;
+
+if (!global._mongoClientPromise) {
+  client = new MongoClient(uri);
+  global._mongoClientPromise = client.connect();
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // On attend un POST avec { questionId: "fr_easy_12", answerIndex: 2 }
-  const { questionId, answerIndex } = req.body;
+  if (req.method !== 'POST') return res.status(405).end();
 
-  if (!questionId) return res.status(400).json({ error: 'Missing ID' });
+  const { questionId, userIndex } = req.body;
+
+  if (!questionId) return res.status(400).json({ error: 'Missing questionId' });
 
   try {
     const client = await global._mongoClientPromise;
@@ -15,24 +22,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const collection = db.collection("Norml Trivia Kanna");
     const data = await collection.findOne({});
 
-    // 1. Décoder l'ID pour retrouver la question dans le JSON
-    // Format de l'ID : "lang_level_index"
-    const [lang, level, indexStr] = questionId.split('_');
-    const index = parseInt(indexStr);
+    // DÉCODAGE DE L'ID : "fr_easy_12"
+    const parts = questionId.split('_');
+    // Si le titre contient des underscores, on prend les derniers morceaux
+    const indexStr = parts.pop();
+    const level = parts.pop();
+    const lang = parts.join('_'); // Le reste est la langue (au cas où "fr_FR")
 
-    const question = data[lang].questions_pool[level][index];
+    const index = parseInt(indexStr!);
 
-    // 2. Vérifier la réponse
-    const isCorrect = (question.correct === answerIndex);
+    // Récupération sécurisée
+    const source = data[lang];
+    if (!source) throw new Error("Langue introuvable");
 
-    // 3. Renvoyer le résultat ET l'explication (maintenant on a le droit)
+    const pool = source.questions_pool[level!];
+    if (!pool) throw new Error("Niveau introuvable");
+
+    const originalQuestion = pool[index];
+
+    // Vérification
+    const isCorrect = (originalQuestion.correct === userIndex);
+
     res.status(200).json({
       correct: isCorrect,
-      correctIndex: question.correct, // Pour afficher la bonne réponse en vert
-      explanation: question.explanation
+      correctIndex: originalQuestion.correct,
+      explanation: originalQuestion.explanation
     });
 
   } catch (e: any) {
+    console.error("Check Error:", e);
     res.status(500).json({ error: e.message });
   }
 }
