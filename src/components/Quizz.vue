@@ -3,19 +3,19 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import confetti from 'canvas-confetti';
 
+// Import des JSONs LOCAUX (Pour l'interface uniquement)
+import fr from '../locales/fr.json';
+import en from '../locales/en.json';
+import es from '../locales/es.json';
+
 // --- 1. INTERFACES ---
 interface Question {
+  _id: string; // ID technique MongoDB
   category: string;
   question: string;
   options: string[];
-  correct: number;
-  explanation: string;
-}
-
-// Structure de ton gros objet JSON
-// On simplifie le typage ici pour éviter les conflits avec i18n
-interface MessagesData {
-  [lang: string]: any; 
+  correct?: number; // Optionnel car absent avant la réponse API
+  explanation?: string; // Optionnel car absent avant la réponse API
 }
 
 interface LeaderboardEntry {
@@ -49,10 +49,15 @@ const LETTERS = ["A", "B", "C", "D"];
 const { t, locale, setLocaleMessage } = useI18n();
 
 // Chargement & Données
-const isLoading = ref(true);
+const isLoading = ref(false);
+const isChecking = ref(false);
 const apiError = ref<string | null>(null);
-const messagesLocal = ref<MessagesData | null>(null);
-const availableLocales = ref<string[]>(['fr']);
+
+// Interface : on charge les fichiers locaux par défaut
+const availableLocales = ['fr', 'en', 'es'];
+setLocaleMessage('fr', fr);
+setLocaleMessage('en', en);
+setLocaleMessage('es', es);
 
 // Jeu
 const gameState = ref<'start' | 'playing' | 'end'>('start');
@@ -72,48 +77,15 @@ const scoreSaved = ref(false);
 const leaderboard = ref<LeaderboardEntry[]>([...MOCK_LEADERBOARD]);
 const showPointPopup = ref(false);
 
-// --- 4. CYCLE DE VIE (API Call) ---
-onMounted(async () => {
-  // A. Charger le leaderboard local
+// --- 4. CYCLE DE VIE ---
+onMounted(() => {
   const savedScores = localStorage.getItem("norml_quiz_scores");
   if (savedScores) {
     try {
       const parsed = JSON.parse(savedScores) as LeaderboardEntry[];
       leaderboard.value = [...MOCK_LEADERBOARD, ...parsed];
       sortLeaderboard();
-    } catch (e) {
-      console.error("Erreur lecture leaderboard", e);
-    }
-  }
-
-  // B. Charger les données depuis l'API MongoDB
-  try {
-    // ✅ URL CORRECTE
-    const res = await fetch('/api/questions_pool');
-
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-
-    const data = await res.json() as MessagesData;
-
-    // Stockage local
-    messagesLocal.value = data;
-
-    // Détection des langues (filtre les clés techniques comme _id)
-    const langs = Object.keys(data).filter(k => k.length === 2);
-    availableLocales.value = langs;
-
-    // Injection dynamique dans Vue I18n
-    langs.forEach(lang => {
-      // ✅ CORRECTION TS : "as any" pour dire à TS que le format est OK pour i18n
-      setLocaleMessage(lang, data[lang] as any);
-    });
-
-    isLoading.value = false;
-
-  } catch (err: any) {
-    console.error("Failed to load questions:", err);
-    apiError.value = "Erreur de chargement. Vérifiez votre connexion.";
-    isLoading.value = false;
+    } catch (e) { console.error(e); }
   }
 });
 
@@ -135,55 +107,86 @@ const prepareNewQuestion = () => {
   currentShuffledOptions.value = opts.sort(() => 0.5 - Math.random());
 };
 
-const startGame = (difficulty: string) => {
-  // Sécurité si les données ne sont pas chargées
-  if (!messagesLocal.value) return;
-
+// Démarrage SÉCURISÉ via API
+const startGame = async (difficulty: string) => {
+  isLoading.value = true;
   selectedDifficulty.value = difficulty;
   score.value = 0;
   currentQIndex.value = 0;
   scoreSaved.value = false;
   userName.value = "";
+  apiError.value = null;
 
-  const currentLangData = messagesLocal.value[locale.value];
-  let pool = currentLangData?.questions_pool?.[difficulty];
-  
-  // Fallback FR
-  if (!pool || pool.length === 0) {
-    pool = messagesLocal.value['fr']?.questions_pool?.[difficulty];
+  try {
+    const res = await fetch(`/api/start_game?lang=${locale.value}&level=${difficulty}`);
+    if (!res.ok) throw new Error('Erreur chargement questions');
+    
+    const data = await res.json() as Question[];
+    
+    if (!data || data.length === 0) {
+      throw new Error("Aucune question disponible.");
+    }
+
+    questions.value = data;
+    prepareNewQuestion();
+    
+    resetStep();
+    gameState.value = "playing";
+
+  } catch (e: any) {
+    console.error(e);
+    apiError.value = "Impossible de lancer le jeu. Serveur indisponible.";
+  } finally {
+    isLoading.value = false;
   }
+};
 
-  if (!pool || pool.length === 0) {
-    console.error("Aucune question trouvée pour ce niveau/langue");
+// Vérification SÉCURISÉE via API
+const selectAnswer = async (visualIndex: number) => {
+  if (hasAnswered.value || isChecking.value) return;
+  
+  isChecking.value = true;
+  selectedAnswer.value = visualIndex;
+  
+  // 1. Récupération des objets
+  const selectedOptionObj = currentShuffledOptions.value[visualIndex];
+  const currentQ = questions.value[currentQIndex.value];
+
+  // 2. SAFETY CHECK (La correction de ton erreur TS est ICI)
+  if (!currentQ || !selectedOptionObj) {
+    console.error("Erreur interne : Question ou Option introuvable");
+    isChecking.value = false;
     return;
   }
 
-  // Mélange des questions
-  // On force le typage pour le sort
-  const poolTyped = pool as Question[];
-  const shuffledQuestions = [...poolTyped].sort(() => 0.5 - Math.random());
-  questions.value = shuffledQuestions.slice(0, 20);
+  try {
+    // 3. Appel API avec l'ID sécurisé
+    const res = await fetch('/api/check_answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questionId: currentQ._id, // TypeScript est content car on a vérifié !currentQ au dessus
+        userIndex: selectedOptionObj.originalIndex
+      })
+    });
 
-  prepareNewQuestion();
-  resetStep();
-  gameState.value = "playing";
-};
+    const result = await res.json(); 
 
-const selectAnswer = (visualIndex: number) => {
-  if (hasAnswered.value) return;
-  
-  selectedAnswer.value = visualIndex;
-  hasAnswered.value = true;
+    if (result.correct) {
+      score.value++;
+      showPointPopup.value = true;
+    }
 
-  const selectedOptionObj = currentShuffledOptions.value[visualIndex];
-  const question = questions.value[currentQIndex.value];
-  
-  // ✅ CORRECTION TS : On vérifie que la question existe avant de l'utiliser
-  if (!question) return;
+    // Mise à jour de la question locale avec la vérité du serveur
+    currentQ.correct = result.correctIndex;
+    currentQ.explanation = result.explanation;
+    
+    hasAnswered.value = true;
 
-  if (selectedOptionObj && selectedOptionObj.originalIndex === question.correct) {
-    score.value++;
-    showPointPopup.value = true;
+  } catch (e) {
+    console.error("Erreur vérification", e);
+  } finally {
+    isChecking.value = false;
   }
 };
 
@@ -191,12 +194,7 @@ const nextQuestion = () => {
   if (currentQIndex.value === questions.value.length - 1) {
     gameState.value = "end";
     if (score.value >= 15) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#297534", "#4CAF50", "#E4E9D5"]
-      });
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ["#297534", "#4CAF50", "#E4E9D5"] });
     }
   } else {
     currentQIndex.value++;
@@ -217,14 +215,12 @@ const resetGame = () => {
 
 const submitScore = () => {
   if (!userName.value) return;
-  
   const newEntry: LeaderboardEntry = {
     name: userName.value,
     score: score.value,
     memberId: userMemberId.value,
     isUser: true
   };
-  
   leaderboard.value.push(newEntry);
   sortLeaderboard();
 
@@ -241,7 +237,6 @@ const sortLeaderboard = () => {
   leaderboard.value = leaderboard.value.slice(0, 20);
 };
 
-// Ajoute cette fonction pour recharger la page proprement
 const reloadPage = () => {
   window.location.reload();
 };
@@ -252,7 +247,8 @@ const currentQuestion = computed(() =>
 );
 
 const isCorrect = computed(() => {
-  if (selectedAnswer.value === null) return false;
+  if (selectedAnswer.value === null || currentQuestion.value.correct === undefined) return false;
+  
   const selectedObj = currentShuffledOptions.value[selectedAnswer.value];
   return selectedObj && selectedObj.originalIndex === currentQuestion.value.correct;
 });
@@ -267,11 +263,13 @@ const progress = computed(() => {
 });
 
 const getOptionClass = (visualIndex: number) => {
-  if (!hasAnswered.value) return "";
+  if (!hasAnswered.value || currentQuestion.value.correct === undefined) return "";
+  
   const optionObj = currentShuffledOptions.value[visualIndex];
   const correctIndexOriginal = currentQuestion.value.correct;
   
   if (optionObj && optionObj.originalIndex === correctIndexOriginal) return "correct";
+  
   if (selectedAnswer.value === visualIndex && optionObj && optionObj.originalIndex !== correctIndexOriginal) return "wrong";
   return "dimmed";
 };
