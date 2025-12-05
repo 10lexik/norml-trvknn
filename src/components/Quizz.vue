@@ -1,12 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useI18n } from "vue-i18n";
-import confetti from "canvas-confetti";
-
-// Import des JSONs
-import fr from "../locales/fr.json";
-import en from "../locales/en.json";
-import es from "../locales/es.json";
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import confetti from 'canvas-confetti';
 
 // --- 1. INTERFACES ---
 interface Question {
@@ -15,6 +10,12 @@ interface Question {
   options: string[];
   correct: number;
   explanation: string;
+}
+
+// Structure de ton gros objet JSON
+// On simplifie le typage ici pour éviter les conflits avec i18n
+interface MessagesData {
+  [lang: string]: any; 
 }
 
 interface LeaderboardEntry {
@@ -29,7 +30,7 @@ interface ShuffledOption {
   originalIndex: number;
 }
 
-// --- 2. CONFIGURATION & DATA ---
+// --- 2. CONFIGURATION ---
 const LEVELS_CONFIG = [
   { id: "easy", icon: "🌱" },
   { id: "medium", icon: "🌿" },
@@ -38,33 +39,28 @@ const LEVELS_CONFIG = [
 
 const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   { name: "Marie-Jeanne", score: 20, memberId: "0420" },
-  { name: "Jack Herer", score: 19, memberId: "" },
-  { name: "Militant75", score: 18, memberId: "1312" },
-  { name: "Dr. Grinspoon", score: 17, memberId: "" },
-  { name: "SativaDiva", score: 16, memberId: "9999" },
-  { name: "LegalizeIt", score: 15, memberId: "" },
-  { name: "Petit_Nuage", score: 10, memberId: "" }
+  { name: "Jack Herer", score: 19 },
+  { name: "Militant75", score: 18, memberId: "1312" }
 ];
-
-// SOURCE DE VÉRITÉ POUR LES LANGUES
-const messagesLocal = { fr, en, es };
-const DEFAULT_LANG = "fr"; // La langue de repli définie une seule fois
-
-// On génère la liste des langues dynamiquement : ['fr', 'en', 'es']
-const availableLocales = Object.keys(messagesLocal);
 
 const LETTERS = ["A", "B", "C", "D"];
 
-// --- 3. SETUP I18N ---
-const { t, locale } = useI18n();
+// --- 3. ÉTATS (REFS) ---
+const { t, locale, setLocaleMessage } = useI18n();
 
-// --- 4. ÉTATS (REFS) ---
-const gameState = ref<"start" | "playing" | "end">("start");
+// Chargement & Données
+const isLoading = ref(true);
+const apiError = ref<string | null>(null);
+const messagesLocal = ref<MessagesData | null>(null);
+const availableLocales = ref<string[]>(['fr']);
+
+// Jeu
+const gameState = ref<'start' | 'playing' | 'end'>('start');
 const currentQIndex = ref(0);
 const score = ref(0);
 const selectedAnswer = ref<number | null>(null);
 const hasAnswered = ref(false);
-const selectedDifficulty = ref<string>("medium");
+const selectedDifficulty = ref<string>('medium');
 
 const questions = ref<Question[]>([]);
 const currentShuffledOptions = ref<ShuffledOption[]>([]);
@@ -76,17 +72,52 @@ const scoreSaved = ref(false);
 const leaderboard = ref<LeaderboardEntry[]>([...MOCK_LEADERBOARD]);
 const showPointPopup = ref(false);
 
-// --- 5. CYCLE DE VIE ---
-onMounted(() => {
+// --- 4. CYCLE DE VIE (API Call) ---
+onMounted(async () => {
+  // A. Charger le leaderboard local
   const savedScores = localStorage.getItem("norml_quiz_scores");
   if (savedScores) {
-    const parsed = JSON.parse(savedScores) as LeaderboardEntry[];
-    leaderboard.value = [...MOCK_LEADERBOARD, ...parsed];
-    sortLeaderboard();
+    try {
+      const parsed = JSON.parse(savedScores) as LeaderboardEntry[];
+      leaderboard.value = [...MOCK_LEADERBOARD, ...parsed];
+      sortLeaderboard();
+    } catch (e) {
+      console.error("Erreur lecture leaderboard", e);
+    }
+  }
+
+  // B. Charger les données depuis l'API MongoDB
+  try {
+    // ✅ URL CORRECTE
+    const res = await fetch('/api/questions_pool');
+
+    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+
+    const data = await res.json() as MessagesData;
+
+    // Stockage local
+    messagesLocal.value = data;
+
+    // Détection des langues (filtre les clés techniques comme _id)
+    const langs = Object.keys(data).filter(k => k.length === 2);
+    availableLocales.value = langs;
+
+    // Injection dynamique dans Vue I18n
+    langs.forEach(lang => {
+      // ✅ CORRECTION TS : "as any" pour dire à TS que le format est OK pour i18n
+      setLocaleMessage(lang, data[lang] as any);
+    });
+
+    isLoading.value = false;
+
+  } catch (err: any) {
+    console.error("Failed to load questions:", err);
+    apiError.value = "Erreur de chargement. Vérifiez votre connexion.";
+    isLoading.value = false;
   }
 });
 
-// --- 6. LOGIQUE DU JEU ---
+// --- 5. LOGIQUE DU JEU ---
 
 const setLang = (l: string) => {
   locale.value = l;
@@ -105,46 +136,52 @@ const prepareNewQuestion = () => {
 };
 
 const startGame = (difficulty: string) => {
+  // Sécurité si les données ne sont pas chargées
+  if (!messagesLocal.value) return;
+
   selectedDifficulty.value = difficulty;
   score.value = 0;
   currentQIndex.value = 0;
   scoreSaved.value = false;
   userName.value = "";
 
-  const source = (messagesLocal as any)[locale.value];
-  let pool = source?.questions_pool?.[difficulty];
-
-  // Utilisation de la constante DEFAULT_LANG au lieu de 'fr' en dur
+  const currentLangData = messagesLocal.value[locale.value];
+  let pool = currentLangData?.questions_pool?.[difficulty];
+  
+  // Fallback FR
   if (!pool || pool.length === 0) {
-    pool = (messagesLocal as any)[DEFAULT_LANG].questions_pool[difficulty];
+    pool = messagesLocal.value['fr']?.questions_pool?.[difficulty];
   }
 
+  if (!pool || pool.length === 0) {
+    console.error("Aucune question trouvée pour ce niveau/langue");
+    return;
+  }
+
+  // Mélange des questions
+  // On force le typage pour le sort
   const poolTyped = pool as Question[];
   const shuffledQuestions = [...poolTyped].sort(() => 0.5 - Math.random());
   questions.value = shuffledQuestions.slice(0, 20);
 
   prepareNewQuestion();
-
   resetStep();
   gameState.value = "playing";
 };
 
 const selectAnswer = (visualIndex: number) => {
   if (hasAnswered.value) return;
-
+  
   selectedAnswer.value = visualIndex;
   hasAnswered.value = true;
 
   const selectedOptionObj = currentShuffledOptions.value[visualIndex];
   const question = questions.value[currentQIndex.value];
+  
+  // ✅ CORRECTION TS : On vérifie que la question existe avant de l'utiliser
   if (!question) return;
 
-  const correctIndexOriginal = question.correct;
-
-  if (
-    selectedOptionObj &&
-    selectedOptionObj.originalIndex === correctIndexOriginal
-  ) {
+  if (selectedOptionObj && selectedOptionObj.originalIndex === question.correct) {
     score.value++;
     showPointPopup.value = true;
   }
@@ -180,14 +217,14 @@ const resetGame = () => {
 
 const submitScore = () => {
   if (!userName.value) return;
-
+  
   const newEntry: LeaderboardEntry = {
     name: userName.value,
     score: score.value,
     memberId: userMemberId.value,
     isUser: true
   };
-
+  
   leaderboard.value.push(newEntry);
   sortLeaderboard();
 
@@ -204,22 +241,24 @@ const sortLeaderboard = () => {
   leaderboard.value = leaderboard.value.slice(0, 20);
 };
 
-// --- 7. COMPUTED ---
+// Ajoute cette fonction pour recharger la page proprement
+const reloadPage = () => {
+  window.location.reload();
+};
 
-const currentQuestion = computed(
-  () => questions.value[currentQIndex.value] || ({} as Question)
+// --- 6. COMPUTED ---
+const currentQuestion = computed(() => 
+  questions.value[currentQIndex.value] || ({} as Question)
 );
 
 const isCorrect = computed(() => {
   if (selectedAnswer.value === null) return false;
   const selectedObj = currentShuffledOptions.value[selectedAnswer.value];
-  return (
-    selectedObj && selectedObj.originalIndex === currentQuestion.value.correct
-  );
+  return selectedObj && selectedObj.originalIndex === currentQuestion.value.correct;
 });
 
-const isLastQuestion = computed(
-  () => currentQIndex.value === questions.value.length - 1
+const isLastQuestion = computed(() => 
+  currentQIndex.value === questions.value.length - 1
 );
 
 const progress = computed(() => {
@@ -229,20 +268,11 @@ const progress = computed(() => {
 
 const getOptionClass = (visualIndex: number) => {
   if (!hasAnswered.value) return "";
-
   const optionObj = currentShuffledOptions.value[visualIndex];
   const correctIndexOriginal = currentQuestion.value.correct;
-
-  if (optionObj && optionObj.originalIndex === correctIndexOriginal)
-    return "correct";
-
-  if (
-    selectedAnswer.value === visualIndex &&
-    optionObj &&
-    optionObj.originalIndex !== correctIndexOriginal
-  ) {
-    return "wrong";
-  }
+  
+  if (optionObj && optionObj.originalIndex === correctIndexOriginal) return "correct";
+  if (selectedAnswer.value === visualIndex && optionObj && optionObj.originalIndex !== correctIndexOriginal) return "wrong";
   return "dimmed";
 };
 
@@ -262,226 +292,222 @@ const rankMessage = computed(() => {
 <template>
   <div id="quiz-app">
     <div class="quiz-module">
+      
       <header class="quiz-header">
         <div class="header-top">
-          <div
-            class="lang-switcher"
-            :style="{
-              visibility: gameState === 'start' ? 'visible' : 'hidden'
-            }"
+          <div 
+            class="lang-switcher" 
+            :style="{ visibility: gameState === 'start' ? 'visible' : 'hidden' }"
           >
-            <button
-              v-for="l in availableLocales"
-              :key="l"
+            <button 
+              v-for="l in availableLocales" 
+              :key="l" 
               :class="{ active: locale === l }"
               @click="setLang(l)"
             >
               {{ l.toUpperCase() }}
             </button>
           </div>
-
+          
           <div class="score-display" v-if="gameState !== 'start'">
             <span class="level-badge" :class="selectedDifficulty">
-              {{ t("levels." + selectedDifficulty) }}
+              {{ t('levels.' + selectedDifficulty) }}
             </span>
-            <span class="score-value"
-              >{{ score }} / {{ questions.length }}</span
-            >
+            <span class="score-value">{{ score }} / {{ questions.length }}</span>
           </div>
         </div>
 
         <div class="logo-area">NORML ACADEMY</div>
-
+        
         <div class="progress-bar" v-if="gameState === 'playing'">
           <div class="fill" :style="{ width: progress + '%' }"></div>
         </div>
       </header>
 
-      <div v-if="gameState === 'start'" class="screen start-screen">
-        <h1>{{ t("start.title") }}</h1>
-        <p class="subtitle">{{ t("start.subtitle") }}</p>
-
-        <div class="icon-hero">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"
-            />
-          </svg>
-        </div>
-
-        <div class="difficulty-selector">
-          <p>{{ t("start.choose_level") }}</p>
-          <button
-            v-for="level in LEVELS_CONFIG"
-            :key="level.id"
-            class="btn-diff"
-            :class="level.id"
-            @click="startGame(level.id)"
-          >
-            {{ level.icon }} {{ t("levels." + level.id) }}
-          </button>
-        </div>
+      <div v-if="isLoading" class="screen loading-screen">
+        <div class="loader-spinner"></div>
+        <p>Chargement des données...</p>
       </div>
 
-      <div v-if="gameState === 'playing'" class="screen game-screen">
-        <div class="question-card">
-          <span class="category-tag">{{ currentQuestion.category }}</span>
-          <h2>{{ currentQuestion.question }}</h2>
-        </div>
+      <div v-else-if="apiError" class="screen error-screen">
+        <h3 style="color: #D32F2F">Erreur</h3>
+        <p>{{ apiError }}</p>
+        <button class="btn-primary" @click="reloadPage">Réessayer</button>
+      </div>
 
-        <div class="options-grid">
-          <button
-            v-for="(optObj, index) in currentShuffledOptions"
-            :key="index"
-            class="btn-option"
-            :class="getOptionClass(index)"
-            @click="selectAnswer(index)"
-            :disabled="hasAnswered"
-          >
-            <span class="letter">{{ LETTERS[index] }}</span>
-            <span class="text">{{ optObj.text }}</span>
+      <template v-else>
+        
+        <div v-if="gameState === 'start'" class="screen start-screen">
+          <h1>{{ t('start.title') }}</h1>
+          <p class="subtitle">{{ t('start.subtitle') }}</p>
+          
+          <div class="icon-hero">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"/>
+            </svg>
+          </div>
 
-            <span
-              v-if="showPointPopup && selectedAnswer === index && isCorrect"
-              class="point-popup"
+          <div class="difficulty-selector">
+            <p>{{ t('start.choose_level') }}</p>
+            <button 
+              v-for="level in LEVELS_CONFIG" 
+              :key="level.id"
+              class="btn-diff" 
+              :class="level.id" 
+              @click="startGame(level.id)"
             >
-              {{ t("game.point_popup") }}
-            </span>
-          </button>
+              {{ level.icon }} {{ t('levels.' + level.id) }}
+            </button>
+          </div>
         </div>
 
-        <div
-          v-if="hasAnswered"
-          class="feedback-box"
-          :class="isCorrect ? 'success' : 'error'"
-        >
-          <div class="feedback-header">
-            {{ isCorrect ? t("game.correct") : t("game.wrong") }}
+        <div v-if="gameState === 'playing'" class="screen game-screen">
+          <div class="question-card">
+            <span class="category-tag">{{ currentQuestion.category }}</span>
+            <h2>{{ currentQuestion.question }}</h2>
           </div>
-          <div class="feedback-content">
-            <strong>{{ t("game.argument_label") }}</strong>
-            <p>{{ currentQuestion.explanation }}</p>
-          </div>
-          <button class="btn-next" @click="nextQuestion">
-            {{ isLastQuestion ? t("game.btn_results") : t("game.btn_next") }}
-          </button>
-        </div>
-      </div>
 
-      <div v-if="gameState === 'end'" class="screen end-screen">
-        <div class="score-circle">
-          <span class="label-xp">{{ t("end.score_label") }}</span>
-          <span class="big-score">{{ score }}</span>
-          <span class="total">/ {{ questions.length }}</span>
-        </div>
-
-        <h3>{{ rankTitle }}</h3>
-        <p class="rank-desc">{{ rankMessage }}</p>
-
-        <div v-if="!scoreSaved" class="save-form">
-          <h4>{{ t("end.leaderboard_title") }}</h4>
-          <div class="input-group">
-            <input
-              type="text"
-              v-model="userName"
-              :placeholder="t('end.placeholder_name')"
-              maxlength="15"
-            />
+          <div class="options-grid">
+            <button 
+              v-for="(optObj, index) in currentShuffledOptions" 
+              :key="index"
+              class="btn-option"
+              :class="getOptionClass(index)"
+              @click="selectAnswer(index)"
+              :disabled="hasAnswered"
+            >
+              <span class="letter">{{ LETTERS[index] }}</span>
+              <span class="text">{{ optObj.text }}</span>
+              
+              <span v-if="showPointPopup && selectedAnswer === index && isCorrect" class="point-popup">
+                {{ t('game.point_popup') }}
+              </span>
+            </button>
           </div>
-          <div class="input-group">
-            <input
-              type="text"
-              v-model="userMemberId"
-              :placeholder="t('end.placeholder_id')"
-            />
+
+          <div v-if="hasAnswered" class="feedback-box" :class="isCorrect ? 'success' : 'error'">
+            <div class="feedback-header">
+              {{ isCorrect ? t('game.correct') : t('game.wrong') }}
+            </div>
+            <div class="feedback-content">
+              <strong>{{ t('game.argument_label') }}</strong>
+              <p>{{ currentQuestion.explanation }}</p>
+            </div>
+            <button class="btn-next" @click="nextQuestion">
+              {{ isLastQuestion ? t('game.btn_results') : t('game.btn_next') }}
+            </button>
           </div>
-          <button
-            class="btn-primary"
-            @click="submitScore"
-            :disabled="!userName"
-          >
-            {{ t("end.btn_save") }}
-          </button>
-          <button class="btn-skip" @click="resetGame">
-            {{ t("end.btn_skip") }}
-          </button>
         </div>
 
-        <div v-else class="leaderboard-wrapper">
-          <div class="leaderboard-container">
-            <h4>
-              🏆 {{ t("end.top_10") }} -
-              {{ t("levels." + selectedDifficulty).toUpperCase() }}
-            </h4>
-            <div class="leaderboard-scroll">
-              <table class="leaderboard-table">
-                <thead>
-                  <tr>
-                    <th>{{ t("end.col_rank") }}</th>
-                    <th>{{ t("end.col_name") }}</th>
-                    <th>{{ t("end.col_score") }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="(entry, index) in leaderboard"
-                    :key="index"
-                    :class="{
-                      'current-user': entry.isUser,
-                      'top-3': index < 3
-                    }"
-                  >
-                    <td class="rank">{{ index + 1 }}</td>
-                    <td class="name">
-                      {{ entry.name }}
-                      <span v-if="entry.memberId" class="badge-member"
-                        >#{{ entry.memberId }}</span
-                      >
-                    </td>
-                    <td class="score-val">{{ entry.score }}</td>
-                  </tr>
-                </tbody>
-              </table>
+        <div v-if="gameState === 'end'" class="screen end-screen">
+          <div class="score-circle">
+            <span class="label-xp">{{ t('end.score_label') }}</span>
+            <span class="big-score">{{ score }}</span>
+            <span class="total">/ {{ questions.length }}</span>
+          </div>
+          
+          <h3>{{ rankTitle }}</h3>
+          <p class="rank-desc">{{ rankMessage }}</p>
+
+          <div v-if="!scoreSaved" class="save-form">
+            <h4>{{ t('end.leaderboard_title') }}</h4>
+            
+            <div class="input-group">
+              <input type="text" v-model="userName" :placeholder="t('end.placeholder_name')" maxlength="15">
+            </div>
+            <div class="input-group">
+              <input type="text" v-model="userMemberId" :placeholder="t('end.placeholder_id')">
+            </div>
+
+            <button class="btn-primary" @click="submitScore" :disabled="!userName">
+              {{ t('end.btn_save') }}
+            </button>
+
+            <button class="btn-skip" @click="resetGame">
+              {{ t('end.btn_skip') }}
+            </button>
+          </div>
+
+          <div v-else class="leaderboard-wrapper">
+            <div class="leaderboard-container">
+              <h4>🏆 {{ t('end.top_10') }} - {{ t('levels.' + selectedDifficulty).toUpperCase() }}</h4>
+              <div class="leaderboard-scroll">
+                <table class="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th>{{ t('end.col_rank') }}</th>
+                      <th>{{ t('end.col_name') }}</th>
+                      <th>{{ t('end.col_score') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      v-for="(entry, index) in leaderboard" 
+                      :key="index"
+                      :class="{ 'current-user': entry.isUser, 'top-3': index < 3 }"
+                    >
+                      <td class="rank">{{ index + 1 }}</td>
+                      <td class="name">
+                        {{ entry.name }}
+                        <span v-if="entry.memberId" class="badge-member">#{{ entry.memberId }}</span>
+                      </td>
+                      <td class="score-val">{{ entry.score }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="final-actions">
+              <button class="btn-giant-restart" @click="resetGame">
+                🔄 {{ t('end.btn_retry') }}
+              </button>
+              <a href="https://www.norml.fr/adherer/" target="_blank" class="link-join">
+                {{ t('end.btn_join') }} →
+              </a>
             </div>
           </div>
-
-          <div class="final-actions">
-            <button class="btn-giant-restart" @click="resetGame">
-              🔄 {{ t("end.btn_retry") }}
-            </button>
-            <a
-              href="https://www.norml.fr/adherer/"
-              target="_blank"
-              class="link-join"
-            >
-              {{ t("end.btn_join") }} →
-            </a>
-          </div>
         </div>
-      </div>
+
+      </template>
+
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
+// Pas de changement dans ton CSS, il est parfait.
+// Juste assure-toi d'avoir le style pour .loader-spinner si tu veux l'animation
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0,0,0,0.1);
+  border-left-color: #297534;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Le reste de ton CSS... */
 /* --- IMPORTS & FONTS --- */
 @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap");
 
 :root {
-  --poster-beige: #e4e9d5;
+  --poster-beige: #E4E9D5;
   --prohib-black: #141414;
   --reg-green: #297534;
-  --highlight-green: #4caf50;
-  --error-red: #d32f2f;
+  --highlight-green: #4CAF50;
+  --error-red: #D32F2F;
 }
 
-$font-main: "Space Grotesk", sans-serif;
+$font-main: "Space Grotesk", sans-serif; 
 $font-mono: "Share Tech Mono", monospace;
 
 // Container Principal
 #quiz-app {
   font-family: $font-main;
-  background-color: #e4e9d5;
+  background-color: #E4E9D5;
   color: #141414;
   min-height: 100vh;
   display: flex;
@@ -509,7 +535,7 @@ $font-mono: "Share Tech Mono", monospace;
   display: flex;
   flex-direction: column;
   align-items: center;
-
+  
   .header-top {
     width: 100%;
     display: flex;
@@ -517,7 +543,7 @@ $font-mono: "Share Tech Mono", monospace;
     align-items: flex-start;
     margin-bottom: 10px;
   }
-
+  
   .logo-area {
     font-weight: 900;
     text-transform: uppercase;
@@ -529,71 +555,57 @@ $font-mono: "Share Tech Mono", monospace;
 }
 
 /* LANG SWITCHER */
-.lang-switcher {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-
-  button {
-    background: transparent;
-    border: none;
-    color: #141414;
+.lang-switcher { 
+  display: flex; 
+  justify-content: center; 
+  gap: 15px; 
+  
+  button { 
+    background: transparent; 
+    border: none; 
+    color: #141414; 
     opacity: 0.5;
-    font-size: 0.8rem;
-    font-weight: 900;
-    cursor: pointer;
-    padding: 0;
-
-    &:hover {
-      opacity: 1;
-    }
-    &.active {
-      opacity: 1;
-      text-decoration: underline;
-    }
-  }
+    font-size: 0.8rem; 
+    font-weight: 900; 
+    cursor: pointer; 
+    padding: 0; 
+    
+    &:hover { opacity: 1; } 
+    &.active { opacity: 1; text-decoration: underline; } 
+  } 
 }
 
 /* SCORE DISPLAY */
 .score-display {
   background: #141414;
-  color: #4caf50;
+  color: #4CAF50;
   padding: 5px 10px;
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: $font-mono;
-
+  
   .level-badge {
     font-size: 0.7rem;
     color: white;
     text-transform: uppercase;
     margin-bottom: 2px;
-    &.easy {
-      color: #8bc34a;
-    }
-    &.medium {
-      color: #4caf50;
-    }
-    &.hard {
-      color: #297534;
-    }
+    &.easy { color: #8BC34A; }
+    &.medium { color: #4CAF50; }
+    &.hard { color: #297534; }
   }
-
-  .score-value {
-    font-size: 1.1rem;
-    font-weight: bold;
-  }
+  
+  .score-value { font-size: 1.1rem; font-weight: bold; }
 }
 
 .progress-bar {
   width: 100%;
   height: 6px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0,0,0,0.1);
   border-radius: 3px;
   overflow: hidden;
-
+  
   .fill {
     height: 100%;
     background: #297534;
@@ -615,29 +627,26 @@ $font-mono: "Share Tech Mono", monospace;
 .start-screen {
   text-align: center;
   justify-content: center;
-
+  
   h1 {
     font-size: 2.5rem;
     line-height: 1;
     margin: 0 0 10px 0;
     text-transform: uppercase;
   }
-
+  
   .subtitle {
     font-size: 1.1rem;
     opacity: 0.8;
     margin-bottom: 30px;
   }
-
+  
   .icon-hero {
     width: 80px;
     height: 80px;
     margin-bottom: 20px;
     color: #297534;
-    svg {
-      width: 100%;
-      height: 100%;
-    }
+    svg { width: 100%; height: 100%; }
   }
 }
 
@@ -648,13 +657,8 @@ $font-mono: "Share Tech Mono", monospace;
   gap: 10px;
   width: 100%;
   max-width: 300px;
-
-  p {
-    font-weight: bold;
-    opacity: 0.7;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-  }
+  
+  p { font-weight: bold; opacity: 0.7; margin-bottom: 5px; font-size: 0.9rem; }
 }
 
 .btn-diff {
@@ -668,45 +672,21 @@ $font-mono: "Share Tech Mono", monospace;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
-
-  &:hover {
-    transform: translateX(5px);
-    box-shadow: -5px 5px 0 #141414;
-  }
-
-  &.easy {
-    border-color: #8bc34a;
-    &:hover {
-      background: #8bc34a;
-      color: white;
-    }
-  }
-  &.medium {
-    border-color: #4caf50;
-    &:hover {
-      background: #4caf50;
-      color: white;
-    }
-  }
-  &.hard {
-    border-color: #297534;
-    &:hover {
-      background: #297534;
-      color: white;
-    }
-  }
+  
+  &:hover { transform: translateX(5px); box-shadow: -5px 5px 0 #141414; }
+  
+  &.easy { border-color: #8BC34A; &:hover { background: #8BC34A; color: white; } }
+  &.medium { border-color: #4CAF50; &:hover { background: #4CAF50; color: white; } }
+  &.hard { border-color: #297534; &:hover { background: #297534; color: white; } }
 }
 
 /* JEU */
-.game-screen {
-  width: 100%;
-  box-sizing: border-box;
-}
+.game-screen { width: 100%; box-sizing: border-box; }
 
 .question-card {
   text-align: center;
   margin-bottom: 30px;
-
+  
   .category-tag {
     background: #141414;
     color: white;
@@ -716,12 +696,8 @@ $font-mono: "Share Tech Mono", monospace;
     font-weight: bold;
     border-radius: 2px;
   }
-
-  h2 {
-    font-size: 1.3rem;
-    margin-top: 15px;
-    line-height: 1.3;
-  }
+  
+  h2 { font-size: 1.3rem; margin-top: 15px; line-height: 1.3; }
 }
 
 .options-grid {
@@ -745,7 +721,7 @@ $font-mono: "Share Tech Mono", monospace;
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
-
+  
   .letter {
     background: #141414;
     color: white;
@@ -759,41 +735,29 @@ $font-mono: "Share Tech Mono", monospace;
     font-weight: bold;
     flex-shrink: 0;
   }
-
+  
   &:hover:not(:disabled) {
     background: #141414;
     color: white;
-    .letter {
-      background: white;
-      color: black;
-    }
+    .letter { background: white; color: black; }
   }
-
+  
   &.correct {
     background: #297534;
     border-color: #297534;
     color: white;
-    .letter {
-      background: white;
-      color: #297534;
-    }
+    .letter { background: white; color: #297534; }
   }
-
+  
   &.wrong {
-    background: #d32f2f;
-    border-color: #d32f2f;
+    background: #D32F2F;
+    border-color: #D32F2F;
     color: white;
     opacity: 0.8;
-    .letter {
-      background: white;
-      color: #d32f2f;
-    }
+    .letter { background: white; color: #D32F2F; }
   }
-
-  &.dimmed {
-    opacity: 0.4;
-    cursor: default;
-  }
+  
+  &.dimmed { opacity: 0.4; cursor: default; }
 }
 
 .point-popup {
@@ -801,13 +765,13 @@ $font-mono: "Share Tech Mono", monospace;
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  background: #4caf50;
+  background: #4CAF50;
   color: #141414;
   font-weight: 900;
   padding: 5px 10px;
   border-radius: 20px;
   animation: popUp 0.6s ease-out forwards;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 /* FEEDBACK */
@@ -818,32 +782,24 @@ $font-mono: "Share Tech Mono", monospace;
   border: 2px solid;
   padding: 20px;
   text-align: left;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
   animation: slideUp 0.3s ease;
-
-  &.success {
-    border-color: #297534;
-  }
-  &.error {
-    border-color: #d32f2f;
-  }
-
+  
+  &.success { border-color: #297534; }
+  &.error { border-color: #D32F2F; }
+  
   .feedback-header {
     font-weight: 900;
     text-transform: uppercase;
     font-size: 1.1rem;
     margin-bottom: 10px;
   }
-
+  
   .feedback-content {
     font-size: 0.9rem;
     line-height: 1.4;
     margin-bottom: 20px;
-    strong {
-      display: block;
-      margin-bottom: 5px;
-      color: #141414;
-    }
+    strong { display: block; margin-bottom: 5px; color: #141414; }
   }
 }
 
@@ -851,7 +807,7 @@ $font-mono: "Share Tech Mono", monospace;
 .end-screen {
   text-align: center;
   justify-content: center;
-
+  
   .score-circle {
     width: 120px;
     height: 120px;
@@ -864,33 +820,14 @@ $font-mono: "Share Tech Mono", monospace;
     align-items: center;
     margin-bottom: 20px;
     border: 4px solid #297534;
-
-    .label-xp {
-      font-size: 0.7rem;
-      color: #4caf50;
-      margin-bottom: 5px;
-    }
-    .big-score {
-      font-family: $font-mono;
-      font-size: 3.5rem;
-      line-height: 1;
-    }
-    .total {
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
+    
+    .label-xp { font-size: 0.7rem; color: #4CAF50; margin-bottom: 5px; }
+    .big-score { font-family: $font-mono; font-size: 3.5rem; line-height: 1; }
+    .total { font-size: 0.9rem; opacity: 0.7; }
   }
-
-  h3 {
-    font-size: 1.6rem;
-    margin: 0 0 10px 0;
-    text-transform: uppercase;
-  }
-  .rank-desc {
-    font-size: 1rem;
-    margin-bottom: 20px;
-    max-width: 400px;
-  }
+  
+  h3 { font-size: 1.6rem; margin: 0 0 10px 0; text-transform: uppercase; }
+  .rank-desc { font-size: 1rem; margin-bottom: 20px; max-width: 400px; }
 }
 
 /* FORMULAIRE SAUVEGARDE */
@@ -902,13 +839,9 @@ $font-mono: "Share Tech Mono", monospace;
   border: 2px solid #141414;
   margin-bottom: 20px;
   text-align: left;
-
-  h4 {
-    margin: 0 0 15px 0;
-    text-transform: uppercase;
-    font-size: 1rem;
-  }
-
+  
+  h4 { margin: 0 0 15px 0; text-transform: uppercase; font-size: 1rem; }
+  
   .input-group {
     margin-bottom: 15px;
     input {
@@ -919,12 +852,8 @@ $font-mono: "Share Tech Mono", monospace;
       font-size: 1rem;
       background: #f9f9f9;
       box-sizing: border-box;
-
-      &:focus {
-        border-color: #297534;
-        outline: none;
-        background: white;
-      }
+      
+      &:focus { border-color: #297534; outline: none; background: white; }
     }
   }
 }
@@ -942,107 +871,54 @@ $font-mono: "Share Tech Mono", monospace;
   opacity: 0.6;
   width: 100%;
   transition: all 0.2s;
-
-  &:hover {
-    opacity: 1;
-    color: #d32f2f;
-  }
+  
+  &:hover { opacity: 1; color: #D32F2F; }
 }
 
 /* LEADERBOARD TABLE */
-.leaderboard-wrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+.leaderboard-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; }
 
 .leaderboard-container {
   width: 100%;
   max-width: 450px;
   animation: slideUp 0.3s ease;
   margin-bottom: 10px;
-
-  h4 {
-    margin: 0 0 10px 0;
-    text-transform: uppercase;
-    font-size: 1rem;
-    border-bottom: 3px solid #141414;
-    display: inline-block;
-  }
+  
+  h4 { margin: 0 0 10px 0; text-transform: uppercase; font-size: 1rem; border-bottom: 3px solid #141414; display: inline-block; }
 }
 
-.leaderboard-scroll {
-  max-height: 250px;
-  overflow-y: auto;
-  border: 2px solid #141414;
-}
+.leaderboard-scroll { max-height: 250px; overflow-y: auto; border: 2px solid #141414; }
 
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
   font-family: $font-main;
-
+  
   thead {
     background: #141414;
     color: white;
-    th {
-      padding: 8px;
-      text-align: left;
-      text-transform: uppercase;
-      font-size: 0.8rem;
-      position: sticky;
-      top: 0;
-    }
+    th { padding: 8px; text-align: left; text-transform: uppercase; font-size: 0.8rem; position: sticky; top: 0; }
   }
-
+  
   tbody tr {
     border-bottom: 1px solid #eee;
-    td {
-      padding: 8px;
-      font-size: 0.9rem;
-    }
-
-    .rank {
-      font-weight: bold;
-      width: 30px;
-      text-align: center;
-    }
-    .score-val {
-      font-weight: bold;
-      text-align: right;
-      color: #297534;
-    }
-
-    .badge-member {
-      font-size: 0.7rem;
-      background: #eee;
-      padding: 2px 4px;
-      border-radius: 4px;
-      margin-left: 5px;
-      color: #666;
-    }
-
-    &.top-3 .rank {
-      color: #d4af37;
-      font-size: 1.1rem;
-    }
-    &:nth-child(2) .rank {
-      color: #c0c0c0;
-    }
-    &:nth-child(3) .rank {
-      color: #cd7f32;
-    }
-
+    td { padding: 8px; font-size: 0.9rem; }
+    
+    .rank { font-weight: bold; width: 30px; text-align: center; }
+    .score-val { font-weight: bold; text-align: right; color: #297534; }
+    
+    .badge-member { font-size: 0.7rem; background: #eee; padding: 2px 4px; border-radius: 4px; margin-left: 5px; color: #666; }
+    
+    &.top-3 .rank { color: #D4AF37; font-size: 1.1rem; }
+    &:nth-child(2) .rank { color: #C0C0C0; }
+    &:nth-child(3) .rank { color: #CD7F32; }
+    
     &.current-user {
       background: rgba(76, 175, 80, 0.15);
       border-left: 4px solid #297534;
       font-weight: bold;
-      .name {
-        color: #297534;
-        text-transform: uppercase;
-      }
+      .name { color: #297534; text-transform: uppercase; }
     }
   }
 }
@@ -1072,7 +948,7 @@ $font-mono: "Share Tech Mono", monospace;
   width: 100%;
   border-radius: 50px;
   transition: all 0.2s ease;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1080,13 +956,11 @@ $font-mono: "Share Tech Mono", monospace;
 
   &:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25);
     background: white;
     color: #141414;
   }
-  &:active {
-    transform: translateY(1px);
-  }
+  &:active { transform: translateY(1px); }
 }
 
 .link-join {
@@ -1097,11 +971,8 @@ $font-mono: "Share Tech Mono", monospace;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s;
-
-  &:hover {
-    border-bottom-color: #297534;
-    color: #297534;
-  }
+  
+  &:hover { border-bottom-color: #297534; color: #297534; }
 }
 
 /* BOUTON PRIMAIRE STANDARD */
@@ -1116,54 +987,22 @@ $font-mono: "Share Tech Mono", monospace;
   text-transform: uppercase;
   cursor: pointer;
   width: 100%;
-
-  &:hover {
-    background: #23632c;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  
+  &:hover { background: #23632c; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .btn-next {
   @extend .btn-primary;
   background: #141414;
-  &:hover {
-    background: #333;
-  }
+  &:hover { background: #333; }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes slideUp {
-  from {
-    transform: translateY(10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes popUp {
-  0% {
-    transform: translateY(0) scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: translateY(-10px) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-20px) scale(1);
-    opacity: 0;
-  }
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  50% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-20px) scale(1); opacity: 0; }
 }
 </style>
