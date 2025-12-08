@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Container Principal de l'App */
+#app-container {
+  font-family: $font-main;
+  background-color: $poster-beige; // Utilisation variable Sass
+  color: $prohib-black;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: radial-gradient(#d0d6c0 1px, transparent 1px);
+  background-size: 20px 20px;
+  width: 100%;
+}
+
+/* Helper de mise en page */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  animation: fadeIn 0.4s ease;
+}

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import Quizz from './components/Quizz.vue';
+import Quizz from './components/Quizz.vue'
 </script>
 
 <template>
-  <Quizz />
+  <div id="app-container">
+    <Quizz />
+  </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 
-// Import des JSONs LOCAUX
+// Import des JSONs LOCAUX (Pour l'interface uniquement)
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
@@ -30,8 +30,8 @@ interface ShuffledOption {
   originalIndex: number
 }
 
-// --- 2. CONFIGURATION (Structurelle uniquement) ---
-// Les icônes et labels sont maintenant dans le JSON
+// --- 2. CONFIGURATION ---
+// Les icônes et labels sont maintenant dans le JSON, on garde juste les clés
 const LEVEL_IDS = ['easy', 'medium', 'hard']
 
 // --- 3. ÉTATS (REFS) ---
@@ -42,7 +42,7 @@ const isLoading = ref(false)
 const isChecking = ref(false)
 const apiError = ref<string | null>(null)
 
-// Interface
+// Interface : on charge les fichiers locaux par défaut
 const availableLocales = ['fr', 'en', 'es']
 setLocaleMessage('fr', fr)
 setLocaleMessage('en', en)
@@ -66,32 +66,43 @@ const scoreSaved = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const showPointPopup = ref(false)
 
-// --- 4. COMPUTED DYNAMIQUES (Depuis le JSON) ---
+// --- 4. COMPUTED DYNAMIQUES (SÉCURISÉS) ---
+
+// Helper pour forcer le type Tableau depuis i18n
+const getI18nArray = (key: string): any[] => {
+  const data = tm(key)
+  if (Array.isArray(data)) return data
+  // Si c'est un objet (cas fréquent), on le transforme en tableau
+  if (data && typeof data === 'object') return Object.values(data)
+  return []
+}
 
 // Récupère les lettres A, B, C, D depuis le JSON
 const optionLetters = computed(() => {
-  return tm('game.letters') as string[]
+  const letters = getI18nArray('game.letters')
+  return letters.length > 0 ? letters : ['A', 'B', 'C', 'D']
 })
 
 // Récupère le mock leaderboard depuis le JSON
 const mockData = computed(() => {
-  return tm('end.mock_leaderboard') as LeaderboardEntry[]
+  return getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
 })
 
 // --- 5. CYCLE DE VIE ---
 onMounted(() => {
-  // On charge les scores sauvegardés + les mocks du JSON
   const savedScores = localStorage.getItem('norml_quiz_scores')
 
-  // On initialise avec les mocks du JSON courant
+  // Utilisation sécurisée de la computed
   let initialData = [...mockData.value]
 
   if (savedScores) {
     try {
       const parsed = JSON.parse(savedScores) as LeaderboardEntry[]
-      initialData = [...initialData, ...parsed]
+      if (Array.isArray(parsed)) {
+        initialData = [...initialData, ...parsed]
+      }
     } catch (e) {
-      console.error(e)
+      console.error('Erreur lecture localStorage', e)
     }
   }
 
@@ -103,9 +114,9 @@ onMounted(() => {
 
 const setLang = (l: string) => {
   locale.value = l
-  // Petit hack : au changement de langue, on recharge les mocks pour qu'ils aient les noms traduits si besoin
-  // (Note : dans ton cas les noms propres "Marie-Jeanne" ne changent probablement pas, mais c'est plus propre)
-  // On ne réécrase pas le leaderboard complet pour ne pas perdre le score en cours si on change en cours de route
+  // On force la mise à jour du leaderboard au changement de langue (pour les mocks)
+  // On garde les scores utilisateurs, on ne met à jour que les mocks si nécessaire
+  // (Simplification : ici on laisse réactif via le template)
 }
 
 const prepareNewQuestion = () => {
@@ -120,6 +131,7 @@ const prepareNewQuestion = () => {
   currentShuffledOptions.value = opts.sort(() => 0.5 - Math.random())
 }
 
+// Démarrage SÉCURISÉ via API
 const startGame = async (difficulty: string) => {
   isLoading.value = true
   selectedDifficulty.value = difficulty
@@ -134,6 +146,7 @@ const startGame = async (difficulty: string) => {
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
 
+    // Utilisation des clés d'erreur du JSON
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
 
     const data = (await res.json()) as Question[]
@@ -155,6 +168,7 @@ const startGame = async (difficulty: string) => {
   }
 }
 
+// Vérification SÉCURISÉE via API
 const selectAnswer = async (visualIndex: number) => {
   if (hasAnswered.value || isChecking.value) return
 
@@ -314,271 +328,222 @@ const rankMessage = computed(() => {
 </script>
 
 <template>
-  <div id="quiz-app">
-    <div class="quiz-module">
-      <header class="quiz-header">
-        <div class="header-top">
-          <div
-            class="lang-switcher"
-            :style="{
-              visibility: gameState === 'start' ? 'visible' : 'hidden'
-            }"
+  <div class="quiz-module">
+    <header class="quiz-header">
+      <div class="header-top">
+        <div
+          class="lang-switcher"
+          :style="{
+            visibility: gameState === 'start' ? 'visible' : 'hidden'
+          }"
+        >
+          <button
+            v-for="l in availableLocales"
+            :key="l"
+            :class="{ active: locale === l }"
+            @click="setLang(l)"
           >
-            <button
-              v-for="l in availableLocales"
-              :key="l"
-              :class="{ active: locale === l }"
-              @click="setLang(l)"
-            >
-              {{ l.toUpperCase() }}
-            </button>
-          </div>
-
-          <div class="score-display" v-if="gameState !== 'start'">
-            <span class="level-badge" :class="selectedDifficulty">
-              {{ t('levels.' + selectedDifficulty + '.label') }}
-            </span>
-            <span class="score-value"
-              >{{ score }} / {{ questions.length }}</span
-            >
-          </div>
+            {{ l.toUpperCase() }}
+          </button>
         </div>
 
-        <div class="logo-area">{{ t('header.brand') }}</div>
-
-        <div class="progress-bar" v-if="gameState === 'playing'">
-          <div class="fill" :style="{ width: progress + '%' }"></div>
+        <div class="score-display" v-if="gameState !== 'start'">
+          <span class="level-badge" :class="selectedDifficulty">
+            {{ t('levels.' + selectedDifficulty + '.label') }}
+          </span>
+          <span class="score-value">{{ score }} / {{ questions.length }}</span>
         </div>
-      </header>
-
-      <div v-if="isLoading" class="screen loading-screen">
-        <div class="loader-spinner"></div>
-        <p>{{ t('ui.loading') }}</p>
       </div>
 
-      <div v-else-if="apiError" class="screen error-screen">
-        <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
-        <p>{{ apiError }}</p>
-        <button class="btn-primary" @click="reloadPage">
-          {{ t('ui.btn_retry') }}
-        </button>
+      <div class="logo-area">{{ t('header.brand') }}</div>
+
+      <div class="progress-bar" v-if="gameState === 'playing'">
+        <div class="fill" :style="{ width: progress + '%' }"></div>
       </div>
+    </header>
 
-      <template v-else>
-        <div v-if="gameState === 'start'" class="screen start-screen">
-          <h1>{{ t('start.title') }}</h1>
-          <p class="subtitle">{{ t('start.subtitle') }}</p>
-
-          <div class="icon-hero">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"
-              />
-            </svg>
-          </div>
-
-          <div class="difficulty-selector">
-            <p>{{ t('start.choose_level') }}</p>
-            <button
-              v-for="id in LEVEL_IDS"
-              :key="id"
-              class="btn-diff"
-              :class="id"
-              @click="startGame(id)"
-            >
-              {{ t('levels.' + id + '.icon') }}
-              {{ t('levels.' + id + '.label') }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="gameState === 'playing'" class="screen game-screen">
-          <div class="question-card">
-            <span class="category-tag">{{ currentQuestion.category }}</span>
-            <h2>{{ currentQuestion.question }}</h2>
-          </div>
-
-          <div class="options-grid">
-            <button
-              v-for="(optObj, index) in currentShuffledOptions"
-              :key="index"
-              class="btn-option"
-              :class="getOptionClass(index)"
-              @click="selectAnswer(index)"
-              :disabled="hasAnswered"
-            >
-              <span class="letter">{{ optionLetters[index] }}</span>
-              <span class="text">{{ optObj.text }}</span>
-
-              <span
-                v-if="showPointPopup && selectedAnswer === index && isCorrect"
-                class="point-popup"
-              >
-                {{ t('game.point_popup') }}
-              </span>
-            </button>
-          </div>
-
-          <div
-            v-if="hasAnswered"
-            class="feedback-box"
-            :class="isCorrect ? 'success' : 'error'"
-          >
-            <div class="feedback-header">
-              {{ isCorrect ? t('game.correct') : t('game.wrong') }}
-            </div>
-            <div class="feedback-content">
-              <strong>{{ t('game.argument_label') }}</strong>
-              <p>{{ currentQuestion.explanation }}</p>
-            </div>
-            <button class="btn-next" @click="nextQuestion">
-              {{ isLastQuestion ? t('game.btn_results') : t('game.btn_next') }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="gameState === 'end'" class="screen end-screen">
-          <div class="score-circle">
-            <span class="label-xp">{{ t('end.score_label') }}</span>
-            <span class="big-score">{{ score }}</span>
-            <span class="total">/ {{ questions.length }}</span>
-          </div>
-
-          <h3>{{ rankTitle }}</h3>
-          <p class="rank-desc">{{ rankMessage }}</p>
-
-          <div v-if="!scoreSaved" class="save-form">
-            <h4>{{ t('end.leaderboard_title') }}</h4>
-
-            <div class="input-group">
-              <input
-                type="text"
-                v-model="userName"
-                :placeholder="t('end.placeholder_name')"
-                maxlength="15"
-              />
-            </div>
-            <div class="input-group">
-              <input
-                type="text"
-                v-model="userMemberId"
-                :placeholder="t('end.placeholder_id')"
-              />
-            </div>
-
-            <button
-              class="btn-primary"
-              @click="submitScore"
-              :disabled="!userName"
-            >
-              {{ t('end.btn_save') }}
-            </button>
-
-            <button class="btn-skip" @click="resetGame">
-              {{ t('end.btn_skip') }}
-            </button>
-          </div>
-
-          <div v-else class="leaderboard-wrapper">
-            <div class="leaderboard-container">
-              <h4>
-                {{ t('end.top_10') }}
-                {{ t('levels.' + selectedDifficulty + '.label').toUpperCase() }}
-              </h4>
-              <div class="leaderboard-scroll">
-                <table class="leaderboard-table">
-                  <thead>
-                    <tr>
-                      <th>{{ t('end.col_rank') }}</th>
-                      <th>{{ t('end.col_name') }}</th>
-                      <th>{{ t('end.col_score') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="(entry, index) in leaderboard"
-                      :key="index"
-                      :class="{
-                        'current-user': entry.isUser,
-                        'top-3': index < 3
-                      }"
-                    >
-                      <td class="rank">{{ index + 1 }}</td>
-                      <td class="name">
-                        {{ entry.name }}
-                        <span v-if="entry.memberId" class="badge-member"
-                          >#{{ entry.memberId }}</span
-                        >
-                      </td>
-                      <td class="score-val">{{ entry.score }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="final-actions">
-              <button class="btn-giant-restart" @click="resetGame">
-                {{ t('end.btn_retry') }}
-              </button>
-              <a :href="t('end.btn_url')" target="_blank" class="link-join">
-                {{ t('end.btn_join') }}
-              </a>
-            </div>
-          </div>
-        </div>
-      </template>
+    <div v-if="isLoading" class="screen loading-screen">
+      <div class="loader-spinner"></div>
+      <p>{{ t('ui.loading') }}</p>
     </div>
+
+    <div v-else-if="apiError" class="screen error-screen">
+      <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
+      <p>{{ apiError }}</p>
+      <button class="btn-primary" @click="reloadPage">
+        {{ t('ui.btn_retry') }}
+      </button>
+    </div>
+
+    <template v-else>
+      <div v-if="gameState === 'start'" class="screen start-screen">
+        <h1>{{ t('start.title') }}</h1>
+        <p class="subtitle">{{ t('start.subtitle') }}</p>
+
+        <div class="icon-hero">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"
+            />
+          </svg>
+        </div>
+
+        <div class="difficulty-selector">
+          <p>{{ t('start.choose_level') }}</p>
+          <button
+            v-for="id in LEVEL_IDS"
+            :key="id"
+            class="btn-diff"
+            :class="id"
+            @click="startGame(id)"
+          >
+            {{ t('levels.' + id + '.icon') }}
+            {{ t('levels.' + id + '.label') }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="gameState === 'playing'" class="screen game-screen">
+        <div class="question-card">
+          <span class="category-tag">{{ currentQuestion.category }}</span>
+          <h2>{{ currentQuestion.question }}</h2>
+        </div>
+
+        <div class="options-grid">
+          <button
+            v-for="(optObj, index) in currentShuffledOptions"
+            :key="index"
+            class="btn-option"
+            :class="getOptionClass(index)"
+            @click="selectAnswer(index)"
+            :disabled="hasAnswered"
+          >
+            <span class="letter">{{ optionLetters[index] }}</span>
+            <span class="text">{{ optObj.text }}</span>
+
+            <span
+              v-if="showPointPopup && selectedAnswer === index && isCorrect"
+              class="point-popup"
+            >
+              {{ t('game.point_popup') }}
+            </span>
+          </button>
+        </div>
+
+        <div
+          v-if="hasAnswered"
+          class="feedback-box"
+          :class="isCorrect ? 'success' : 'error'"
+        >
+          <div class="feedback-header">
+            {{ isCorrect ? t('game.correct') : t('game.wrong') }}
+          </div>
+          <div class="feedback-content">
+            <strong>{{ t('game.argument_label') }}</strong>
+            <p>{{ currentQuestion.explanation }}</p>
+          </div>
+          <button class="btn-next" @click="nextQuestion">
+            {{ isLastQuestion ? t('game.btn_results') : t('game.btn_next') }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="gameState === 'end'" class="screen end-screen">
+        <div class="score-circle">
+          <span class="label-xp">{{ t('end.score_label') }}</span>
+          <span class="big-score">{{ score }}</span>
+          <span class="total">/ {{ questions.length }}</span>
+        </div>
+
+        <h3>{{ rankTitle }}</h3>
+        <p class="rank-desc">{{ rankMessage }}</p>
+
+        <div v-if="!scoreSaved" class="save-form">
+          <h4>{{ t('end.leaderboard_title') }}</h4>
+
+          <div class="input-group">
+            <input
+              type="text"
+              v-model="userName"
+              :placeholder="t('end.placeholder_name')"
+              maxlength="15"
+            />
+          </div>
+          <div class="input-group">
+            <input
+              type="text"
+              v-model="userMemberId"
+              :placeholder="t('end.placeholder_id')"
+            />
+          </div>
+
+          <button
+            class="btn-primary"
+            @click="submitScore"
+            :disabled="!userName"
+          >
+            {{ t('end.btn_save') }}
+          </button>
+
+          <button class="btn-skip" @click="resetGame">
+            {{ t('end.btn_skip') }}
+          </button>
+        </div>
+
+        <div v-else class="leaderboard-wrapper">
+          <div class="leaderboard-container">
+            <h4>
+              {{ t('end.top_10') }}
+              {{ t('levels.' + selectedDifficulty + '.label').toUpperCase() }}
+            </h4>
+            <div class="leaderboard-scroll">
+              <table class="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('end.col_rank') }}</th>
+                    <th>{{ t('end.col_name') }}</th>
+                    <th>{{ t('end.col_score') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(entry, index) in leaderboard"
+                    :key="index"
+                    :class="{
+                      'current-user': entry.isUser,
+                      'top-3': index < 3
+                    }"
+                  >
+                    <td class="rank">{{ index + 1 }}</td>
+                    <td class="name">
+                      {{ entry.name }}
+                      <span v-if="entry.memberId" class="badge-member"
+                        >#{{ entry.memberId }}</span
+                      >
+                    </td>
+                    <td class="score-val">{{ entry.score }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="final-actions">
+            <button class="btn-giant-restart" @click="resetGame">
+              {{ t('end.btn_retry') }}
+            </button>
+
+            <a :href="t('end.btn_join.url')" target="_blank" class="link-join">
+              {{ t('end.btn_join.text') }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped lang="scss">
-// Pas de changement dans ton CSS, il est parfait.
-// Juste assure-toi d'avoir le style pour .loader-spinner si tu veux l'animation
-.loader-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #297534;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Le reste de ton CSS... */
-/* --- IMPORTS & FONTS --- */
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap');
-
-:root {
-  --poster-beige: #e4e9d5;
-  --prohib-black: #141414;
-  --reg-green: #297534;
-  --highlight-green: #4caf50;
-  --error-red: #d32f2f;
-}
-
-$font-main: 'Space Grotesk', sans-serif;
-$font-mono: 'Share Tech Mono', monospace;
-
-// Container Principal
-#quiz-app {
-  font-family: $font-main;
-  background-color: #e4e9d5;
-  color: #141414;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: radial-gradient(#d0d6c0 1px, transparent 1px);
-  background-size: 20px 20px;
-  width: 100%;
-}
-
 .quiz-module {
   width: 100%;
   max-width: 600px;
@@ -590,7 +555,7 @@ $font-mono: 'Share Tech Mono', monospace;
   flex-direction: column;
 }
 
-/* HEADER */
+/* HEADER SPÉCIFIQUE */
 .quiz-header {
   padding: 20px;
   display: flex;
@@ -609,7 +574,7 @@ $font-mono: 'Share Tech Mono', monospace;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 2px;
-    border-bottom: 3px solid #141414;
+    border-bottom: 3px solid $prohib-black;
     padding-bottom: 5px;
     margin-bottom: 15px;
   }
@@ -624,7 +589,7 @@ $font-mono: 'Share Tech Mono', monospace;
   button {
     background: transparent;
     border: none;
-    color: #141414;
+    color: $prohib-black;
     opacity: 0.5;
     font-size: 0.8rem;
     font-weight: 900;
@@ -641,10 +606,10 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 }
 
-/* SCORE DISPLAY */
+/* SCORE & PROGRESS */
 .score-display {
-  background: #141414;
-  color: #4caf50;
+  background: $prohib-black;
+  color: $highlight-green;
   padding: 5px 10px;
   border-radius: 4px;
   display: flex;
@@ -658,13 +623,13 @@ $font-mono: 'Share Tech Mono', monospace;
     text-transform: uppercase;
     margin-bottom: 2px;
     &.easy {
-      color: #8bc34a;
+      color: $light-green;
     }
     &.medium {
-      color: #4caf50;
+      color: $highlight-green;
     }
     &.hard {
-      color: #297534;
+      color: $reg-green;
     }
   }
 
@@ -683,22 +648,12 @@ $font-mono: 'Share Tech Mono', monospace;
 
   .fill {
     height: 100%;
-    background: #297534;
+    background: $reg-green;
     transition: width 0.3s ease;
   }
 }
 
-/* ECRANS */
-.screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  animation: fadeIn 0.4s ease;
-}
-
-/* ACCUEIL */
+/* ECRAN START */
 .start-screen {
   text-align: center;
   justify-content: center;
@@ -709,18 +664,16 @@ $font-mono: 'Share Tech Mono', monospace;
     margin: 0 0 10px 0;
     text-transform: uppercase;
   }
-
   .subtitle {
     font-size: 1.1rem;
     opacity: 0.8;
     margin-bottom: 30px;
   }
-
   .icon-hero {
     width: 80px;
     height: 80px;
     margin-bottom: 20px;
-    color: #297534;
+    color: $reg-green;
     svg {
       width: 100%;
       height: 100%;
@@ -728,14 +681,13 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 }
 
-/* DIFFICULTÉ */
+/* BOUTONS DIFFICULTÉ */
 .difficulty-selector {
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
   max-width: 300px;
-
   p {
     font-weight: bold;
     opacity: 0.7;
@@ -746,9 +698,9 @@ $font-mono: 'Share Tech Mono', monospace;
 
 .btn-diff {
   padding: 15px;
-  border: 2px solid #141414;
+  border: 2px solid $prohib-black;
   background: white;
-  color: #141414;
+  color: $prohib-black;
   font-family: $font-main;
   font-weight: 800;
   text-transform: uppercase;
@@ -758,36 +710,35 @@ $font-mono: 'Share Tech Mono', monospace;
 
   &:hover {
     transform: translateX(5px);
-    box-shadow: -5px 5px 0 #141414;
+    box-shadow: -5px 5px 0 $prohib-black;
   }
 
   &.easy {
-    border-color: #8bc34a;
+    border-color: $light-green;
     &:hover {
-      background: #8bc34a;
+      background: $light-green;
       color: white;
     }
   }
   &.medium {
-    border-color: #4caf50;
+    border-color: $highlight-green;
     &:hover {
-      background: #4caf50;
+      background: $highlight-green;
       color: white;
     }
   }
   &.hard {
-    border-color: #297534;
+    border-color: $reg-green;
     &:hover {
-      background: #297534;
+      background: $reg-green;
       color: white;
     }
   }
 }
 
-/* JEU */
+/* JEU ET CARTES */
 .game-screen {
   width: 100%;
-  box-sizing: border-box;
 }
 
 .question-card {
@@ -795,7 +746,7 @@ $font-mono: 'Share Tech Mono', monospace;
   margin-bottom: 30px;
 
   .category-tag {
-    background: #141414;
+    background: $prohib-black;
     color: white;
     padding: 4px 8px;
     font-size: 0.7rem;
@@ -803,7 +754,6 @@ $font-mono: 'Share Tech Mono', monospace;
     font-weight: bold;
     border-radius: 2px;
   }
-
   h2 {
     font-size: 1.3rem;
     margin-top: 15px;
@@ -820,7 +770,7 @@ $font-mono: 'Share Tech Mono', monospace;
 
 .btn-option {
   background: white;
-  border: 2px solid #141414;
+  border: 2px solid $prohib-black;
   padding: 15px;
   text-align: left;
   font-family: $font-main;
@@ -834,7 +784,7 @@ $font-mono: 'Share Tech Mono', monospace;
   overflow: hidden;
 
   .letter {
-    background: #141414;
+    background: $prohib-black;
     color: white;
     width: 24px;
     height: 24px;
@@ -848,7 +798,7 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 
   &:hover:not(:disabled) {
-    background: #141414;
+    background: $prohib-black;
     color: white;
     .letter {
       background: white;
@@ -857,26 +807,25 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 
   &.correct {
-    background: #297534;
-    border-color: #297534;
+    background: $reg-green;
+    border-color: $reg-green;
     color: white;
     .letter {
       background: white;
-      color: #297534;
+      color: $reg-green;
     }
   }
 
   &.wrong {
-    background: #d32f2f;
-    border-color: #d32f2f;
+    background: $error-red;
+    border-color: $error-red;
     color: white;
     opacity: 0.8;
     .letter {
       background: white;
-      color: #d32f2f;
+      color: $error-red;
     }
   }
-
   &.dimmed {
     opacity: 0.4;
     cursor: default;
@@ -888,13 +837,28 @@ $font-mono: 'Share Tech Mono', monospace;
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  background: #4caf50;
-  color: #141414;
+  background: $highlight-green;
+  color: $prohib-black;
   font-weight: 900;
   padding: 5px 10px;
   border-radius: 20px;
   animation: popUp 0.6s ease-out forwards;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes popUp {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px) scale(1);
+    opacity: 0;
+  }
 }
 
 /* FEEDBACK */
@@ -909,10 +873,10 @@ $font-mono: 'Share Tech Mono', monospace;
   animation: slideUp 0.3s ease;
 
   &.success {
-    border-color: #297534;
+    border-color: $reg-green;
   }
   &.error {
-    border-color: #d32f2f;
+    border-color: $error-red;
   }
 
   .feedback-header {
@@ -921,7 +885,6 @@ $font-mono: 'Share Tech Mono', monospace;
     font-size: 1.1rem;
     margin-bottom: 10px;
   }
-
   .feedback-content {
     font-size: 0.9rem;
     line-height: 1.4;
@@ -929,12 +892,23 @@ $font-mono: 'Share Tech Mono', monospace;
     strong {
       display: block;
       margin-bottom: 5px;
-      color: #141414;
+      color: $prohib-black;
     }
   }
 }
 
-/* FIN & CLASSEMENT */
+.btn-next {
+  @include btn-base; // Copie tout le style du bouton ici
+
+  // Surcharge spécifique pour ce bouton
+  background: $prohib-black;
+
+  &:hover {
+    background: lighten($prohib-black, 15%); // Fonction Sass pour éclaircir
+  }
+}
+
+/* FIN & LEADERBOARD */
 .end-screen {
   text-align: center;
   justify-content: center;
@@ -942,7 +916,7 @@ $font-mono: 'Share Tech Mono', monospace;
   .score-circle {
     width: 120px;
     height: 120px;
-    background: #141414;
+    background: $prohib-black;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -950,11 +924,11 @@ $font-mono: 'Share Tech Mono', monospace;
     justify-content: center;
     align-items: center;
     margin-bottom: 20px;
-    border: 4px solid #297534;
+    border: 4px solid $reg-green;
 
     .label-xp {
       font-size: 0.7rem;
-      color: #4caf50;
+      color: $highlight-green;
       margin-bottom: 5px;
     }
     .big-score {
@@ -980,13 +954,13 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 }
 
-/* FORMULAIRE SAUVEGARDE */
+/* Formulaire */
 .save-form {
   width: 100%;
   max-width: 400px;
   background: white;
   padding: 20px;
-  border: 2px solid #141414;
+  border: 2px solid $prohib-black;
   margin-bottom: 20px;
   text-align: left;
 
@@ -995,7 +969,6 @@ $font-mono: 'Share Tech Mono', monospace;
     text-transform: uppercase;
     font-size: 1rem;
   }
-
   .input-group {
     margin-bottom: 15px;
     input {
@@ -1005,10 +978,8 @@ $font-mono: 'Share Tech Mono', monospace;
       font-family: $font-main;
       font-size: 1rem;
       background: #f9f9f9;
-      box-sizing: border-box;
-
       &:focus {
-        border-color: #297534;
+        border-color: $reg-green;
         outline: none;
         background: white;
       }
@@ -1016,11 +987,10 @@ $font-mono: 'Share Tech Mono', monospace;
   }
 }
 
-/* Bouton Skip */
 .btn-skip {
   background: transparent;
   border: none;
-  color: #141414;
+  color: $prohib-black;
   margin-top: 15px;
   cursor: pointer;
   font-family: $font-main;
@@ -1029,42 +999,37 @@ $font-mono: 'Share Tech Mono', monospace;
   opacity: 0.6;
   width: 100%;
   transition: all 0.2s;
-
   &:hover {
     opacity: 1;
-    color: #d32f2f;
+    color: $error-red;
   }
 }
 
-/* LEADERBOARD TABLE */
+/* Table */
 .leaderboard-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 .leaderboard-container {
   width: 100%;
   max-width: 450px;
   animation: slideUp 0.3s ease;
   margin-bottom: 10px;
-
   h4 {
     margin: 0 0 10px 0;
     text-transform: uppercase;
     font-size: 1rem;
-    border-bottom: 3px solid #141414;
+    border-bottom: 3px solid $prohib-black;
     display: inline-block;
   }
 }
-
 .leaderboard-scroll {
   max-height: 250px;
   overflow-y: auto;
-  border: 2px solid #141414;
+  border: 2px solid $prohib-black;
 }
-
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
@@ -1072,25 +1037,23 @@ $font-mono: 'Share Tech Mono', monospace;
   font-family: $font-main;
 
   thead {
-    background: #141414;
     color: white;
     th {
       padding: 8px;
       text-align: left;
       text-transform: uppercase;
       font-size: 0.8rem;
-      position: sticky;
       top: 0;
+      position: sticky;
+      background: $prohib-black;
     }
   }
-
   tbody tr {
     border-bottom: 1px solid #eee;
     td {
       padding: 8px;
       font-size: 0.9rem;
     }
-
     .rank {
       font-weight: bold;
       width: 30px;
@@ -1099,9 +1062,8 @@ $font-mono: 'Share Tech Mono', monospace;
     .score-val {
       font-weight: bold;
       text-align: right;
-      color: #297534;
+      color: $reg-green;
     }
-
     .badge-member {
       font-size: 0.7rem;
       background: #eee;
@@ -1112,29 +1074,28 @@ $font-mono: 'Share Tech Mono', monospace;
     }
 
     &.top-3 .rank {
-      color: #d4af37;
+      color: $gold;
       font-size: 1.1rem;
     }
     &:nth-child(2) .rank {
-      color: #c0c0c0;
+      color: $silver;
     }
     &:nth-child(3) .rank {
-      color: #cd7f32;
+      color: $bronze;
     }
 
     &.current-user {
       background: rgba(76, 175, 80, 0.15);
-      border-left: 4px solid #297534;
+      border-left: 4px solid $reg-green;
       font-weight: bold;
       .name {
-        color: #297534;
+        color: $reg-green;
         text-transform: uppercase;
       }
     }
   }
 }
 
-/* BOUTONS ACTIONS FINAUX */
 .final-actions {
   width: 100%;
   max-width: 450px;
@@ -1145,112 +1106,17 @@ $font-mono: 'Share Tech Mono', monospace;
   margin-top: 10px;
 }
 
-.btn-giant-restart {
-  background: #141414;
-  color: white;
-  border: 3px solid #141414;
-  padding: 18px 40px;
-  font-family: $font-main;
-  font-weight: 900;
-  font-size: 1.2rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  width: 100%;
-  border-radius: 50px;
-  transition: all 0.2s ease;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-
-  &:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
-    background: white;
-    color: #141414;
-  }
-  &:active {
-    transform: translateY(1px);
-  }
-}
-
 .link-join {
-  color: #141414;
+  color: $prohib-black;
   font-weight: 700;
   text-decoration: none;
   font-size: 0.9rem;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s;
-
   &:hover {
-    border-bottom-color: #297534;
-    color: #297534;
-  }
-}
-
-/* BOUTON PRIMAIRE STANDARD */
-.btn-primary {
-  background: #297534;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-family: $font-main;
-  font-weight: bold;
-  font-size: 1rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  width: 100%;
-
-  &:hover {
-    background: #23632c;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn-next {
-  @extend .btn-primary;
-  background: #141414;
-  &:hover {
-    background: #333;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes slideUp {
-  from {
-    transform: translateY(10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-@keyframes popUp {
-  0% {
-    transform: translateY(0) scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: translateY(-10px) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-20px) scale(1);
-    opacity: 0;
+    border-bottom-color: $reg-green;
+    color: $reg-green;
   }
 }
 </style>

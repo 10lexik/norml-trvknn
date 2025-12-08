@@ -34,7 +34,7 @@
   "end": {
     "btn_retry": "🔄 Rejouer une partie",
     "btn_join": {
-      "text": "Adhérer à NORML",
+      "text": "Adhérer à NORML France →",
       "url": "https://www.norml.fr/boutique/adhesion-norml-france/"
     },
     "btn_save": "Enregistrer mon score",

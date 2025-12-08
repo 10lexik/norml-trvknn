@@ -1,0 +1,35 @@
+.btn-primary {
+  @include btn-base; // Injection du style défini dans le mixin
+}
+
+.btn-giant-restart {
+  background: $prohib-black;
+  color: white;
+  border: 3px solid $prohib-black;
+  font-family: $font-main;
+  padding: 18px 40px;
+  font-family: $font-main;
+  font-weight: 900;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+    background: white;
+    color: $prohib-black;
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}

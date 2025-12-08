@@ -1,0 +1,26 @@
+@import 'variables';
+
+// On définit le style du bouton ici, mais on ne le génère pas encore en CSS
+@mixin btn-base {
+  background: $reg-green;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-family: $font-main;
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  display: inline-block; // Sécurité
+  text-align: center;
+
+  &:hover {
+    background: darken($reg-green, 5%); // Fonction Sass native
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
