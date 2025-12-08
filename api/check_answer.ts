@@ -1,84 +1,72 @@
-import { MongoClient } from "mongodb";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { MongoClient } from 'mongodb'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getApiText } from './_i18n'
 
-const uri = process.env.MONGODB_URI!;
-let client: MongoClient;
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined
+}
+
+const uri = process.env.MONGODB_URI!
 
 if (!global._mongoClientPromise) {
-  client = new MongoClient(uri);
-  global._mongoClientPromise = client.connect();
+  const client = new MongoClient(uri)
+  global._mongoClientPromise = client.connect()
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // 1. On accepte uniquement les POST
-  if (req.method !== "POST") return res.status(405).end();
+  let T = getApiText('fr')
 
-  const { questionId, userIndex } = req.body;
+  if (req.method !== 'POST')
+    return res.status(405).json({ error: T.method_not_allowed })
 
-  // 2. Validation basique
+  const { questionId, userIndex } = req.body
+
   if (!questionId || userIndex === undefined) {
-    return res
-      .status(400)
-      .json({ error: "Données manquantes : questionId ou userIndex" });
+    return res.status(400).json({ error: T.params_missing })
   }
 
   try {
-    const client = await global._mongoClientPromise;
-    // IMPORTANT : On reprend le nom de collection "trivia" qui fonctionne
-    const collection = client.db("norml_trvknn").collection("trivia");
-    const data = await collection.findOne({});
+    const parts = questionId.split('_')
+    const index = parseInt(parts.pop()!, 10)
+    const level = parts.pop()
+    const lang = parts.join('_')
 
-    if (!data) throw new Error("Base de données vide (Aucun document trouvé)");
+    T = getApiText(lang)
 
-    // 3. DÉCODAGE DE L'ID
-    // Format attendu généré par start_game : "fr_easy_12"
-    const parts = questionId.split("_");
-    const index = parseInt(parts.pop()!, 10); // 12
-    const level = parts.pop(); // easy
-    const lang = parts.join("_"); // fr
+    const client = await global._mongoClientPromise
 
-    // 4. NAVIGATION STRICTE DANS VOTRE STRUCTURE JSON
-    // Structure : data -> fr -> questions_pool -> easy -> [12]
-
-    // Étape A : La langue
-    const langData = data[lang];
-    if (!langData) {
-      console.error(`Langue introuvable: ${lang}`);
-      throw new Error("Langue introuvable dans la BDD");
+    // --- CORRECTION : SAFETY CHECK ---
+    if (!client) {
+      throw new Error('Database client not initialized')
     }
+    // ---------------------------------
 
-    // Étape B : Le pool
-    const pool = langData.questions_pool;
-    if (!pool) {
-      console.error(`questions_pool introuvable dans ${lang}`);
-      throw new Error("Structure de données invalide");
-    }
+    const collection = client.db('norml_trvknn').collection('trivia')
+    const data = await collection.findOne({})
 
-    // Étape C : Le niveau (easy, medium...)
-    const levelQuestions = pool[level!];
-    if (!levelQuestions) {
-      console.error(`Niveau introuvable: ${level}`);
-      throw new Error("Niveau introuvable");
-    }
+    if (!data) throw new Error(T.db_empty)
 
-    // Étape D : La question spécifique
-    const question = levelQuestions[index];
-    if (!question) {
-      console.error(`Question introuvable à l'index ${index}`);
-      throw new Error("Question introuvable");
-    }
+    const langData = data[lang]
+    if (!langData) throw new Error(T.lang_missing)
 
-    // 5. VÉRIFICATION
-    const isCorrect = question.correct === userIndex;
+    const pool = langData.questions_pool
+    if (!pool) throw new Error(T.structure_invalid)
+
+    const levelQuestions = pool[level!]
+    if (!levelQuestions) throw new Error(T.level_missing)
+
+    const question = levelQuestions[index]
+    if (!question) throw new Error(T.question_missing)
+
+    const isCorrect = question.correct === userIndex
 
     res.status(200).json({
       correct: isCorrect,
       correctIndex: question.correct,
       explanation: question.explanation
-    });
+    })
   } catch (e: any) {
-    console.error("API ERROR check_answer:", e.message);
-    // On renvoie 500 pour différencier d'une 404 (Route introuvable)
-    res.status(500).json({ error: e.message });
+    console.error('API Error check_answer:', e.message)
+    res.status(500).json({ error: e.message })
   }
 }

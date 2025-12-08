@@ -473,7 +473,7 @@ const rankMessage = computed(() => {
           <div v-else class="leaderboard-wrapper">
             <div class="leaderboard-container">
               <h4>
-                🏆 {{ t('end.top_10') }} -
+                {{ t('end.top_10') }}
                 {{ t('levels.' + selectedDifficulty).toUpperCase() }}
               </h4>
               <div class="leaderboard-scroll">
@@ -510,14 +510,14 @@ const rankMessage = computed(() => {
 
             <div class="final-actions">
               <button class="btn-giant-restart" @click="resetGame">
-                🔄 {{ t('end.btn_retry') }}
+                {{ t('end.btn_retry') }}
               </button>
               <a
                 href="https://www.norml.fr/adherer/"
                 target="_blank"
                 class="link-join"
               >
-                {{ t('end.btn_join') }} →
+                {{ t('end.btn_join') }}
               </a>
             </div>
           </div>
