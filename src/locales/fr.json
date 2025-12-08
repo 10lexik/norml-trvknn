@@ -1,8 +1,5 @@
 {
-  "header": {
-    "brand": "NORML ACADEMY",
-    "score_label": "NOTE"
-  },
+  "header": { "brand": "NORML ACADEMY", "score_label": "NOTE" },
   "start": {
     "title": "Stop aux Idées Reçues",
     "subtitle": "La prohibition échoue. Testez votre lucidité.",
@@ -10,17 +7,29 @@
     "choose_level": "Choisissez votre niveau :"
   },
   "levels": {
-    "easy": "Curieux",
-    "medium": "Adhérent",
-    "hard": "Expert"
+    "easy": { "label": "Curieux", "icon": "🌱" },
+    "medium": { "label": "Adhérent", "icon": "🌿" },
+    "hard": { "label": "Expert", "icon": "🌳" }
   },
   "game": {
+    "letters": ["A", "B", "C", "D"],
     "correct": "✅ Exact !",
     "wrong": "❌ Faux !",
     "argument_label": "Explication :",
     "btn_next": "Suivant →",
     "btn_results": "Voir mon Score",
     "point_popup": "+1 PT"
+  },
+  "ui": {
+    "loading": "Chargement des questions...",
+    "error_title": "Une erreur est survenue",
+    "btn_retry": "Réessayer"
+  },
+  "errors": {
+    "fetch_fail": "Erreur lors du chargement des questions.",
+    "no_questions": "Aucune question disponible pour ce niveau.",
+    "server_unavailable": "Impossible de lancer le jeu. Serveur indisponible.",
+    "internal": "Erreur interne du jeu (Question introuvable)."
   },
   "end": {
     "btn_retry": "🔄 Rejouer une partie",

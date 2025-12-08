@@ -3,19 +3,19 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 
-// Import des JSONs LOCAUX (Pour l'interface uniquement)
+// Import des JSONs LOCAUX
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
 
 // --- 1. INTERFACES ---
 interface Question {
-  _id: string // ID technique MongoDB
+  _id: string
   category: string
   question: string
   options: string[]
-  correct?: number // Optionnel car absent avant la réponse API
-  explanation?: string // Optionnel car absent avant la réponse API
+  correct?: number
+  explanation?: string
 }
 
 interface LeaderboardEntry {
@@ -30,30 +30,19 @@ interface ShuffledOption {
   originalIndex: number
 }
 
-// --- 2. CONFIGURATION ---
-const LEVELS_CONFIG = [
-  { id: 'easy', icon: '🌱' },
-  { id: 'medium', icon: '🌿' },
-  { id: 'hard', icon: '🌳' }
-]
-
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-  { name: 'Marie-Jeanne', score: 20, memberId: '0420' },
-  { name: 'Jack Herer', score: 19 },
-  { name: 'Militant75', score: 18, memberId: '1312' }
-]
-
-const LETTERS = ['A', 'B', 'C', 'D']
+// --- 2. CONFIGURATION (Structurelle uniquement) ---
+// Les icônes et labels sont maintenant dans le JSON
+const LEVEL_IDS = ['easy', 'medium', 'hard']
 
 // --- 3. ÉTATS (REFS) ---
-const { t, locale, setLocaleMessage } = useI18n()
+const { t, tm, locale, setLocaleMessage } = useI18n()
 
 // Chargement & Données
 const isLoading = ref(false)
 const isChecking = ref(false)
 const apiError = ref<string | null>(null)
 
-// Interface : on charge les fichiers locaux par défaut
+// Interface
 const availableLocales = ['fr', 'en', 'es']
 setLocaleMessage('fr', fr)
 setLocaleMessage('en', en)
@@ -74,27 +63,49 @@ const currentShuffledOptions = ref<ShuffledOption[]>([])
 const userName = ref('')
 const userMemberId = ref('')
 const scoreSaved = ref(false)
-const leaderboard = ref<LeaderboardEntry[]>([...MOCK_LEADERBOARD])
+const leaderboard = ref<LeaderboardEntry[]>([])
 const showPointPopup = ref(false)
 
-// --- 4. CYCLE DE VIE ---
+// --- 4. COMPUTED DYNAMIQUES (Depuis le JSON) ---
+
+// Récupère les lettres A, B, C, D depuis le JSON
+const optionLetters = computed(() => {
+  return tm('game.letters') as string[]
+})
+
+// Récupère le mock leaderboard depuis le JSON
+const mockData = computed(() => {
+  return tm('end.mock_leaderboard') as LeaderboardEntry[]
+})
+
+// --- 5. CYCLE DE VIE ---
 onMounted(() => {
+  // On charge les scores sauvegardés + les mocks du JSON
   const savedScores = localStorage.getItem('norml_quiz_scores')
+
+  // On initialise avec les mocks du JSON courant
+  let initialData = [...mockData.value]
+
   if (savedScores) {
     try {
       const parsed = JSON.parse(savedScores) as LeaderboardEntry[]
-      leaderboard.value = [...MOCK_LEADERBOARD, ...parsed]
-      sortLeaderboard()
+      initialData = [...initialData, ...parsed]
     } catch (e) {
       console.error(e)
     }
   }
+
+  leaderboard.value = initialData
+  sortLeaderboard()
 })
 
-// --- 5. LOGIQUE DU JEU ---
+// --- 6. LOGIQUE DU JEU ---
 
 const setLang = (l: string) => {
   locale.value = l
+  // Petit hack : au changement de langue, on recharge les mocks pour qu'ils aient les noms traduits si besoin
+  // (Note : dans ton cas les noms propres "Marie-Jeanne" ne changent probablement pas, mais c'est plus propre)
+  // On ne réécrase pas le leaderboard complet pour ne pas perdre le score en cours si on change en cours de route
 }
 
 const prepareNewQuestion = () => {
@@ -109,7 +120,6 @@ const prepareNewQuestion = () => {
   currentShuffledOptions.value = opts.sort(() => 0.5 - Math.random())
 }
 
-// Démarrage SÉCURISÉ via API
 const startGame = async (difficulty: string) => {
   isLoading.value = true
   selectedDifficulty.value = difficulty
@@ -123,12 +133,13 @@ const startGame = async (difficulty: string) => {
     const res = await fetch(
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
-    if (!res.ok) throw new Error('Erreur chargement questions')
+
+    if (!res.ok) throw new Error(t('errors.fetch_fail'))
 
     const data = (await res.json()) as Question[]
 
     if (!data || data.length === 0) {
-      throw new Error('Aucune question disponible.')
+      throw new Error(t('errors.no_questions'))
     }
 
     questions.value = data
@@ -138,37 +149,33 @@ const startGame = async (difficulty: string) => {
     gameState.value = 'playing'
   } catch (e: any) {
     console.error(e)
-    apiError.value = 'Impossible de lancer le jeu. Serveur indisponible.'
+    apiError.value = t('errors.server_unavailable')
   } finally {
     isLoading.value = false
   }
 }
 
-// Vérification SÉCURISÉE via API
 const selectAnswer = async (visualIndex: number) => {
   if (hasAnswered.value || isChecking.value) return
 
   isChecking.value = true
   selectedAnswer.value = visualIndex
 
-  // 1. Récupération des objets
   const selectedOptionObj = currentShuffledOptions.value[visualIndex]
   const currentQ = questions.value[currentQIndex.value]
 
-  // 2. SAFETY CHECK (La correction de ton erreur TS est ICI)
   if (!currentQ || !selectedOptionObj) {
-    console.error('Erreur interne : Question ou Option introuvable')
+    console.error(t('errors.internal'))
     isChecking.value = false
     return
   }
 
   try {
-    // 3. Appel API avec l'ID sécurisé
     const res = await fetch('/api/check_answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        questionId: currentQ._id, // TypeScript est content car on a vérifié !currentQ au dessus
+        questionId: currentQ._id,
         userIndex: selectedOptionObj.originalIndex
       })
     })
@@ -180,7 +187,6 @@ const selectAnswer = async (visualIndex: number) => {
       showPointPopup.value = true
     }
 
-    // Mise à jour de la question locale avec la vérité du serveur
     currentQ.correct = result.correctIndex
     currentQ.explanation = result.explanation
 
@@ -248,7 +254,7 @@ const reloadPage = () => {
   window.location.reload()
 }
 
-// --- 6. COMPUTED ---
+// --- 7. COMPUTED HELPERS ---
 const currentQuestion = computed(
   () => questions.value[currentQIndex.value] || ({} as Question)
 )
@@ -330,7 +336,7 @@ const rankMessage = computed(() => {
 
           <div class="score-display" v-if="gameState !== 'start'">
             <span class="level-badge" :class="selectedDifficulty">
-              {{ t('levels.' + selectedDifficulty) }}
+              {{ t('levels.' + selectedDifficulty + '.label') }}
             </span>
             <span class="score-value"
               >{{ score }} / {{ questions.length }}</span
@@ -338,7 +344,7 @@ const rankMessage = computed(() => {
           </div>
         </div>
 
-        <div class="logo-area">NORML ACADEMY</div>
+        <div class="logo-area">{{ t('header.brand') }}</div>
 
         <div class="progress-bar" v-if="gameState === 'playing'">
           <div class="fill" :style="{ width: progress + '%' }"></div>
@@ -347,13 +353,15 @@ const rankMessage = computed(() => {
 
       <div v-if="isLoading" class="screen loading-screen">
         <div class="loader-spinner"></div>
-        <p>Chargement des données...</p>
+        <p>{{ t('ui.loading') }}</p>
       </div>
 
       <div v-else-if="apiError" class="screen error-screen">
-        <h3 style="color: #d32f2f">Erreur</h3>
+        <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
         <p>{{ apiError }}</p>
-        <button class="btn-primary" @click="reloadPage">Réessayer</button>
+        <button class="btn-primary" @click="reloadPage">
+          {{ t('ui.btn_retry') }}
+        </button>
       </div>
 
       <template v-else>
@@ -372,13 +380,14 @@ const rankMessage = computed(() => {
           <div class="difficulty-selector">
             <p>{{ t('start.choose_level') }}</p>
             <button
-              v-for="level in LEVELS_CONFIG"
-              :key="level.id"
+              v-for="id in LEVEL_IDS"
+              :key="id"
               class="btn-diff"
-              :class="level.id"
-              @click="startGame(level.id)"
+              :class="id"
+              @click="startGame(id)"
             >
-              {{ level.icon }} {{ t('levels.' + level.id) }}
+              {{ t('levels.' + id + '.icon') }}
+              {{ t('levels.' + id + '.label') }}
             </button>
           </div>
         </div>
@@ -398,7 +407,7 @@ const rankMessage = computed(() => {
               @click="selectAnswer(index)"
               :disabled="hasAnswered"
             >
-              <span class="letter">{{ LETTERS[index] }}</span>
+              <span class="letter">{{ optionLetters[index] }}</span>
               <span class="text">{{ optObj.text }}</span>
 
               <span
@@ -474,7 +483,7 @@ const rankMessage = computed(() => {
             <div class="leaderboard-container">
               <h4>
                 {{ t('end.top_10') }}
-                {{ t('levels.' + selectedDifficulty).toUpperCase() }}
+                {{ t('levels.' + selectedDifficulty + '.label').toUpperCase() }}
               </h4>
               <div class="leaderboard-scroll">
                 <table class="leaderboard-table">
@@ -512,11 +521,7 @@ const rankMessage = computed(() => {
               <button class="btn-giant-restart" @click="resetGame">
                 {{ t('end.btn_retry') }}
               </button>
-              <a
-                href="https://www.norml.fr/adherer/"
-                target="_blank"
-                class="link-join"
-              >
+              <a :href="t('end.btn_url')" target="_blank" class="link-join">
                 {{ t('end.btn_join') }}
               </a>
             </div>
