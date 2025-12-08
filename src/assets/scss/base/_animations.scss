@@ -6,7 +6,6 @@
     opacity: 1;
   }
 }
-
 @keyframes slideUp {
   from {
     transform: translateY(10px);
@@ -17,7 +16,6 @@
     opacity: 1;
   }
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);

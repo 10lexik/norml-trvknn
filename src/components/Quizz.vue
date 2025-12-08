@@ -544,6 +544,11 @@ const rankMessage = computed(() => {
 </template>
 
 <style scoped lang="scss">
+// IMPORTS MANUELS OBLIGATOIRES
+@use '@/assets/scss/abstracts/variables' as *;
+@use '@/assets/scss/abstracts/mixins' as *;
+@use 'sass:color';
+
 .quiz-module {
   width: 100%;
   max-width: 600px;
@@ -898,13 +903,13 @@ const rankMessage = computed(() => {
 }
 
 .btn-next {
-  @include btn-base; // Copie tout le style du bouton ici
+  @include btn-base; // Mixin fonctionne car importé en haut
 
   // Surcharge spécifique pour ce bouton
   background: $prohib-black;
 
   &:hover {
-    background: lighten($prohib-black, 15%); // Fonction Sass pour éclaircir
+    background: color.adjust($prohib-black, $lightness: 15%);
   }
 }
 

@@ -1,5 +1,8 @@
+@use '../abstracts/mixins' as *;
+@use '../abstracts/variables' as *;
+
 .btn-primary {
-  @include btn-base; // Injection du style défini dans le mixin
+  @include btn-base;
 }
 
 .btn-giant-restart {
