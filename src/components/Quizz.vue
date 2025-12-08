@@ -31,7 +31,6 @@ interface ShuffledOption {
 }
 
 // --- 2. CONFIGURATION ---
-// Les icônes et labels sont maintenant dans le JSON, on garde juste les clés
 const LEVEL_IDS = ['easy', 'medium', 'hard']
 
 // --- 3. ÉTATS (REFS) ---
@@ -40,6 +39,8 @@ const { t, tm, locale, setLocaleMessage } = useI18n()
 // Chargement & Données
 const isLoading = ref(false)
 const isChecking = ref(false)
+// NOUVEAU : Stocke l'index visuel du bouton en cours de vérification réseau
+const verifyingIndex = ref<number | null>(null)
 const apiError = ref<string | null>(null)
 
 // Interface : on charge les fichiers locaux par défaut
@@ -66,24 +67,20 @@ const scoreSaved = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const showPointPopup = ref(false)
 
-// --- 4. COMPUTED DYNAMIQUES (SÉCURISÉS) ---
+// --- 4. COMPUTED DYNAMIQUES ---
 
-// Helper pour forcer le type Tableau depuis i18n
 const getI18nArray = (key: string): any[] => {
   const data = tm(key)
   if (Array.isArray(data)) return data
-  // Si c'est un objet (cas fréquent), on le transforme en tableau
   if (data && typeof data === 'object') return Object.values(data)
   return []
 }
 
-// Récupère les lettres A, B, C, D depuis le JSON
 const optionLetters = computed(() => {
   const letters = getI18nArray('game.letters')
   return letters.length > 0 ? letters : ['A', 'B', 'C', 'D']
 })
 
-// Récupère le mock leaderboard depuis le JSON
 const mockData = computed(() => {
   return getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
 })
@@ -91,8 +88,6 @@ const mockData = computed(() => {
 // --- 5. CYCLE DE VIE ---
 onMounted(() => {
   const savedScores = localStorage.getItem('norml_quiz_scores')
-
-  // Utilisation sécurisée de la computed
   let initialData = [...mockData.value]
 
   if (savedScores) {
@@ -114,9 +109,6 @@ onMounted(() => {
 
 const setLang = (l: string) => {
   locale.value = l
-  // On force la mise à jour du leaderboard au changement de langue (pour les mocks)
-  // On garde les scores utilisateurs, on ne met à jour que les mocks si nécessaire
-  // (Simplification : ici on laisse réactif via le template)
 }
 
 const prepareNewQuestion = () => {
@@ -131,7 +123,6 @@ const prepareNewQuestion = () => {
   currentShuffledOptions.value = opts.sort(() => 0.5 - Math.random())
 }
 
-// Démarrage SÉCURISÉ via API
 const startGame = async (difficulty: string) => {
   isLoading.value = true
   selectedDifficulty.value = difficulty
@@ -146,7 +137,6 @@ const startGame = async (difficulty: string) => {
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
 
-    // Utilisation des clés d'erreur du JSON
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
 
     const data = (await res.json()) as Question[]
@@ -157,7 +147,6 @@ const startGame = async (difficulty: string) => {
 
     questions.value = data
     prepareNewQuestion()
-
     resetStep()
     gameState.value = 'playing'
   } catch (e: any) {
@@ -168,11 +157,13 @@ const startGame = async (difficulty: string) => {
   }
 }
 
-// Vérification SÉCURISÉE via API
+// MISE A JOUR : Vérification avec feedback immédiat
 const selectAnswer = async (visualIndex: number) => {
+  // On bloque si déjà répondu ou si une requête est en cours
   if (hasAnswered.value || isChecking.value) return
 
   isChecking.value = true
+  verifyingIndex.value = visualIndex // Déclenche l'état visuel "loading" sur le bouton
   selectedAnswer.value = visualIndex
 
   const selectedOptionObj = currentShuffledOptions.value[visualIndex]
@@ -181,6 +172,7 @@ const selectAnswer = async (visualIndex: number) => {
   if (!currentQ || !selectedOptionObj) {
     console.error(t('errors.internal'))
     isChecking.value = false
+    verifyingIndex.value = null
     return
   }
 
@@ -196,6 +188,7 @@ const selectAnswer = async (visualIndex: number) => {
 
     const result = await res.json()
 
+    // Une fois la réponse reçue, on peut afficher le vrai résultat
     if (result.correct) {
       score.value++
       showPointPopup.value = true
@@ -203,12 +196,12 @@ const selectAnswer = async (visualIndex: number) => {
 
     currentQ.correct = result.correctIndex
     currentQ.explanation = result.explanation
-
     hasAnswered.value = true
   } catch (e) {
     console.error('Erreur vérification', e)
   } finally {
     isChecking.value = false
+    verifyingIndex.value = null // Fin du chargement visuel
   }
 }
 
@@ -234,6 +227,7 @@ const resetStep = () => {
   selectedAnswer.value = null
   hasAnswered.value = false
   showPointPopup.value = false
+  verifyingIndex.value = null
 }
 
 const resetGame = () => {
@@ -296,6 +290,10 @@ const progress = computed(() => {
 })
 
 const getOptionClass = (visualIndex: number) => {
+  // Priorité 1: Si c'est le bouton en cours de vérification réseau
+  if (verifyingIndex.value === visualIndex) return 'is-verifying'
+
+  // Priorité 2: Si pas encore de réponse validée, rien
   if (!hasAnswered.value || currentQuestion.value.correct === undefined)
     return ''
 
@@ -416,8 +414,10 @@ const rankMessage = computed(() => {
             class="btn-option"
             :class="getOptionClass(index)"
             @click="selectAnswer(index)"
-            :disabled="hasAnswered"
+            :disabled="hasAnswered || isChecking"
           >
+            <span v-if="verifyingIndex === index" class="mini-loader"></span>
+
             <span class="letter">{{ optionLetters[index] }}</span>
             <span class="text">{{ optObj.text }}</span>
 
@@ -544,7 +544,6 @@ const rankMessage = computed(() => {
 </template>
 
 <style scoped lang="scss">
-// IMPORTS MANUELS OBLIGATOIRES
 @use '@/assets/scss/abstracts/variables' as *;
 @use '@/assets/scss/abstracts/mixins' as *;
 @use 'sass:color';
@@ -802,12 +801,38 @@ const rankMessage = computed(() => {
     flex-shrink: 0;
   }
 
+  /* NOUVEAU: Loader interne */
+  .mini-loader {
+    width: 16px;
+    height: 16px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-left-color: $prohib-black;
+    border-radius: 50%;
+    margin-right: 15px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+  }
+
   &:hover:not(:disabled) {
     background: $prohib-black;
     color: white;
     .letter {
       background: white;
       color: black;
+    }
+  }
+
+  /* NOUVEAU: État de vérification (Attente API) */
+  &.is-verifying {
+    background: color.scale($prohib-black, $lightness: 90%); // Gris très clair
+    border-color: $prohib-black;
+    cursor: wait;
+    transform: scale(0.98);
+    .letter {
+      display: none; // On cache la lettre pour afficher le loader à la place si on veut, ou on garde les deux
+    }
+    .mini-loader {
+      display: inline-block; // On s'assure qu'il est visible
     }
   }
 
@@ -831,9 +856,22 @@ const rankMessage = computed(() => {
       color: $error-red;
     }
   }
+
   &.dimmed {
     opacity: 0.4;
     cursor: default;
+  }
+
+  // Si désactivé mais pas en cours de verif (autres boutons pendant l'attente)
+  &:disabled:not(.is-verifying):not(.correct):not(.wrong) {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -903,11 +941,8 @@ const rankMessage = computed(() => {
 }
 
 .btn-next {
-  @include btn-base; // Mixin fonctionne car importé en haut
-
-  // Surcharge spécifique pour ce bouton
+  @include btn-base;
   background: $prohib-black;
-
   &:hover {
     background: color.adjust($prohib-black, $lightness: 15%);
   }
