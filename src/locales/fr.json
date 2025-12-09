@@ -40,13 +40,33 @@
     "btn_save": "Enregistrer mon score",
     "btn_skip": "Ne pas enregistrer et Rejouer",
     "leaderboard_title": "Tableau d'Honneur",
-    "placeholder_name": "Ton Pseudo",
+    "placeholder_name": "Pseudo",
     "placeholder_id": "N° Adhérent (Optionnel)",
     "score_label": "NOTE FINALE",
     "top_10": "🏆 TOP 10 -",
     "col_rank": "#",
     "col_name": "Militant",
     "col_score": "Note",
+    "socials_config": [
+      {
+        "id": "instagram",
+        "icon": "📸",
+        "placeholder": "Instagram",
+        "baseUrl": "instagram.com"
+      },
+      {
+        "id": "x",
+        "icon": "✖️",
+        "placeholder": "X / Twitter",
+        "baseUrl": "x.com"
+      },
+      {
+        "id": "facebook",
+        "icon": "f",
+        "placeholder": "Facebook",
+        "baseUrl": "facebook.com"
+      }
+    ],
     "ranks": {
       "expert": {
         "title": "Ambassadeur de la Régulation",
@@ -380,7 +400,7 @@
           "Tous ces secteurs"
         ],
         "correct": 3,
-        "explanation": "Le chanvre est une plante multi-usage : isolation (béton de chanvre), vêtements, bioplastiques, papier, alimentation, cosmétique..."
+        "explanation": "Le chanvre est une plante multi-usage : isolation (béde chanvre), vêtements, bioplastiques, papier, alimentation, cosmétique..."
       },
       {
         "category": "💰 Economie",
@@ -859,7 +879,7 @@
           "Oregon et Utah"
         ],
         "correct": 1,
-        "explanation": "Le Colorado et l'État de Washington ont ouvert la voie historique de la légalisation récréative aux États-Unis en 2012."
+        "explanation": "Le Colorado et l'État de Washingont ouvert la voie historique de la légalisation récréative aux États-Unis en 2012."
       },
       {
         "category": "🏛️ Politique",
@@ -873,12 +893,12 @@
         "question": "À quoi sert la chènevotte (coeur de la tige) ?",
         "options": [
           "Vêtements",
-          "Béton de chanvre (Construction)",
+          "Béde chanvre (Construction)",
           "Huile",
           "Papier"
         ],
         "correct": 1,
-        "explanation": "Mélangée à de la chaux, elle forme un béton isolant léger et écologique, qui régule l'humidité des maisons."
+        "explanation": "Mélangée à de la chaux, elle forme un béisolant léger et écologique, qui régule l'humidité des maisons."
       },
       {
         "category": "💰 Economie",
@@ -1324,7 +1344,7 @@
         "question": "Combien d'États américains ont légalisé l'usage adulte (en 2024) ?",
         "options": ["5", "10", "24", "50"],
         "correct": 2,
-        "explanation": "24 États plus le district de Columbia (Washington DC). Plus de la moitié de la population américaine vit en zone légale."
+        "explanation": "24 États plus le district de Columbia (WashingDC). Plus de la moitié de la population américaine vit en zone légale."
       },
       {
         "category": "🏛️ Politique",
@@ -1347,7 +1367,7 @@
       },
       {
         "category": "💰 Economie",
-        "question": "Quelle est la conductivité thermique du béton de chanvre ?",
+        "question": "Quelle est la conductivité thermique du béde chanvre ?",
         "options": ["Haute", "Faible (bon isolant)", "Nulle", "Variable"],
         "correct": 1,
         "explanation": "Il a une faible conductivité thermique (lambda), ce qui en fait un excellent isolant qui garde la chaleur en hiver et la fraîcheur en été."

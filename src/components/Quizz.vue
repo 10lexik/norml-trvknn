@@ -4,12 +4,11 @@ import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 
 // --- 1. IMPORTS & FALLBACKS ---
-// On garde les fichiers locaux comme sécurité si le réseau plante
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
 
-// --- 2. TYPES & INTERFACES ---
+// --- 2. TYPES ---
 interface Question {
   _id: string
   category: string
@@ -19,35 +18,38 @@ interface Question {
   explanation?: string
 }
 
+interface SocialNetworkConfig {
+  id: string
+  icon: string
+  placeholder: string
+  baseUrl: string
+}
+
 interface LeaderboardEntry {
   name: string
   score: number
   memberId?: string
+  socials?: Record<string, string>
   isUser?: boolean
 }
 
 // --- 3. CONFIGURATION ---
 const LEVEL_IDS = ['easy', 'medium', 'hard']
 const { t, tm, locale, setLocaleMessage } = useI18n()
-
 const availableLocales = ['fr', 'en', 'es']
 
-// Initialisation i18n avec les données locales
 setLocaleMessage('fr', fr)
 setLocaleMessage('en', en)
 setLocaleMessage('es', es)
 
-// --- 4. ÉTATS DU JEU (REACTIVE) ---
-
-// État de l'interface (Loading, Erreurs, Feedback visuel)
+// --- 4. STATE ---
 const ui = reactive({
-  isLoading: false, // Chargement global (au début)
-  isChecking: false, // Empêche le double-clic
-  verifyingIdx: null as number | null, // Index du bouton qui "tourne"
-  error: null as string | null // Message d'erreur API
+  isLoading: false,
+  isChecking: false,
+  verifyingIdx: null as number | null,
+  error: null as string | null
 })
 
-// État de la partie en cours
 const game = reactive({
   status: 'start' as 'start' | 'playing' | 'end',
   score: 0,
@@ -60,85 +62,86 @@ const game = reactive({
   showPointPopup: false
 })
 
-// État du Leaderboard & Formulaire
 const form = reactive({
   name: '',
   memberId: '',
+  socials: {} as Record<string, string>,
   isSaved: false,
   leaderboard: [] as LeaderboardEntry[]
 })
 
-// --- 5. LOGIQUE "HEADLESS CMS" ---
-// Récupère les textes (Titres, Menus) depuis MongoDB sans les questions
+// État visuel pour l'accordéon des réseaux sociaux
+const visibleNetworks = ref<string[]>([])
+
+// --- 5. LOGIQUE CMS ---
 const hydrateContent = async () => {
   try {
     const res = await fetch(`/api/get_content?lang=${locale.value}`)
     if (res.ok) {
       const remoteData = await res.json()
-      // Si données reçues, on écrase les textes locaux
-      if (remoteData && Object.keys(remoteData).length > 0) {
+      if (remoteData && Object.keys(remoteData).length > 0)
         setLocaleMessage(locale.value, remoteData)
-      }
     }
-  } catch (e) {
-    // Silencieux : on reste sur le fichier local en cas d'erreur
-  }
+  } catch (e) {}
 }
 
 // --- 6. CYCLE DE VIE ---
 onMounted(async () => {
-  // 1. Charger les textes CMS (Non bloquant)
   hydrateContent()
 
-  // 2. Charger le leaderboard local
-  const saved = localStorage.getItem('norml_quiz_scores')
-
-  // On récupère les mocks depuis le JSON (local ou distant)
-  const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
-  let data = [...mocks]
-
-  if (saved) {
+  const localUser = localStorage.getItem('norml_user_infos')
+  if (localUser) {
     try {
-      const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed)) data = [...data, ...parsed]
+      const u = JSON.parse(localUser)
+      form.name = u.name || ''
+      form.memberId = u.memberId || ''
+      if (u.socials) {
+        form.socials = u.socials
+        // Ouvre les réseaux qui ont déjà une valeur
+        visibleNetworks.value = Object.keys(u.socials).filter(
+          (k) => u.socials[k]
+        )
+      }
     } catch (e) {
       console.error(e)
     }
   }
 
+  const savedScores = localStorage.getItem('norml_quiz_scores')
+  const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
+  let data = [...mocks]
+
+  if (savedScores) {
+    try {
+      const parsed = JSON.parse(savedScores)
+      if (Array.isArray(parsed)) data = [...data, ...parsed]
+    } catch (e) {
+      console.error(e)
+    }
+  }
   form.leaderboard = data.sort((a, b) => b.score - a.score).slice(0, 20)
 })
 
-// --- 7. ACTIONS DU JEU ---
-
-// Changement de langue
+// --- 7. ACTIONS JEU ---
 const setLang = async (l: string) => {
   locale.value = l
-  await hydrateContent() // On recharge le contenu CMS pour la nouvelle langue
+  await hydrateContent()
 }
 
-// Lancer une partie
 const startGame = async (difficulty: string) => {
   ui.isLoading = true
   ui.error = null
-
-  // Reset des états
   game.difficulty = difficulty
   game.score = 0
   game.currentQIndex = 0
   form.isSaved = false
-  form.name = ''
-
   try {
-    // Appel API pour récupérer les questions (MongoDB)
     const res = await fetch(
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
-
     const data = await res.json()
     if (!data || data.length === 0) throw new Error(t('errors.no_questions'))
-
     game.questions = data
     prepareNewQuestion()
     resetStep()
@@ -150,7 +153,6 @@ const startGame = async (difficulty: string) => {
   }
 }
 
-// Préparer la question (mélanger les options)
 const prepareNewQuestion = () => {
   const q = game.questions[game.currentQIndex]
   if (!q) return
@@ -159,36 +161,27 @@ const prepareNewQuestion = () => {
     .sort(() => 0.5 - Math.random())
 }
 
-// Vérifier une réponse (Appel API sécurisé)
 const selectAnswer = async (visualIndex: number) => {
   if (game.hasAnswered || ui.isChecking) return
-
   ui.isChecking = true
   ui.verifyingIdx = visualIndex
   game.selectedAnswer = visualIndex
-
-  const currentQ = game.questions[game.currentQIndex]
-  const selectedOpt = game.shuffledOptions[visualIndex]
-
   try {
     const res = await fetch('/api/check_answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        questionId: currentQ._id,
-        userIndex: selectedOpt.originalIndex
+        questionId: game.questions[game.currentQIndex]._id,
+        userIndex: game.shuffledOptions[visualIndex].originalIndex
       })
     })
-
     const result = await res.json()
-
-    // Mise à jour du score et de la question (révélation)
     if (result.correct) {
       game.score++
       game.showPointPopup = true
     }
-    currentQ.correct = result.correctIndex
-    currentQ.explanation = result.explanation
+    game.questions[game.currentQIndex].correct = result.correctIndex
+    game.questions[game.currentQIndex].explanation = result.explanation
     game.hasAnswered = true
   } catch (e) {
     console.error(e)
@@ -198,70 +191,116 @@ const selectAnswer = async (visualIndex: number) => {
   }
 }
 
-// Passer à la suite
 const nextQuestion = () => {
-  if (game.currentQIndex === game.questions.length - 1) {
-    endGame()
-  } else {
+  if (game.currentQIndex === game.questions.length - 1) endGame()
+  else {
     game.currentQIndex++
     prepareNewQuestion()
     resetStep()
   }
 }
-
 const resetStep = () => {
   game.selectedAnswer = null
   game.hasAnswered = false
   game.showPointPopup = false
   ui.verifyingIdx = null
 }
-
 const endGame = () => {
   game.status = 'end'
-  // Confettis si bon score (> 75%)
-  if (game.score >= game.questions.length * 0.75) {
+  if (game.score >= game.questions.length * 0.75)
     confetti({
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#297534', '#4CAF50', '#E4E9D5']
     })
+}
+
+// --- 8. UI LOGIC (Toggle & Clear) ---
+const toggleNetwork = (id: string) => {
+  if (visibleNetworks.value.includes(id)) {
+    // Si vide, on ferme. Sinon on laisse ouvert.
+    if (!form.socials[id])
+      visibleNetworks.value = visibleNetworks.value.filter((n) => n !== id)
+  } else {
+    visibleNetworks.value.push(id)
   }
 }
 
-// Sauvegarder le score (Local pour l'instant, bientôt API)
-const submitScore = () => {
+// NOUVEAU : Fonction dédiée pour éviter l'erreur de syntaxe dans le HTML
+const clearSocial = (id: string) => {
+  form.socials[id] = '' // On vide le champ
+  toggleNetwork(id) // On met à jour l'affichage (fermeture)
+}
+
+// --- 9. SAUVEGARDE DYNAMIQUE ---
+const submitScore = async () => {
   if (!form.name) return
+  ui.isLoading = true
 
-  const entry: LeaderboardEntry = {
-    name: form.name,
-    score: game.score,
-    memberId: form.memberId,
-    isUser: true
+  const finalSocials: Record<string, string> = {}
+
+  socialNetworks.value.forEach((net) => {
+    const handle = form.socials[net.id]
+    if (handle) {
+      const clean = handle
+        .replace(/^@/, '')
+        .replace(/https?:\/\//, '')
+        .replace('www.', '')
+        .replace(net.baseUrl + '/', '')
+        .trim()
+      if (clean) finalSocials[net.id] = `https://${net.baseUrl}/${clean}`
+    }
+  })
+
+  try {
+    const payload = {
+      name: form.name,
+      score: game.score,
+      memberId: form.memberId,
+      socials: finalSocials,
+      difficulty: game.difficulty
+    }
+
+    const res = await fetch('/api/submit_score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) throw new Error('Erreur sauvegarde')
+    const realTop10 = await res.json()
+
+    form.leaderboard = realTop10.map((entry: LeaderboardEntry) => ({
+      ...entry,
+      isUser: entry.name === form.name
+    }))
+
+    localStorage.setItem(
+      'norml_user_infos',
+      JSON.stringify({
+        name: form.name,
+        memberId: form.memberId,
+        socials: form.socials
+      })
+    )
+
+    form.isSaved = true
+  } catch (e) {
+    console.error(e)
+    ui.error = 'Erreur sauvegarde.'
+  } finally {
+    ui.isLoading = false
   }
-
-  form.leaderboard.push(entry)
-  form.leaderboard.sort((a, b) => b.score - a.score) // Tri immédiat
-  form.leaderboard = form.leaderboard.slice(0, 20) // Garde top 20
-
-  // Persistance LocalStorage
-  const existing = localStorage.getItem('norml_quiz_scores')
-  let history = existing ? JSON.parse(existing) : []
-  history.push(entry)
-  localStorage.setItem('norml_quiz_scores', JSON.stringify(history))
-
-  form.isSaved = true
 }
 
-// --- 8. HELPERS (COMPUTED) ---
-
-// Helper pour récupérer des tableaux depuis i18n
+// --- 10. HELPERS ---
 const getI18nArray = (key: string): any[] => {
-  const data = tm(key)
-  return Array.isArray(data)
-    ? data
-    : data && typeof data === 'object'
-      ? Object.values(data)
+  const d = tm(key)
+  return Array.isArray(d)
+    ? d
+    : d && typeof d === 'object'
+      ? Object.values(d)
       : []
 }
 
@@ -270,20 +309,24 @@ const optionLetters = computed(() => {
   return l.length ? l : ['A', 'B', 'C', 'D']
 })
 
+// Cible correctement "end.socials_config"
+const socialNetworks = computed(() => {
+  const nets = getI18nArray('end.socials_config')
+  return nets as SocialNetworkConfig[]
+})
+
 const currentQuestion = computed(
   () => game.questions[game.currentQIndex] || ({} as Question)
 )
-
 const isCorrect = computed(() => {
   if (
     game.selectedAnswer === null ||
     currentQuestion.value.correct === undefined
   )
     return false
-  const opt = game.shuffledOptions[game.selectedAnswer]
-  return opt && opt.originalIndex === currentQuestion.value.correct
+  const o = game.shuffledOptions[game.selectedAnswer]
+  return o && o.originalIndex === currentQuestion.value.correct
 })
-
 const isLastQuestion = computed(
   () => game.currentQIndex === game.questions.length - 1
 )
@@ -292,21 +335,16 @@ const progress = computed(() =>
     ? ((game.currentQIndex + 1) / game.questions.length) * 100
     : 0
 )
-
-// Gestion des classes CSS des boutons réponses
 const getOptionClass = (idx: number) => {
   if (ui.verifyingIdx === idx) return 'is-verifying'
   if (!game.hasAnswered || currentQuestion.value.correct === undefined)
     return ''
-
-  const opt = game.shuffledOptions[idx]
-  const correctIdx = currentQuestion.value.correct
-
-  if (opt.originalIndex === correctIdx) return 'correct'
+  const o = game.shuffledOptions[idx]
+  const c = currentQuestion.value.correct
+  if (o.originalIndex === c) return 'correct'
   if (game.selectedAnswer === idx) return 'wrong'
   return 'dimmed'
 }
-
 const rankInfo = computed(() => {
   const s = game.score
   if (s >= 18)
@@ -345,19 +383,16 @@ const rankInfo = computed(() => {
             {{ l.toUpperCase() }}
           </button>
         </div>
-
         <div class="score-display" v-if="game.status !== 'start'">
-          <span class="level-badge" :class="game.difficulty">
-            {{ t('levels.' + game.difficulty + '.label') }}
-          </span>
+          <span class="level-badge" :class="game.difficulty">{{
+            t('levels.' + game.difficulty + '.label')
+          }}</span>
           <span class="score-value"
             >{{ game.score }} / {{ game.questions.length }}</span
           >
         </div>
       </div>
-
       <div class="logo-area">{{ t('header.brand') }}</div>
-
       <div class="progress-bar" v-if="game.status === 'playing'">
         <div class="fill" :style="{ width: progress + '%' }"></div>
       </div>
@@ -367,7 +402,6 @@ const rankInfo = computed(() => {
       <div class="loader-spinner"></div>
       <p>{{ t('ui.loading') }}</p>
     </div>
-
     <div v-else-if="ui.error" class="screen error-screen">
       <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
       <p>{{ ui.error }}</p>
@@ -405,7 +439,6 @@ const rankInfo = computed(() => {
         <span class="category-tag">{{ currentQuestion.category }}</span>
         <h2>{{ currentQuestion.question }}</h2>
       </div>
-
       <div class="options-grid">
         <button
           v-for="(opt, index) in game.shuffledOptions"
@@ -415,21 +448,18 @@ const rankInfo = computed(() => {
           :disabled="game.hasAnswered || ui.isChecking"
           @click="selectAnswer(index)"
         >
-          <span v-if="ui.verifyingIdx === index" class="mini-loader"></span>
-          <span class="letter">{{ optionLetters[index] }}</span>
-          <span class="text">{{ opt.text }}</span>
-
+          <span v-if="ui.verifyingIdx === index" class="mini-loader"></span
+          ><span class="letter">{{ optionLetters[index] }}</span
+          ><span class="text">{{ opt.text }}</span>
           <span
             v-if="
               game.showPointPopup && game.selectedAnswer === index && isCorrect
             "
             class="point-popup"
+            >{{ t('game.point_popup') }}</span
           >
-            {{ t('game.point_popup') }}
-          </span>
         </button>
       </div>
-
       <div
         v-if="game.hasAnswered"
         class="feedback-box"
@@ -450,37 +480,83 @@ const rankInfo = computed(() => {
 
     <div v-else-if="game.status === 'end'" class="screen end-screen">
       <div class="score-circle">
-        <span class="label-xp">{{ t('end.score_label') }}</span>
-        <span class="big-score">{{ game.score }}</span>
-        <span class="total">/ {{ game.questions.length }}</span>
+        <span class="label-xp">{{ t('end.score_label') }}</span
+        ><span class="big-score">{{ game.score }}</span
+        ><span class="total">/ {{ game.questions.length }}</span>
       </div>
-
       <h3>{{ rankInfo.title }}</h3>
       <p class="rank-desc">{{ rankInfo.desc }}</p>
 
       <div v-if="!form.isSaved" class="save-form">
         <h4>{{ t('end.leaderboard_title') }}</h4>
-        <div class="input-group">
+
+        <div class="form-row main-row">
+          <span class="prefix-icon">👤</span>
           <input
             type="text"
             v-model="form.name"
             :placeholder="t('end.placeholder_name')"
             maxlength="15"
+            class="main-input"
           />
         </div>
-        <div class="input-group">
+
+        <div class="social-section" v-if="socialNetworks.length">
+          <div class="social-bar">
+            <button
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="icon-btn"
+              :class="{
+                active: visibleNetworks.includes(net.id) || form.socials[net.id]
+              }"
+              @click="toggleNetwork(net.id)"
+              :title="net.placeholder"
+            >
+              {{ net.icon }}
+            </button>
+          </div>
+
+          <transition-group name="slide">
+            <div
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="form-row social-row"
+              v-show="visibleNetworks.includes(net.id) || form.socials[net.id]"
+            >
+              <span class="prefix-icon social-icon">{{ net.icon }}</span>
+              <input
+                type="text"
+                v-model="form.socials[net.id]"
+                :placeholder="net.placeholder"
+              />
+
+              <button class="close-btn" @click="clearSocial(net.id)">×</button>
+            </div>
+          </transition-group>
+        </div>
+
+        <div class="form-row secondary-row">
+          <span class="prefix-icon">#</span>
           <input
             type="text"
             v-model="form.memberId"
             :placeholder="t('end.placeholder_id')"
           />
         </div>
-        <button class="btn-primary" @click="submitScore" :disabled="!form.name">
-          {{ t('end.btn_save') }}
-        </button>
-        <button class="btn-skip" @click="game.status = 'start'">
-          {{ t('end.btn_skip') }}
-        </button>
+
+        <div class="actions-row">
+          <button
+            class="btn-primary"
+            @click="submitScore"
+            :disabled="!form.name || ui.isLoading"
+          >
+            {{ ui.isLoading ? '...' : t('end.btn_save') }}
+          </button>
+          <button class="btn-skip" @click="game.status = 'start'">
+            {{ t('end.btn_skip') }}
+          </button>
+        </div>
       </div>
 
       <div v-else class="leaderboard-wrapper">
@@ -506,10 +582,26 @@ const rankInfo = computed(() => {
                 >
                   <td class="rank">{{ index + 1 }}</td>
                   <td class="name">
-                    {{ entry.name }}
-                    <span v-if="entry.memberId" class="badge-member"
-                      >#{{ entry.memberId }}</span
+                    <div class="name-row">
+                      <span>{{ entry.name }}</span>
+                      <span v-if="entry.memberId" class="badge-member"
+                        >#{{ entry.memberId }}</span
+                      >
+                    </div>
+                    <div
+                      class="social-icons"
+                      v-if="entry.socials && socialNetworks.length"
                     >
+                      <template v-for="net in socialNetworks" :key="net.id">
+                        <a
+                          v-if="entry.socials[net.id]"
+                          :href="entry.socials[net.id]"
+                          target="_blank"
+                          class="s-lnk"
+                          >{{ net.icon }}</a
+                        >
+                      </template>
+                    </div>
                   </td>
                   <td class="score-val">{{ entry.score }}</td>
                 </tr>
@@ -568,7 +660,6 @@ const rankInfo = computed(() => {
     margin-bottom: 15px;
   }
 }
-
 .lang-switcher {
   display: flex;
   gap: 15px;
@@ -589,7 +680,6 @@ const rankInfo = computed(() => {
     }
   }
 }
-
 .score-display {
   background: $prohib-black;
   color: $highlight-green;
@@ -618,7 +708,6 @@ const rankInfo = computed(() => {
     font-weight: bold;
   }
 }
-
 .progress-bar {
   width: 100%;
   height: 6px;
@@ -632,7 +721,7 @@ const rankInfo = computed(() => {
   }
 }
 
-/* ECRANS GÉNÉRAUX */
+/* ECRANS */
 .screen {
   width: 100%;
 }
@@ -738,7 +827,6 @@ const rankInfo = computed(() => {
     line-height: 1.3;
   }
 }
-
 .options-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -828,7 +916,6 @@ const rankInfo = computed(() => {
     opacity: 0.6;
   }
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -903,7 +990,7 @@ const rankInfo = computed(() => {
   }
 }
 
-/* FIN */
+/* FIN & FORM */
 .end-screen {
   .score-circle {
     width: 120px;
@@ -944,43 +1031,181 @@ const rankInfo = computed(() => {
   }
 }
 
-/* FORMULAIRE & TABLE */
+/* CONTAINER FORM */
 .save-form {
   width: 100%;
   max-width: 400px;
   background: white;
-  padding: 20px;
+  padding: 25px;
   border: 2px solid $prohib-black;
+  margin: auto;
   margin-bottom: 20px;
   text-align: left;
-  margin: auto;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.05);
   h4 {
-    margin: 0 0 15px 0;
+    margin: 0 0 20px 0;
     text-transform: uppercase;
     font-size: 1rem;
+    letter-spacing: 1px;
+    text-align: center;
   }
-  .input-group {
-    margin-bottom: 15px;
-    input {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #ccc;
-      font-family: $font-main;
-      font-size: 1rem;
-      background: #f9f9f9;
-      &:focus {
-        border-color: $reg-green;
-        outline: none;
-        background: white;
-      }
+}
+
+/* CHAMPS GENERIQUES */
+.form-row {
+  display: flex;
+  align-items: center;
+  background: #f9f9f9;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  &:focus-within {
+    border-color: $prohib-black;
+    background: white;
+  }
+  .prefix-icon {
+    width: 40px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    border-right: 1px solid #eee;
+    flex-shrink: 0;
+  }
+  input {
+    width: 100%;
+    padding: 12px 10px;
+    border: none;
+    background: transparent;
+    font-family: $font-main;
+    font-size: 0.95rem;
+    outline: none;
+    color: $prohib-black;
+    &::placeholder {
+      color: #aaa;
+      font-weight: normal;
     }
   }
+}
+.main-row {
+  border-color: $prohib-black;
+  .main-input {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+}
+
+/* SOCIAL SECTION */
+.social-section {
+  margin: 20px 0;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #ddd;
+  .label-tiny {
+    font-size: 0.7rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    display: block;
+  }
+}
+.social-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid #eee;
+    background: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    grayscale: 1;
+    opacity: 0.7;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    &:hover {
+      transform: scale(1.1);
+      border-color: #ccc;
+      opacity: 1;
+    }
+    &.active {
+      border-color: $prohib-black;
+      background: $prohib-black;
+      color: white;
+      opacity: 1;
+      transform: scale(1.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+.social-row {
+  margin-bottom: 8px;
+  animation: slideIn 0.25s ease-out;
+  border-color: #eee;
+  .social-icon {
+    font-size: 1rem;
+    width: 36px;
+  }
+  input {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+  .close-btn {
+    width: 30px;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: #ccc;
+    cursor: pointer;
+    &:hover {
+      color: $error-red;
+    }
+  }
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* TRANSITIONS VUE */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ACTIONS */
+.actions-row {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .btn-skip {
   background: transparent;
   border: none;
   color: $prohib-black;
-  margin-top: 15px;
   cursor: pointer;
   font-family: $font-main;
   font-size: 0.85rem;
@@ -993,6 +1218,7 @@ const rankInfo = computed(() => {
   }
 }
 
+/* LEADERBOARD */
 .leaderboard-wrapper {
   width: 100%;
   display: flex;
@@ -1055,6 +1281,25 @@ const rankInfo = computed(() => {
       border-radius: 4px;
       margin-left: 5px;
       color: #666;
+    }
+    .name-row {
+      display: flex;
+      align-items: center;
+    }
+    .social-icons {
+      display: flex;
+      gap: 5px;
+      margin-top: 3px;
+    }
+    .s-lnk {
+      text-decoration: none;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      transition: transform 0.2s;
+      &:hover {
+        transform: scale(1.2);
+        opacity: 1;
+      }
     }
     &.top-3 .rank {
       color: $gold;
