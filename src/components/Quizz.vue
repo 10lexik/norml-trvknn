@@ -3,12 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 
-// Import des JSONs LOCAUX (Pour l'interface uniquement)
+// Imports locaux (Sécurité : si l'API échoue, on a toujours ça)
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
 
-// --- 1. INTERFACES ---
+// --- INTERFACES ---
 interface Question {
   _id: string
   category: string
@@ -30,20 +30,17 @@ interface ShuffledOption {
   originalIndex: number
 }
 
-// --- 2. CONFIGURATION ---
+// --- CONFIGURATION ---
 const LEVEL_IDS = ['easy', 'medium', 'hard']
-
-// --- 3. ÉTATS (REFS) ---
 const { t, tm, locale, setLocaleMessage } = useI18n()
 
-// Chargement & Données
+// --- ÉTATS ---
 const isLoading = ref(false)
 const isChecking = ref(false)
-// NOUVEAU : Stocke l'index visuel du bouton en cours de vérification réseau
-const verifyingIndex = ref<number | null>(null)
+const verifyingIndex = ref<number | null>(null) // Pour le loader bouton
 const apiError = ref<string | null>(null)
 
-// Interface : on charge les fichiers locaux par défaut
+// Initialisation avec les fichiers locaux (Fallback immédiat)
 const availableLocales = ['fr', 'en', 'es']
 setLocaleMessage('fr', fr)
 setLocaleMessage('en', en)
@@ -67,8 +64,7 @@ const scoreSaved = ref(false)
 const leaderboard = ref<LeaderboardEntry[]>([])
 const showPointPopup = ref(false)
 
-// --- 4. COMPUTED DYNAMIQUES ---
-
+// --- COMPUTED HELPERS ---
 const getI18nArray = (key: string): any[] => {
   const data = tm(key)
   if (Array.isArray(data)) return data
@@ -85,10 +81,34 @@ const mockData = computed(() => {
   return getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
 })
 
-// --- 5. CYCLE DE VIE ---
-onMounted(() => {
+// --- LOGIQUE CMS (HEADLESS) ---
+const loadRemoteContent = async () => {
+  try {
+    // On appelle notre nouvelle API
+    const res = await fetch(`/api/get_content?lang=${locale.value}`)
+    if (!res.ok) return // Si erreur (ou hors ligne), on garde le local
+
+    const remoteData = await res.json()
+
+    // Si on reçoit des données, on met à jour les textes en live
+    if (remoteData && Object.keys(remoteData).length > 0) {
+      setLocaleMessage(locale.value, remoteData)
+    }
+  } catch (e) {
+    console.warn(
+      'Mode hors-ligne ou erreur CMS : utilisation des textes locaux.'
+    )
+  }
+}
+
+// --- CYCLE DE VIE ---
+onMounted(async () => {
+  // 1. On lance l'hydratation CMS (non bloquant, mais rapide)
+  await loadRemoteContent()
+
+  // 2. Gestion du Leaderboard LocalStorage
   const savedScores = localStorage.getItem('norml_quiz_scores')
-  let initialData = [...mockData.value]
+  let initialData = [...mockData.value] // mockData se mettra à jour si le CMS change
 
   if (savedScores) {
     try {
@@ -97,7 +117,7 @@ onMounted(() => {
         initialData = [...initialData, ...parsed]
       }
     } catch (e) {
-      console.error('Erreur lecture localStorage', e)
+      console.error('Erreur localStorage', e)
     }
   }
 
@@ -105,10 +125,12 @@ onMounted(() => {
   sortLeaderboard()
 })
 
-// --- 6. LOGIQUE DU JEU ---
+// --- ACTIONS JEU ---
 
-const setLang = (l: string) => {
+const setLang = async (l: string) => {
   locale.value = l
+  // Si on change de langue, on recharge les textes CMS correspondants
+  await loadRemoteContent()
 }
 
 const prepareNewQuestion = () => {
@@ -133,6 +155,7 @@ const startGame = async (difficulty: string) => {
   apiError.value = null
 
   try {
+    // start_game utilise déjà MongoDB pour les questions
     const res = await fetch(
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
@@ -157,13 +180,11 @@ const startGame = async (difficulty: string) => {
   }
 }
 
-// MISE A JOUR : Vérification avec feedback immédiat
 const selectAnswer = async (visualIndex: number) => {
-  // On bloque si déjà répondu ou si une requête est en cours
   if (hasAnswered.value || isChecking.value) return
 
   isChecking.value = true
-  verifyingIndex.value = visualIndex // Déclenche l'état visuel "loading" sur le bouton
+  verifyingIndex.value = visualIndex
   selectedAnswer.value = visualIndex
 
   const selectedOptionObj = currentShuffledOptions.value[visualIndex]
@@ -188,7 +209,6 @@ const selectAnswer = async (visualIndex: number) => {
 
     const result = await res.json()
 
-    // Une fois la réponse reçue, on peut afficher le vrai résultat
     if (result.correct) {
       score.value++
       showPointPopup.value = true
@@ -201,7 +221,7 @@ const selectAnswer = async (visualIndex: number) => {
     console.error('Erreur vérification', e)
   } finally {
     isChecking.value = false
-    verifyingIndex.value = null // Fin du chargement visuel
+    verifyingIndex.value = null
   }
 }
 
@@ -236,6 +256,7 @@ const resetGame = () => {
 
 const submitScore = () => {
   if (!userName.value) return
+  // NOTE: Ici nous connecterons bientôt la vraie sauvegarde API
   const newEntry: LeaderboardEntry = {
     name: userName.value,
     score: score.value,
@@ -262,7 +283,7 @@ const reloadPage = () => {
   window.location.reload()
 }
 
-// --- 7. COMPUTED HELPERS ---
+// --- COMPUTED UI ---
 const currentQuestion = computed(
   () => questions.value[currentQIndex.value] || ({} as Question)
 )
@@ -273,7 +294,6 @@ const isCorrect = computed(() => {
     currentQuestion.value.correct === undefined
   )
     return false
-
   const selectedObj = currentShuffledOptions.value[selectedAnswer.value]
   return (
     selectedObj && selectedObj.originalIndex === currentQuestion.value.correct
@@ -290,10 +310,8 @@ const progress = computed(() => {
 })
 
 const getOptionClass = (visualIndex: number) => {
-  // Priorité 1: Si c'est le bouton en cours de vérification réseau
   if (verifyingIndex.value === visualIndex) return 'is-verifying'
 
-  // Priorité 2: Si pas encore de réponse validée, rien
   if (!hasAnswered.value || currentQuestion.value.correct === undefined)
     return ''
 
