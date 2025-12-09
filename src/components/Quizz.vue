@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 
-// Imports locaux (Sécurité : si l'API échoue, on a toujours ça)
+// --- 1. IMPORTS & FALLBACKS ---
+// On garde les fichiers locaux comme sécurité si le réseau plante
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
 
-// --- INTERFACES ---
+// --- 2. TYPES & INTERFACES ---
 interface Question {
   _id: string
   category: string
@@ -25,177 +26,149 @@ interface LeaderboardEntry {
   isUser?: boolean
 }
 
-interface ShuffledOption {
-  text: string
-  originalIndex: number
-}
-
-// --- CONFIGURATION ---
+// --- 3. CONFIGURATION ---
 const LEVEL_IDS = ['easy', 'medium', 'hard']
 const { t, tm, locale, setLocaleMessage } = useI18n()
 
-// --- ÉTATS ---
-const isLoading = ref(false)
-const isChecking = ref(false)
-const verifyingIndex = ref<number | null>(null) // Pour le loader bouton
-const apiError = ref<string | null>(null)
-
-// Initialisation avec les fichiers locaux (Fallback immédiat)
 const availableLocales = ['fr', 'en', 'es']
+
+// Initialisation i18n avec les données locales
 setLocaleMessage('fr', fr)
 setLocaleMessage('en', en)
 setLocaleMessage('es', es)
 
-// Jeu
-const gameState = ref<'start' | 'playing' | 'end'>('start')
-const currentQIndex = ref(0)
-const score = ref(0)
-const selectedAnswer = ref<number | null>(null)
-const hasAnswered = ref(false)
-const selectedDifficulty = ref<string>('medium')
+// --- 4. ÉTATS DU JEU (REACTIVE) ---
 
-const questions = ref<Question[]>([])
-const currentShuffledOptions = ref<ShuffledOption[]>([])
-
-// Leaderboard
-const userName = ref('')
-const userMemberId = ref('')
-const scoreSaved = ref(false)
-const leaderboard = ref<LeaderboardEntry[]>([])
-const showPointPopup = ref(false)
-
-// --- COMPUTED HELPERS ---
-const getI18nArray = (key: string): any[] => {
-  const data = tm(key)
-  if (Array.isArray(data)) return data
-  if (data && typeof data === 'object') return Object.values(data)
-  return []
-}
-
-const optionLetters = computed(() => {
-  const letters = getI18nArray('game.letters')
-  return letters.length > 0 ? letters : ['A', 'B', 'C', 'D']
+// État de l'interface (Loading, Erreurs, Feedback visuel)
+const ui = reactive({
+  isLoading: false, // Chargement global (au début)
+  isChecking: false, // Empêche le double-clic
+  verifyingIdx: null as number | null, // Index du bouton qui "tourne"
+  error: null as string | null // Message d'erreur API
 })
 
-const mockData = computed(() => {
-  return getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
+// État de la partie en cours
+const game = reactive({
+  status: 'start' as 'start' | 'playing' | 'end',
+  score: 0,
+  currentQIndex: 0,
+  selectedAnswer: null as number | null,
+  hasAnswered: false,
+  difficulty: 'medium',
+  questions: [] as Question[],
+  shuffledOptions: [] as { text: string; originalIndex: number }[],
+  showPointPopup: false
 })
 
-// --- LOGIQUE CMS (HEADLESS) ---
-const loadRemoteContent = async () => {
+// État du Leaderboard & Formulaire
+const form = reactive({
+  name: '',
+  memberId: '',
+  isSaved: false,
+  leaderboard: [] as LeaderboardEntry[]
+})
+
+// --- 5. LOGIQUE "HEADLESS CMS" ---
+// Récupère les textes (Titres, Menus) depuis MongoDB sans les questions
+const hydrateContent = async () => {
   try {
-    // On appelle notre nouvelle API
     const res = await fetch(`/api/get_content?lang=${locale.value}`)
-    if (!res.ok) return // Si erreur (ou hors ligne), on garde le local
-
-    const remoteData = await res.json()
-
-    // Si on reçoit des données, on met à jour les textes en live
-    if (remoteData && Object.keys(remoteData).length > 0) {
-      setLocaleMessage(locale.value, remoteData)
+    if (res.ok) {
+      const remoteData = await res.json()
+      // Si données reçues, on écrase les textes locaux
+      if (remoteData && Object.keys(remoteData).length > 0) {
+        setLocaleMessage(locale.value, remoteData)
+      }
     }
   } catch (e) {
-    console.warn(
-      'Mode hors-ligne ou erreur CMS : utilisation des textes locaux.'
-    )
+    // Silencieux : on reste sur le fichier local en cas d'erreur
   }
 }
 
-// --- CYCLE DE VIE ---
+// --- 6. CYCLE DE VIE ---
 onMounted(async () => {
-  // 1. On lance l'hydratation CMS (non bloquant, mais rapide)
-  await loadRemoteContent()
+  // 1. Charger les textes CMS (Non bloquant)
+  hydrateContent()
 
-  // 2. Gestion du Leaderboard LocalStorage
-  const savedScores = localStorage.getItem('norml_quiz_scores')
-  let initialData = [...mockData.value] // mockData se mettra à jour si le CMS change
+  // 2. Charger le leaderboard local
+  const saved = localStorage.getItem('norml_quiz_scores')
 
-  if (savedScores) {
+  // On récupère les mocks depuis le JSON (local ou distant)
+  const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
+  let data = [...mocks]
+
+  if (saved) {
     try {
-      const parsed = JSON.parse(savedScores) as LeaderboardEntry[]
-      if (Array.isArray(parsed)) {
-        initialData = [...initialData, ...parsed]
-      }
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed)) data = [...data, ...parsed]
     } catch (e) {
-      console.error('Erreur localStorage', e)
+      console.error(e)
     }
   }
 
-  leaderboard.value = initialData
-  sortLeaderboard()
+  form.leaderboard = data.sort((a, b) => b.score - a.score).slice(0, 20)
 })
 
-// --- ACTIONS JEU ---
+// --- 7. ACTIONS DU JEU ---
 
+// Changement de langue
 const setLang = async (l: string) => {
   locale.value = l
-  // Si on change de langue, on recharge les textes CMS correspondants
-  await loadRemoteContent()
+  await hydrateContent() // On recharge le contenu CMS pour la nouvelle langue
 }
 
-const prepareNewQuestion = () => {
-  const q = questions.value[currentQIndex.value]
-  if (!q) return
-
-  const opts = q.options.map((opt, idx) => ({
-    text: opt,
-    originalIndex: idx
-  }))
-
-  currentShuffledOptions.value = opts.sort(() => 0.5 - Math.random())
-}
-
+// Lancer une partie
 const startGame = async (difficulty: string) => {
-  isLoading.value = true
-  selectedDifficulty.value = difficulty
-  score.value = 0
-  currentQIndex.value = 0
-  scoreSaved.value = false
-  userName.value = ''
-  apiError.value = null
+  ui.isLoading = true
+  ui.error = null
+
+  // Reset des états
+  game.difficulty = difficulty
+  game.score = 0
+  game.currentQIndex = 0
+  form.isSaved = false
+  form.name = ''
 
   try {
-    // start_game utilise déjà MongoDB pour les questions
+    // Appel API pour récupérer les questions (MongoDB)
     const res = await fetch(
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
-
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
 
-    const data = (await res.json()) as Question[]
+    const data = await res.json()
+    if (!data || data.length === 0) throw new Error(t('errors.no_questions'))
 
-    if (!data || data.length === 0) {
-      throw new Error(t('errors.no_questions'))
-    }
-
-    questions.value = data
+    game.questions = data
     prepareNewQuestion()
     resetStep()
-    gameState.value = 'playing'
+    game.status = 'playing'
   } catch (e: any) {
-    console.error(e)
-    apiError.value = t('errors.server_unavailable')
+    ui.error = t('errors.server_unavailable')
   } finally {
-    isLoading.value = false
+    ui.isLoading = false
   }
 }
 
+// Préparer la question (mélanger les options)
+const prepareNewQuestion = () => {
+  const q = game.questions[game.currentQIndex]
+  if (!q) return
+  game.shuffledOptions = q.options
+    .map((opt, idx) => ({ text: opt, originalIndex: idx }))
+    .sort(() => 0.5 - Math.random())
+}
+
+// Vérifier une réponse (Appel API sécurisé)
 const selectAnswer = async (visualIndex: number) => {
-  if (hasAnswered.value || isChecking.value) return
+  if (game.hasAnswered || ui.isChecking) return
 
-  isChecking.value = true
-  verifyingIndex.value = visualIndex
-  selectedAnswer.value = visualIndex
+  ui.isChecking = true
+  ui.verifyingIdx = visualIndex
+  game.selectedAnswer = visualIndex
 
-  const selectedOptionObj = currentShuffledOptions.value[visualIndex]
-  const currentQ = questions.value[currentQIndex.value]
-
-  if (!currentQ || !selectedOptionObj) {
-    console.error(t('errors.internal'))
-    isChecking.value = false
-    verifyingIndex.value = null
-    return
-  }
+  const currentQ = game.questions[game.currentQIndex]
+  const selectedOpt = game.shuffledOptions[visualIndex]
 
   try {
     const res = await fetch('/api/check_answer', {
@@ -203,143 +176,153 @@ const selectAnswer = async (visualIndex: number) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         questionId: currentQ._id,
-        userIndex: selectedOptionObj.originalIndex
+        userIndex: selectedOpt.originalIndex
       })
     })
 
     const result = await res.json()
 
+    // Mise à jour du score et de la question (révélation)
     if (result.correct) {
-      score.value++
-      showPointPopup.value = true
+      game.score++
+      game.showPointPopup = true
     }
-
     currentQ.correct = result.correctIndex
     currentQ.explanation = result.explanation
-    hasAnswered.value = true
+    game.hasAnswered = true
   } catch (e) {
-    console.error('Erreur vérification', e)
+    console.error(e)
   } finally {
-    isChecking.value = false
-    verifyingIndex.value = null
+    ui.isChecking = false
+    ui.verifyingIdx = null
   }
 }
 
+// Passer à la suite
 const nextQuestion = () => {
-  if (currentQIndex.value === questions.value.length - 1) {
-    gameState.value = 'end'
-    if (score.value >= 15) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#297534', '#4CAF50', '#E4E9D5']
-      })
-    }
+  if (game.currentQIndex === game.questions.length - 1) {
+    endGame()
   } else {
-    currentQIndex.value++
+    game.currentQIndex++
     prepareNewQuestion()
     resetStep()
   }
 }
 
 const resetStep = () => {
-  selectedAnswer.value = null
-  hasAnswered.value = false
-  showPointPopup.value = false
-  verifyingIndex.value = null
+  game.selectedAnswer = null
+  game.hasAnswered = false
+  game.showPointPopup = false
+  ui.verifyingIdx = null
 }
 
-const resetGame = () => {
-  gameState.value = 'start'
+const endGame = () => {
+  game.status = 'end'
+  // Confettis si bon score (> 75%)
+  if (game.score >= game.questions.length * 0.75) {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#297534', '#4CAF50', '#E4E9D5']
+    })
+  }
 }
 
+// Sauvegarder le score (Local pour l'instant, bientôt API)
 const submitScore = () => {
-  if (!userName.value) return
-  // NOTE: Ici nous connecterons bientôt la vraie sauvegarde API
-  const newEntry: LeaderboardEntry = {
-    name: userName.value,
-    score: score.value,
-    memberId: userMemberId.value,
+  if (!form.name) return
+
+  const entry: LeaderboardEntry = {
+    name: form.name,
+    score: game.score,
+    memberId: form.memberId,
     isUser: true
   }
-  leaderboard.value.push(newEntry)
-  sortLeaderboard()
 
-  const existingData = localStorage.getItem('norml_quiz_scores')
-  let userHistory = existingData ? JSON.parse(existingData) : []
-  userHistory.push(newEntry)
-  localStorage.setItem('norml_quiz_scores', JSON.stringify(userHistory))
+  form.leaderboard.push(entry)
+  form.leaderboard.sort((a, b) => b.score - a.score) // Tri immédiat
+  form.leaderboard = form.leaderboard.slice(0, 20) // Garde top 20
 
-  scoreSaved.value = true
+  // Persistance LocalStorage
+  const existing = localStorage.getItem('norml_quiz_scores')
+  let history = existing ? JSON.parse(existing) : []
+  history.push(entry)
+  localStorage.setItem('norml_quiz_scores', JSON.stringify(history))
+
+  form.isSaved = true
 }
 
-const sortLeaderboard = () => {
-  leaderboard.value.sort((a, b) => b.score - a.score)
-  leaderboard.value = leaderboard.value.slice(0, 20)
+// --- 8. HELPERS (COMPUTED) ---
+
+// Helper pour récupérer des tableaux depuis i18n
+const getI18nArray = (key: string): any[] => {
+  const data = tm(key)
+  return Array.isArray(data)
+    ? data
+    : data && typeof data === 'object'
+      ? Object.values(data)
+      : []
 }
 
-const reloadPage = () => {
-  window.location.reload()
-}
+const optionLetters = computed(() => {
+  const l = getI18nArray('game.letters')
+  return l.length ? l : ['A', 'B', 'C', 'D']
+})
 
-// --- COMPUTED UI ---
 const currentQuestion = computed(
-  () => questions.value[currentQIndex.value] || ({} as Question)
+  () => game.questions[game.currentQIndex] || ({} as Question)
 )
 
 const isCorrect = computed(() => {
   if (
-    selectedAnswer.value === null ||
+    game.selectedAnswer === null ||
     currentQuestion.value.correct === undefined
   )
     return false
-  const selectedObj = currentShuffledOptions.value[selectedAnswer.value]
-  return (
-    selectedObj && selectedObj.originalIndex === currentQuestion.value.correct
-  )
+  const opt = game.shuffledOptions[game.selectedAnswer]
+  return opt && opt.originalIndex === currentQuestion.value.correct
 })
 
 const isLastQuestion = computed(
-  () => currentQIndex.value === questions.value.length - 1
+  () => game.currentQIndex === game.questions.length - 1
+)
+const progress = computed(() =>
+  game.questions.length
+    ? ((game.currentQIndex + 1) / game.questions.length) * 100
+    : 0
 )
 
-const progress = computed(() => {
-  if (questions.value.length === 0) return 0
-  return ((currentQIndex.value + 1) / questions.value.length) * 100
-})
-
-const getOptionClass = (visualIndex: number) => {
-  if (verifyingIndex.value === visualIndex) return 'is-verifying'
-
-  if (!hasAnswered.value || currentQuestion.value.correct === undefined)
+// Gestion des classes CSS des boutons réponses
+const getOptionClass = (idx: number) => {
+  if (ui.verifyingIdx === idx) return 'is-verifying'
+  if (!game.hasAnswered || currentQuestion.value.correct === undefined)
     return ''
 
-  const optionObj = currentShuffledOptions.value[visualIndex]
-  const correctIndexOriginal = currentQuestion.value.correct
+  const opt = game.shuffledOptions[idx]
+  const correctIdx = currentQuestion.value.correct
 
-  if (optionObj && optionObj.originalIndex === correctIndexOriginal)
-    return 'correct'
-
-  if (
-    selectedAnswer.value === visualIndex &&
-    optionObj &&
-    optionObj.originalIndex !== correctIndexOriginal
-  )
-    return 'wrong'
+  if (opt.originalIndex === correctIdx) return 'correct'
+  if (game.selectedAnswer === idx) return 'wrong'
   return 'dimmed'
 }
 
-const rankTitle = computed(() => {
-  if (score.value >= 18) return t('end.ranks.expert.title')
-  if (score.value >= 10) return t('end.ranks.intermediate.title')
-  return t('end.ranks.beginner.title')
-})
-
-const rankMessage = computed(() => {
-  if (score.value >= 18) return t('end.ranks.expert.desc')
-  if (score.value >= 10) return t('end.ranks.intermediate.desc')
-  return t('end.ranks.beginner.desc')
+const rankInfo = computed(() => {
+  const s = game.score
+  if (s >= 18)
+    return {
+      title: t('end.ranks.expert.title'),
+      desc: t('end.ranks.expert.desc')
+    }
+  if (s >= 10)
+    return {
+      title: t('end.ranks.intermediate.title'),
+      desc: t('end.ranks.intermediate.desc')
+    }
+  return {
+    title: t('end.ranks.beginner.title'),
+    desc: t('end.ranks.beginner.desc')
+  }
 })
 </script>
 
@@ -350,7 +333,7 @@ const rankMessage = computed(() => {
         <div
           class="lang-switcher"
           :style="{
-            visibility: gameState === 'start' ? 'visible' : 'hidden'
+            visibility: game.status === 'start' ? 'visible' : 'hidden'
           }"
         >
           <button
@@ -363,201 +346,187 @@ const rankMessage = computed(() => {
           </button>
         </div>
 
-        <div class="score-display" v-if="gameState !== 'start'">
-          <span class="level-badge" :class="selectedDifficulty">
-            {{ t('levels.' + selectedDifficulty + '.label') }}
+        <div class="score-display" v-if="game.status !== 'start'">
+          <span class="level-badge" :class="game.difficulty">
+            {{ t('levels.' + game.difficulty + '.label') }}
           </span>
-          <span class="score-value">{{ score }} / {{ questions.length }}</span>
+          <span class="score-value"
+            >{{ game.score }} / {{ game.questions.length }}</span
+          >
         </div>
       </div>
 
       <div class="logo-area">{{ t('header.brand') }}</div>
 
-      <div class="progress-bar" v-if="gameState === 'playing'">
+      <div class="progress-bar" v-if="game.status === 'playing'">
         <div class="fill" :style="{ width: progress + '%' }"></div>
       </div>
     </header>
 
-    <div v-if="isLoading" class="screen loading-screen">
+    <div v-if="ui.isLoading" class="screen loading-screen">
       <div class="loader-spinner"></div>
       <p>{{ t('ui.loading') }}</p>
     </div>
 
-    <div v-else-if="apiError" class="screen error-screen">
+    <div v-else-if="ui.error" class="screen error-screen">
       <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
-      <p>{{ apiError }}</p>
-      <button class="btn-primary" @click="reloadPage">
+      <p>{{ ui.error }}</p>
+      <button class="btn-primary" @click="() => window.location.reload()">
         {{ t('ui.btn_retry') }}
       </button>
     </div>
 
-    <template v-else>
-      <div v-if="gameState === 'start'" class="screen start-screen">
-        <h1>{{ t('start.title') }}</h1>
-        <p class="subtitle">{{ t('start.subtitle') }}</p>
-
-        <div class="icon-hero">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"
-            />
-          </svg>
-        </div>
-
-        <div class="difficulty-selector">
-          <p>{{ t('start.choose_level') }}</p>
-          <button
-            v-for="id in LEVEL_IDS"
-            :key="id"
-            class="btn-diff"
-            :class="id"
-            @click="startGame(id)"
-          >
-            {{ t('levels.' + id + '.icon') }}
-            {{ t('levels.' + id + '.label') }}
-          </button>
-        </div>
+    <div v-else-if="game.status === 'start'" class="screen start-screen">
+      <h1>{{ t('start.title') }}</h1>
+      <p class="subtitle">{{ t('start.subtitle') }}</p>
+      <div class="icon-hero">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18L12 21L19 17.18V13.18L12 17L5 13.18Z"
+          />
+        </svg>
       </div>
-
-      <div v-if="gameState === 'playing'" class="screen game-screen">
-        <div class="question-card">
-          <span class="category-tag">{{ currentQuestion.category }}</span>
-          <h2>{{ currentQuestion.question }}</h2>
-        </div>
-
-        <div class="options-grid">
-          <button
-            v-for="(optObj, index) in currentShuffledOptions"
-            :key="index"
-            class="btn-option"
-            :class="getOptionClass(index)"
-            @click="selectAnswer(index)"
-            :disabled="hasAnswered || isChecking"
-          >
-            <span v-if="verifyingIndex === index" class="mini-loader"></span>
-
-            <span class="letter">{{ optionLetters[index] }}</span>
-            <span class="text">{{ optObj.text }}</span>
-
-            <span
-              v-if="showPointPopup && selectedAnswer === index && isCorrect"
-              class="point-popup"
-            >
-              {{ t('game.point_popup') }}
-            </span>
-          </button>
-        </div>
-
-        <div
-          v-if="hasAnswered"
-          class="feedback-box"
-          :class="isCorrect ? 'success' : 'error'"
+      <div class="difficulty-selector">
+        <p>{{ t('start.choose_level') }}</p>
+        <button
+          v-for="id in LEVEL_IDS"
+          :key="id"
+          class="btn-diff"
+          :class="id"
+          @click="startGame(id)"
         >
-          <div class="feedback-header">
-            {{ isCorrect ? t('game.correct') : t('game.wrong') }}
-          </div>
-          <div class="feedback-content">
-            <strong>{{ t('game.argument_label') }}</strong>
-            <p>{{ currentQuestion.explanation }}</p>
-          </div>
-          <button class="btn-next" @click="nextQuestion">
-            {{ isLastQuestion ? t('game.btn_results') : t('game.btn_next') }}
-          </button>
-        </div>
+          {{ t('levels.' + id + '.icon') }} {{ t('levels.' + id + '.label') }}
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="game.status === 'playing'" class="screen game-screen">
+      <div class="question-card">
+        <span class="category-tag">{{ currentQuestion.category }}</span>
+        <h2>{{ currentQuestion.question }}</h2>
       </div>
 
-      <div v-if="gameState === 'end'" class="screen end-screen">
-        <div class="score-circle">
-          <span class="label-xp">{{ t('end.score_label') }}</span>
-          <span class="big-score">{{ score }}</span>
-          <span class="total">/ {{ questions.length }}</span>
-        </div>
+      <div class="options-grid">
+        <button
+          v-for="(opt, index) in game.shuffledOptions"
+          :key="index"
+          class="btn-option"
+          :class="getOptionClass(index)"
+          :disabled="game.hasAnswered || ui.isChecking"
+          @click="selectAnswer(index)"
+        >
+          <span v-if="ui.verifyingIdx === index" class="mini-loader"></span>
+          <span class="letter">{{ optionLetters[index] }}</span>
+          <span class="text">{{ opt.text }}</span>
 
-        <h3>{{ rankTitle }}</h3>
-        <p class="rank-desc">{{ rankMessage }}</p>
-
-        <div v-if="!scoreSaved" class="save-form">
-          <h4>{{ t('end.leaderboard_title') }}</h4>
-
-          <div class="input-group">
-            <input
-              type="text"
-              v-model="userName"
-              :placeholder="t('end.placeholder_name')"
-              maxlength="15"
-            />
-          </div>
-          <div class="input-group">
-            <input
-              type="text"
-              v-model="userMemberId"
-              :placeholder="t('end.placeholder_id')"
-            />
-          </div>
-
-          <button
-            class="btn-primary"
-            @click="submitScore"
-            :disabled="!userName"
+          <span
+            v-if="
+              game.showPointPopup && game.selectedAnswer === index && isCorrect
+            "
+            class="point-popup"
           >
-            {{ t('end.btn_save') }}
-          </button>
+            {{ t('game.point_popup') }}
+          </span>
+        </button>
+      </div>
 
-          <button class="btn-skip" @click="resetGame">
-            {{ t('end.btn_skip') }}
-          </button>
+      <div
+        v-if="game.hasAnswered"
+        class="feedback-box"
+        :class="isCorrect ? 'success' : 'error'"
+      >
+        <div class="feedback-header">
+          {{ isCorrect ? t('game.correct') : t('game.wrong') }}
         </div>
+        <div class="feedback-content">
+          <strong>{{ t('game.argument_label') }}</strong>
+          <p>{{ currentQuestion.explanation }}</p>
+        </div>
+        <button class="btn-next" @click="nextQuestion">
+          {{ isLastQuestion ? t('game.btn_results') : t('game.btn_next') }}
+        </button>
+      </div>
+    </div>
 
-        <div v-else class="leaderboard-wrapper">
-          <div class="leaderboard-container">
-            <h4>
-              {{ t('end.top_10') }}
-              {{ t('levels.' + selectedDifficulty + '.label').toUpperCase() }}
-            </h4>
-            <div class="leaderboard-scroll">
-              <table class="leaderboard-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('end.col_rank') }}</th>
-                    <th>{{ t('end.col_name') }}</th>
-                    <th>{{ t('end.col_score') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="(entry, index) in leaderboard"
-                    :key="index"
-                    :class="{
-                      'current-user': entry.isUser,
-                      'top-3': index < 3
-                    }"
-                  >
-                    <td class="rank">{{ index + 1 }}</td>
-                    <td class="name">
-                      {{ entry.name }}
-                      <span v-if="entry.memberId" class="badge-member"
-                        >#{{ entry.memberId }}</span
-                      >
-                    </td>
-                    <td class="score-val">{{ entry.score }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+    <div v-else-if="game.status === 'end'" class="screen end-screen">
+      <div class="score-circle">
+        <span class="label-xp">{{ t('end.score_label') }}</span>
+        <span class="big-score">{{ game.score }}</span>
+        <span class="total">/ {{ game.questions.length }}</span>
+      </div>
+
+      <h3>{{ rankInfo.title }}</h3>
+      <p class="rank-desc">{{ rankInfo.desc }}</p>
+
+      <div v-if="!form.isSaved" class="save-form">
+        <h4>{{ t('end.leaderboard_title') }}</h4>
+        <div class="input-group">
+          <input
+            type="text"
+            v-model="form.name"
+            :placeholder="t('end.placeholder_name')"
+            maxlength="15"
+          />
+        </div>
+        <div class="input-group">
+          <input
+            type="text"
+            v-model="form.memberId"
+            :placeholder="t('end.placeholder_id')"
+          />
+        </div>
+        <button class="btn-primary" @click="submitScore" :disabled="!form.name">
+          {{ t('end.btn_save') }}
+        </button>
+        <button class="btn-skip" @click="game.status = 'start'">
+          {{ t('end.btn_skip') }}
+        </button>
+      </div>
+
+      <div v-else class="leaderboard-wrapper">
+        <div class="leaderboard-container">
+          <h4>
+            {{ t('end.top_10') }}
+            {{ t('levels.' + game.difficulty + '.label').toUpperCase() }}
+          </h4>
+          <div class="leaderboard-scroll">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>{{ t('end.col_rank') }}</th>
+                  <th>{{ t('end.col_name') }}</th>
+                  <th>{{ t('end.col_score') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(entry, index) in form.leaderboard"
+                  :key="index"
+                  :class="{ 'current-user': entry.isUser, 'top-3': index < 3 }"
+                >
+                  <td class="rank">{{ index + 1 }}</td>
+                  <td class="name">
+                    {{ entry.name }}
+                    <span v-if="entry.memberId" class="badge-member"
+                      >#{{ entry.memberId }}</span
+                    >
+                  </td>
+                  <td class="score-val">{{ entry.score }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-
-          <div class="final-actions">
-            <button class="btn-giant-restart" @click="resetGame">
-              {{ t('end.btn_retry') }}
-            </button>
-
-            <a :href="t('end.btn_join.url')" target="_blank" class="link-join">
-              {{ t('end.btn_join.text') }}
-            </a>
-          </div>
+        </div>
+        <div class="final-actions">
+          <button class="btn-giant-restart" @click="game.status = 'start'">
+            {{ t('end.btn_retry') }}
+          </button>
+          <a :href="t('end.btn_join.url')" target="_blank" class="link-join">{{
+            t('end.btn_join.text')
+          }}</a>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -577,13 +546,12 @@ const rankMessage = computed(() => {
   flex-direction: column;
 }
 
-/* HEADER SPÉCIFIQUE */
+/* HEADER */
 .quiz-header {
   padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-
   .header-top {
     width: 100%;
     display: flex;
@@ -591,7 +559,6 @@ const rankMessage = computed(() => {
     align-items: flex-start;
     margin-bottom: 10px;
   }
-
   .logo-area {
     font-weight: 900;
     text-transform: uppercase;
@@ -602,33 +569,27 @@ const rankMessage = computed(() => {
   }
 }
 
-/* LANG SWITCHER */
 .lang-switcher {
   display: flex;
-  justify-content: center;
   gap: 15px;
-
   button {
     background: transparent;
     border: none;
     color: $prohib-black;
     opacity: 0.5;
-    font-size: 0.8rem;
     font-weight: 900;
     cursor: pointer;
     padding: 0;
-
-    &:hover {
+    &:hover,
+    &.active {
       opacity: 1;
     }
     &.active {
-      opacity: 1;
       text-decoration: underline;
     }
   }
 }
 
-/* SCORE & PROGRESS */
 .score-display {
   background: $prohib-black;
   color: $highlight-green;
@@ -638,12 +599,10 @@ const rankMessage = computed(() => {
   flex-direction: column;
   align-items: center;
   font-family: $font-mono;
-
   .level-badge {
     font-size: 0.7rem;
     color: white;
     text-transform: uppercase;
-    margin-bottom: 2px;
     &.easy {
       color: $light-green;
     }
@@ -654,7 +613,6 @@ const rankMessage = computed(() => {
       color: $reg-green;
     }
   }
-
   .score-value {
     font-size: 1.1rem;
     font-weight: bold;
@@ -667,7 +625,6 @@ const rankMessage = computed(() => {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 3px;
   overflow: hidden;
-
   .fill {
     height: 100%;
     background: $reg-green;
@@ -675,11 +632,20 @@ const rankMessage = computed(() => {
   }
 }
 
-/* ECRAN START */
-.start-screen {
+/* ECRANS GÉNÉRAUX */
+.screen {
+  width: 100%;
+}
+.loading-screen,
+.error-screen,
+.start-screen,
+.end-screen {
   text-align: center;
   justify-content: center;
+}
 
+/* START */
+.start-screen {
   h1 {
     font-size: 2.5rem;
     line-height: 1;
@@ -702,22 +668,19 @@ const rankMessage = computed(() => {
     }
   }
 }
-
-/* BOUTONS DIFFICULTÉ */
 .difficulty-selector {
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
   max-width: 300px;
+  margin: auto;
   p {
     font-weight: bold;
     opacity: 0.7;
     margin-bottom: 5px;
-    font-size: 0.9rem;
   }
 }
-
 .btn-diff {
   padding: 15px;
   border: 2px solid $prohib-black;
@@ -729,12 +692,10 @@ const rankMessage = computed(() => {
   cursor: pointer;
   transition: all 0.2s;
   font-size: 1rem;
-
   &:hover {
     transform: translateX(5px);
     box-shadow: -5px 5px 0 $prohib-black;
   }
-
   &.easy {
     border-color: $light-green;
     &:hover {
@@ -758,15 +719,10 @@ const rankMessage = computed(() => {
   }
 }
 
-/* JEU ET CARTES */
-.game-screen {
-  width: 100%;
-}
-
+/* JEU */
 .question-card {
   text-align: center;
   margin-bottom: 30px;
-
   .category-tag {
     background: $prohib-black;
     color: white;
@@ -789,7 +745,6 @@ const rankMessage = computed(() => {
   gap: 10px;
   width: 100%;
 }
-
 .btn-option {
   background: white;
   border: 2px solid $prohib-black;
@@ -804,7 +759,6 @@ const rankMessage = computed(() => {
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
-
   .letter {
     background: $prohib-black;
     color: white;
@@ -818,8 +772,6 @@ const rankMessage = computed(() => {
     font-weight: bold;
     flex-shrink: 0;
   }
-
-  /* NOUVEAU: Loader interne */
   .mini-loader {
     width: 16px;
     height: 16px;
@@ -830,7 +782,6 @@ const rankMessage = computed(() => {
     animation: spin 1s linear infinite;
     display: inline-block;
   }
-
   &:hover:not(:disabled) {
     background: $prohib-black;
     color: white;
@@ -839,21 +790,16 @@ const rankMessage = computed(() => {
       color: black;
     }
   }
-
-  /* NOUVEAU: État de vérification (Attente API) */
   &.is-verifying {
-    background: color.scale($prohib-black, $lightness: 90%); // Gris très clair
-    border-color: $prohib-black;
+    background: color.scale($prohib-black, $lightness: 90%);
     cursor: wait;
-    transform: scale(0.98);
     .letter {
-      display: none; // On cache la lettre pour afficher le loader à la place si on veut, ou on garde les deux
+      display: none;
     }
     .mini-loader {
-      display: inline-block; // On s'assure qu'il est visible
+      display: inline-block;
     }
   }
-
   &.correct {
     background: $reg-green;
     border-color: $reg-green;
@@ -863,7 +809,6 @@ const rankMessage = computed(() => {
       color: $reg-green;
     }
   }
-
   &.wrong {
     background: $error-red;
     border-color: $error-red;
@@ -874,13 +819,10 @@ const rankMessage = computed(() => {
       color: $error-red;
     }
   }
-
   &.dimmed {
     opacity: 0.4;
     cursor: default;
   }
-
-  // Si désactivé mais pas en cours de verif (autres boutons pendant l'attente)
   &:disabled:not(.is-verifying):not(.correct):not(.wrong) {
     cursor: not-allowed;
     opacity: 0.6;
@@ -892,7 +834,6 @@ const rankMessage = computed(() => {
     transform: rotate(360deg);
   }
 }
-
 .point-popup {
   position: absolute;
   right: 15px;
@@ -906,7 +847,6 @@ const rankMessage = computed(() => {
   animation: popUp 0.6s ease-out forwards;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
-
 @keyframes popUp {
   0% {
     transform: translateY(0) scale(0.5);
@@ -932,14 +872,12 @@ const rankMessage = computed(() => {
   text-align: left;
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
-
   &.success {
     border-color: $reg-green;
   }
   &.error {
     border-color: $error-red;
   }
-
   .feedback-header {
     font-weight: 900;
     text-transform: uppercase;
@@ -957,7 +895,6 @@ const rankMessage = computed(() => {
     }
   }
 }
-
 .btn-next {
   @include btn-base;
   background: $prohib-black;
@@ -966,11 +903,8 @@ const rankMessage = computed(() => {
   }
 }
 
-/* FIN & LEADERBOARD */
+/* FIN */
 .end-screen {
-  text-align: center;
-  justify-content: center;
-
   .score-circle {
     width: 120px;
     height: 120px;
@@ -983,7 +917,6 @@ const rankMessage = computed(() => {
     align-items: center;
     margin-bottom: 20px;
     border: 4px solid $reg-green;
-
     .label-xp {
       font-size: 0.7rem;
       color: $highlight-green;
@@ -999,7 +932,6 @@ const rankMessage = computed(() => {
       opacity: 0.7;
     }
   }
-
   h3 {
     font-size: 1.6rem;
     margin: 0 0 10px 0;
@@ -1012,7 +944,7 @@ const rankMessage = computed(() => {
   }
 }
 
-/* Formulaire */
+/* FORMULAIRE & TABLE */
 .save-form {
   width: 100%;
   max-width: 400px;
@@ -1021,7 +953,7 @@ const rankMessage = computed(() => {
   border: 2px solid $prohib-black;
   margin-bottom: 20px;
   text-align: left;
-
+  margin: auto;
   h4 {
     margin: 0 0 15px 0;
     text-transform: uppercase;
@@ -1044,7 +976,6 @@ const rankMessage = computed(() => {
     }
   }
 }
-
 .btn-skip {
   background: transparent;
   border: none;
@@ -1056,14 +987,12 @@ const rankMessage = computed(() => {
   text-decoration: underline;
   opacity: 0.6;
   width: 100%;
-  transition: all 0.2s;
   &:hover {
     opacity: 1;
     color: $error-red;
   }
 }
 
-/* Table */
 .leaderboard-wrapper {
   width: 100%;
   display: flex;
@@ -1093,18 +1022,15 @@ const rankMessage = computed(() => {
   border-collapse: collapse;
   background: white;
   font-family: $font-main;
-
-  thead {
+  thead th {
+    padding: 8px;
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    position: sticky;
+    top: 0;
+    background: $prohib-black;
     color: white;
-    th {
-      padding: 8px;
-      text-align: left;
-      text-transform: uppercase;
-      font-size: 0.8rem;
-      top: 0;
-      position: sticky;
-      background: $prohib-black;
-    }
   }
   tbody tr {
     border-bottom: 1px solid #eee;
@@ -1130,7 +1056,6 @@ const rankMessage = computed(() => {
       margin-left: 5px;
       color: #666;
     }
-
     &.top-3 .rank {
       color: $gold;
       font-size: 1.1rem;
@@ -1141,7 +1066,6 @@ const rankMessage = computed(() => {
     &:nth-child(3) .rank {
       color: $bronze;
     }
-
     &.current-user {
       background: rgba(76, 175, 80, 0.15);
       border-left: 4px solid $reg-green;
@@ -1153,7 +1077,6 @@ const rankMessage = computed(() => {
     }
   }
 }
-
 .final-actions {
   width: 100%;
   max-width: 450px;
@@ -1163,13 +1086,11 @@ const rankMessage = computed(() => {
   gap: 15px;
   margin-top: 10px;
 }
-
 .link-join {
   color: $prohib-black;
   font-weight: 700;
   text-decoration: none;
   font-size: 0.9rem;
-  padding-bottom: 2px;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s;
   &:hover {
