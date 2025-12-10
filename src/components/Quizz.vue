@@ -311,6 +311,11 @@ const submitScore = async () => {
   }
 }
 
+// Fonction pour recharger la page (car le template ne voit pas 'window')
+const reloadPage = () => {
+  window.location.reload()
+}
+
 // --- 10. HELPERS ---
 const getI18nArray = (key: string): any[] => {
   const d = tm(key)
@@ -418,7 +423,7 @@ const shareNetworks = computed(() => {
     <div v-else-if="ui.error" class="screen error-screen">
       <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
       <p>{{ ui.error }}</p>
-      <button class="btn-primary" @click="() => window.location.reload()">
+      <button class="btn-primary" @click="reloadPage">
         {{ t('ui.btn_retry') }}
       </button>
     </div>
