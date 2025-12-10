@@ -1,5 +1,5 @@
 {
-  "header": { "brand": "NORML France ACADEMY", "score_label": "NOTE" },
+  "header": { "brand": "NORML FRANCE ACADEMY", "score_label": "NOTE" },
   "start": {
     "title": "Stop aux Idées Reçues",
     "subtitle": "La prohibition échoue. Testez votre lucidité.",
@@ -47,26 +47,38 @@
     "col_rank": "#",
     "col_name": "Militant",
     "col_score": "Note",
-    "socials_config": [
-      {
-        "id": "instagram",
-        "icon": "📸",
-        "placeholder": "Instagram",
-        "baseUrl": "instagram.com"
-      },
-      {
-        "id": "x",
-        "icon": "✖️",
-        "placeholder": "X / Twitter",
-        "baseUrl": "x.com"
-      },
-      {
-        "id": "facebook",
-        "icon": "f",
-        "placeholder": "Facebook",
-        "baseUrl": "facebook.com"
-      }
-    ],
+    "share_card": {
+      "tagline": "La prohibition échoue. Testez votre lucidité.",
+      "website": "norml.fr"
+    },
+    "share_modal": {
+      "title": "📤 Partage ton exploit !",
+      "hint": "L'image a été téléchargée. Publie-la où tu veux :",
+      "btn_close": "Fermer",
+      "networks": [
+        {
+          "id": "instagram",
+          "label": "Instagram",
+          "icon": "📸",
+          "url": "https://instagram.com",
+          "color": "#E1306C"
+        },
+        {
+          "id": "x",
+          "label": "X / Twitter",
+          "icon": "✖️",
+          "url": "https://x.com/intent/tweet?text={text}",
+          "color": "#000000"
+        },
+        {
+          "id": "facebook",
+          "label": "Facebook",
+          "icon": "f",
+          "url": "https://www.facebook.com/sharer/sharer.php?u={url}",
+          "color": "#1877F2"
+        }
+      ]
+    },
     "ranks": {
       "expert": {
         "title": "Ambassadeur de la Régulation",

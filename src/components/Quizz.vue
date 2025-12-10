@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
+import html2canvas from 'html2canvas'
 
 // --- 1. IMPORTS & FALLBACKS ---
 import fr from '../locales/fr.json'
@@ -18,19 +19,40 @@ interface Question {
   explanation?: string
 }
 
-interface SocialNetworkConfig {
+interface ShareNetworkConfig {
   id: string
+  label: string
   icon: string
-  placeholder: string
-  baseUrl: string
+  url: string
+  color: string
 }
 
 interface LeaderboardEntry {
   name: string
   score: number
   memberId?: string
-  socials?: Record<string, string>
   isUser?: boolean
+}
+
+// --- 2.5. HELPER TYPO (Défini ici pour être accessible partout) ---
+const autoFixTypo = (data: any): any => {
+  // Si c'est du texte, on applique l'espace insécable avant : ! ? ;
+  if (typeof data === 'string') {
+    return data.replace(/ ([!?:;])/g, '\u00A0$1')
+  }
+  // Si c'est une liste, on nettoie chaque élément
+  if (Array.isArray(data)) {
+    return data.map((item) => autoFixTypo(item))
+  }
+  // Si c'est un objet, on nettoie chaque clé
+  if (data && typeof data === 'object') {
+    const sorted: any = {}
+    Object.keys(data).forEach((key) => {
+      sorted[key] = autoFixTypo(data[key])
+    })
+    return sorted
+  }
+  return data
 }
 
 // --- 3. CONFIGURATION ---
@@ -38,9 +60,10 @@ const LEVEL_IDS = ['easy', 'medium', 'hard']
 const { t, tm, locale, setLocaleMessage } = useI18n()
 const availableLocales = ['fr', 'en', 'es']
 
-setLocaleMessage('fr', fr)
-setLocaleMessage('en', en)
-setLocaleMessage('es', es)
+// Initialisation avec nettoyage automatique des fichiers locaux
+setLocaleMessage('fr', autoFixTypo(fr))
+setLocaleMessage('en', autoFixTypo(en))
+setLocaleMessage('es', autoFixTypo(es))
 
 // --- 4. STATE ---
 const ui = reactive({
@@ -65,13 +88,15 @@ const game = reactive({
 const form = reactive({
   name: '',
   memberId: '',
-  socials: {} as Record<string, string>,
   isSaved: false,
   leaderboard: [] as LeaderboardEntry[]
 })
 
-// État visuel pour l'accordéon des réseaux sociaux
-const visibleNetworks = ref<string[]>([])
+// Gestion du partage
+const shareCardRef = ref<HTMLElement | null>(null)
+const isGenerating = ref(false)
+const showShareModal = ref(false)
+const generatedImageUrl = ref<string | null>(null)
 
 // --- 5. LOGIQUE CMS ---
 const hydrateContent = async () => {
@@ -79,8 +104,11 @@ const hydrateContent = async () => {
     const res = await fetch(`/api/get_content?lang=${locale.value}`)
     if (res.ok) {
       const remoteData = await res.json()
-      if (remoteData && Object.keys(remoteData).length > 0)
-        setLocaleMessage(locale.value, remoteData)
+      if (remoteData && Object.keys(remoteData).length > 0) {
+        // Nettoyage automatique des données reçues du serveur
+        const cleanData = autoFixTypo(remoteData)
+        setLocaleMessage(locale.value, cleanData)
+      }
     }
   } catch (e) {}
 }
@@ -88,29 +116,19 @@ const hydrateContent = async () => {
 // --- 6. CYCLE DE VIE ---
 onMounted(async () => {
   hydrateContent()
-
   const localUser = localStorage.getItem('norml_user_infos')
   if (localUser) {
     try {
       const u = JSON.parse(localUser)
       form.name = u.name || ''
       form.memberId = u.memberId || ''
-      if (u.socials) {
-        form.socials = u.socials
-        // Ouvre les réseaux qui ont déjà une valeur
-        visibleNetworks.value = Object.keys(u.socials).filter(
-          (k) => u.socials[k]
-        )
-      }
     } catch (e) {
       console.error(e)
     }
   }
-
   const savedScores = localStorage.getItem('norml_quiz_scores')
   const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
   let data = [...mocks]
-
   if (savedScores) {
     try {
       const parsed = JSON.parse(savedScores)
@@ -135,12 +153,16 @@ const startGame = async (difficulty: string) => {
   game.score = 0
   game.currentQIndex = 0
   form.isSaved = false
+  showShareModal.value = false
   try {
     const res = await fetch(
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
-    const data = await res.json()
+    // On nettoie aussi les questions qui arrivent de l'API start_game
+    const rawData = await res.json()
+    const data = autoFixTypo(rawData)
+
     if (!data || data.length === 0) throw new Error(t('errors.no_questions'))
     game.questions = data
     prepareNewQuestion()
@@ -180,8 +202,11 @@ const selectAnswer = async (visualIndex: number) => {
       game.score++
       game.showPointPopup = true
     }
+    // On nettoie l'explication qui arrive du serveur
     game.questions[game.currentQIndex].correct = result.correctIndex
-    game.questions[game.currentQIndex].explanation = result.explanation
+    game.questions[game.currentQIndex].explanation = autoFixTypo(
+      result.explanation
+    )
     game.hasAnswered = true
   } catch (e) {
     console.error(e)
@@ -216,75 +241,67 @@ const endGame = () => {
     })
 }
 
-// --- 8. UI LOGIC (Toggle & Clear) ---
-const toggleNetwork = (id: string) => {
-  if (visibleNetworks.value.includes(id)) {
-    // Si vide, on ferme. Sinon on laisse ouvert.
-    if (!form.socials[id])
-      visibleNetworks.value = visibleNetworks.value.filter((n) => n !== id)
-  } else {
-    visibleNetworks.value.push(id)
+// --- 8. SYSTÈME DE PARTAGE ---
+const openShareModal = async () => {
+  if (!shareCardRef.value) return
+  isGenerating.value = true
+  try {
+    const canvas = await html2canvas(shareCardRef.value, {
+      backgroundColor: '#1a1a1a',
+      scale: 2,
+      useCORS: true
+    })
+    generatedImageUrl.value = canvas.toDataURL('image/png')
+    showShareModal.value = true
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isGenerating.value = false
   }
 }
 
-// NOUVEAU : Fonction dédiée pour éviter l'erreur de syntaxe dans le HTML
-const clearSocial = (id: string) => {
-  form.socials[id] = '' // On vide le champ
-  toggleNetwork(id) // On met à jour l'affichage (fermeture)
+const handleShareClick = (network: ShareNetworkConfig) => {
+  if (generatedImageUrl.value) {
+    const link = document.createElement('a')
+    link.download = 'score-norml.png'
+    link.href = generatedImageUrl.value
+    link.click()
+  }
+  let finalUrl = network.url
+  const shareText = encodeURIComponent(
+    `Score NORML: ${game.score}/${game.questions.length} ! 🌿`
+  )
+  const shareUrl = encodeURIComponent('https://norml.fr')
+  finalUrl = finalUrl.replace('{text}', shareText).replace('{url}', shareUrl)
+  window.open(finalUrl, '_blank')
 }
 
-// --- 9. SAUVEGARDE DYNAMIQUE ---
+// --- 9. SAUVEGARDE ---
 const submitScore = async () => {
   if (!form.name) return
   ui.isLoading = true
-
-  const finalSocials: Record<string, string> = {}
-
-  socialNetworks.value.forEach((net) => {
-    const handle = form.socials[net.id]
-    if (handle) {
-      const clean = handle
-        .replace(/^@/, '')
-        .replace(/https?:\/\//, '')
-        .replace('www.', '')
-        .replace(net.baseUrl + '/', '')
-        .trim()
-      if (clean) finalSocials[net.id] = `https://${net.baseUrl}/${clean}`
-    }
-  })
-
   try {
     const payload = {
       name: form.name,
       score: game.score,
       memberId: form.memberId,
-      socials: finalSocials,
       difficulty: game.difficulty
     }
-
     const res = await fetch('/api/submit_score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-
     if (!res.ok) throw new Error('Erreur sauvegarde')
     const realTop10 = await res.json()
-
     form.leaderboard = realTop10.map((entry: LeaderboardEntry) => ({
       ...entry,
       isUser: entry.name === form.name
     }))
-
     localStorage.setItem(
       'norml_user_infos',
-      JSON.stringify({
-        name: form.name,
-        memberId: form.memberId,
-        socials: form.socials
-      })
+      JSON.stringify({ name: form.name, memberId: form.memberId })
     )
-
     form.isSaved = true
   } catch (e) {
     console.error(e)
@@ -303,18 +320,10 @@ const getI18nArray = (key: string): any[] => {
       ? Object.values(d)
       : []
 }
-
 const optionLetters = computed(() => {
   const l = getI18nArray('game.letters')
   return l.length ? l : ['A', 'B', 'C', 'D']
 })
-
-// Cible correctement "end.socials_config"
-const socialNetworks = computed(() => {
-  const nets = getI18nArray('end.socials_config')
-  return nets as SocialNetworkConfig[]
-})
-
 const currentQuestion = computed(
   () => game.questions[game.currentQIndex] || ({} as Question)
 )
@@ -361,6 +370,10 @@ const rankInfo = computed(() => {
     title: t('end.ranks.beginner.title'),
     desc: t('end.ranks.beginner.desc')
   }
+})
+const shareNetworks = computed(() => {
+  const nets = getI18nArray('end.share_modal.networks')
+  return nets as ShareNetworkConfig[]
 })
 </script>
 
@@ -489,7 +502,6 @@ const rankInfo = computed(() => {
 
       <div v-if="!form.isSaved" class="save-form">
         <h4>{{ t('end.leaderboard_title') }}</h4>
-
         <div class="form-row main-row">
           <span class="prefix-icon">👤</span>
           <input
@@ -500,42 +512,6 @@ const rankInfo = computed(() => {
             class="main-input"
           />
         </div>
-
-        <div class="social-section" v-if="socialNetworks.length">
-          <div class="social-bar">
-            <button
-              v-for="net in socialNetworks"
-              :key="net.id"
-              class="icon-btn"
-              :class="{
-                active: visibleNetworks.includes(net.id) || form.socials[net.id]
-              }"
-              @click="toggleNetwork(net.id)"
-              :title="net.placeholder"
-            >
-              {{ net.icon }}
-            </button>
-          </div>
-
-          <transition-group name="slide">
-            <div
-              v-for="net in socialNetworks"
-              :key="net.id"
-              class="form-row social-row"
-              v-show="visibleNetworks.includes(net.id) || form.socials[net.id]"
-            >
-              <span class="prefix-icon social-icon">{{ net.icon }}</span>
-              <input
-                type="text"
-                v-model="form.socials[net.id]"
-                :placeholder="net.placeholder"
-              />
-
-              <button class="close-btn" @click="clearSocial(net.id)">×</button>
-            </div>
-          </transition-group>
-        </div>
-
         <div class="form-row secondary-row">
           <span class="prefix-icon">#</span>
           <input
@@ -544,7 +520,6 @@ const rankInfo = computed(() => {
             :placeholder="t('end.placeholder_id')"
           />
         </div>
-
         <div class="actions-row">
           <button
             class="btn-primary"
@@ -553,6 +528,13 @@ const rankInfo = computed(() => {
           >
             {{ ui.isLoading ? '...' : t('end.btn_save') }}
           </button>
+          <button
+            class="btn-action-trigger"
+            @click="openShareModal"
+            :disabled="isGenerating"
+          >
+            {{ isGenerating ? '...' : t('end.share_modal.title') }}
+          </button>
           <button class="btn-skip" @click="game.status = 'start'">
             {{ t('end.btn_skip') }}
           </button>
@@ -560,6 +542,15 @@ const rankInfo = computed(() => {
       </div>
 
       <div v-else class="leaderboard-wrapper">
+        <div class="final-actions top-actions">
+          <button
+            class="btn-action-trigger"
+            @click="openShareModal"
+            :disabled="isGenerating"
+          >
+            {{ isGenerating ? '...' : t('end.share_modal.title') }}
+          </button>
+        </div>
         <div class="leaderboard-container">
           <h4>
             {{ t('end.top_10') }}
@@ -582,26 +573,10 @@ const rankInfo = computed(() => {
                 >
                   <td class="rank">{{ index + 1 }}</td>
                   <td class="name">
-                    <div class="name-row">
-                      <span>{{ entry.name }}</span>
-                      <span v-if="entry.memberId" class="badge-member"
-                        >#{{ entry.memberId }}</span
-                      >
-                    </div>
-                    <div
-                      class="social-icons"
-                      v-if="entry.socials && socialNetworks.length"
+                    {{ entry.name }}
+                    <span v-if="entry.memberId" class="badge-member"
+                      >#{{ entry.memberId }}</span
                     >
-                      <template v-for="net in socialNetworks" :key="net.id">
-                        <a
-                          v-if="entry.socials[net.id]"
-                          :href="entry.socials[net.id]"
-                          target="_blank"
-                          class="s-lnk"
-                          >{{ net.icon }}</a
-                        >
-                      </template>
-                    </div>
                   </td>
                   <td class="score-val">{{ entry.score }}</td>
                 </tr>
@@ -609,7 +584,7 @@ const rankInfo = computed(() => {
             </table>
           </div>
         </div>
-        <div class="final-actions">
+        <div class="final-actions bottom-actions">
           <button class="btn-giant-restart" @click="game.status = 'start'">
             {{ t('end.btn_retry') }}
           </button>
@@ -617,6 +592,52 @@ const rankInfo = computed(() => {
             t('end.btn_join.text')
           }}</a>
         </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showShareModal"
+      class="share-modal-overlay"
+      @click.self="showShareModal = false"
+    >
+      <div class="share-modal-content">
+        <h3>{{ t('end.share_modal.title') }}</h3>
+        <p class="modal-hint">{{ t('end.share_modal.hint') }}</p>
+        <div class="preview-img-container">
+          <img
+            v-if="generatedImageUrl"
+            :src="generatedImageUrl"
+            alt="Score"
+            class="preview-img"
+          />
+        </div>
+        <div class="share-buttons-grid">
+          <button
+            v-for="net in shareNetworks"
+            :key="net.id"
+            class="btn-network-option"
+            :style="{ backgroundColor: net.color }"
+            @click="handleShareClick(net)"
+          >
+            <span class="icon">{{ net.icon }}</span> {{ net.label }}
+          </button>
+        </div>
+        <button class="btn-close-modal" @click="showShareModal = false">
+          {{ t('end.share_modal.btn_close') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="share-card-hidden" ref="shareCardRef">
+      <div class="card-content">
+        <div class="card-logo">{{ t('header.brand') }}</div>
+        <div class="card-rank">{{ rankInfo.title }}</div>
+        <div class="card-score-big">
+          {{ game.score
+          }}<span class="small">/{{ game.questions.length }}</span>
+        </div>
+        <div class="card-text">{{ t('end.share_card.tagline') }}</div>
+        <div class="card-footer">{{ t('end.share_card.website') }}</div>
       </div>
     </div>
   </div>
@@ -671,6 +692,7 @@ const rankInfo = computed(() => {
     font-weight: 900;
     cursor: pointer;
     padding: 0;
+    transition: opacity 0.2s;
     &:hover,
     &.active {
       opacity: 1;
@@ -733,6 +755,19 @@ const rankInfo = computed(() => {
   justify-content: center;
 }
 
+/* ANIMATIONS FLUIDES BOUTONS STANDARD */
+.btn-diff,
+.btn-option,
+.btn-primary,
+.btn-network-option,
+.btn-close-modal {
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+  will-change: transform;
+}
+
 /* START */
 .start-screen {
   h1 {
@@ -779,7 +814,6 @@ const rankInfo = computed(() => {
   font-weight: 800;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s;
   font-size: 1rem;
   &:hover {
     transform: translateX(5px);
@@ -844,7 +878,6 @@ const rankInfo = computed(() => {
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.2s;
   position: relative;
   overflow: hidden;
   .letter {
@@ -859,6 +892,9 @@ const rankInfo = computed(() => {
     margin-right: 15px;
     font-weight: bold;
     flex-shrink: 0;
+    transition:
+      background 0.2s,
+      color 0.2s;
   }
   .mini-loader {
     width: 16px;
@@ -873,10 +909,14 @@ const rankInfo = computed(() => {
   &:hover:not(:disabled) {
     background: $prohib-black;
     color: white;
+    transform: translateY(-2px);
     .letter {
       background: white;
       color: black;
     }
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
   &.is-verifying {
     background: color.scale($prohib-black, $lightness: 90%);
@@ -1097,105 +1137,19 @@ const rankInfo = computed(() => {
   }
 }
 
-/* SOCIAL SECTION */
-.social-section {
-  margin: 20px 0;
-  padding-bottom: 15px;
-  border-bottom: 1px dashed #ddd;
-  .label-tiny {
-    font-size: 0.7rem;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 800;
-    margin-bottom: 10px;
-    display: block;
-  }
-}
-.social-bar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
-  .icon-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 2px solid #eee;
-    background: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ccc;
-    grayscale: 1;
-    opacity: 0.7;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    &:hover {
-      transform: scale(1.1);
-      border-color: #ccc;
-      opacity: 1;
-    }
-    &.active {
-      border-color: $prohib-black;
-      background: $prohib-black;
-      color: white;
-      opacity: 1;
-      transform: scale(1.15);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    }
-  }
-}
-.social-row {
-  margin-bottom: 8px;
-  animation: slideIn 0.25s ease-out;
-  border-color: #eee;
-  .social-icon {
-    font-size: 1rem;
-    width: 36px;
-  }
-  input {
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-  .close-btn {
-    width: 30px;
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    color: #ccc;
-    cursor: pointer;
-    &:hover {
-      color: $error-red;
-    }
-  }
-}
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* TRANSITIONS VUE */
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-  height: 0;
-  margin: 0;
-  overflow: hidden;
-}
-
 /* ACTIONS */
+.final-actions {
+  width: 100%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+.top-actions {
+  margin-bottom: 20px;
+}
 .actions-row {
   margin-top: 20px;
   display: flex;
@@ -1218,7 +1172,244 @@ const rankInfo = computed(() => {
   }
 }
 
-/* LEADERBOARD */
+/* --- SHARE BUTTON (SEUL BOUTON MODIFIÉ) --- */
+.btn-action-trigger {
+  @include btn-base;
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  overflow: hidden; /* Important pour double layer */
+  color: white;
+  width: 100%;
+  margin-bottom: 10px;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(200, 50, 100, 0.3);
+
+  /* Transition fluide transformation + ombre seulement */
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  /* Layer 1 : Le Vert (Fond, révélé au hover) */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: $reg-green;
+    z-index: -2;
+  }
+
+  /* Layer 2 : Le Dégradé (Dessus, masqué au hover) */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 1;
+    background: linear-gradient(
+      45deg,
+      #f09433 0%,
+      #e6683c 25%,
+      #dc2743 50%,
+      #cc2366 75%,
+      #bc1888 100%
+    );
+    transition: opacity 0.4s ease; /* LA CLÉ : On joue sur l'opacité */
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    &::after {
+      opacity: 0;
+    } /* On cache le dégradé pour montrer le vert dessous */
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+  &:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+}
+
+/* MODALE PARTAGE */
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  animation: fadeIn 0.2s;
+}
+.share-modal-content {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: slideUpModal 0.3s;
+  h3 {
+    margin-top: 0;
+    text-transform: uppercase;
+    color: $prohib-black;
+  }
+  .modal-hint {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 20px;
+  }
+}
+.preview-img-container {
+  margin-bottom: 20px;
+  img {
+    max-width: 100%;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+}
+.share-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.btn-network-option {
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  font-family: $font-main;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  &:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+.btn-close-modal {
+  background: transparent;
+  border: 2px solid #ccc;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #666;
+  &:hover {
+    border-color: $prohib-black;
+    color: $prohib-black;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideUpModal {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* CARTE CACHÉE */
+.share-card-hidden {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1080px;
+  height: 1080px;
+  background: $prohib-black;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: $font-main;
+  text-align: center;
+  z-index: -1;
+  .card-content {
+    border: 20px solid $reg-green;
+    width: 90%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+    border-radius: 40px;
+    padding: 50px;
+  }
+  .card-logo {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 10px;
+    margin-bottom: 40px;
+    opacity: 0.8;
+  }
+  .card-rank {
+    font-size: 5rem;
+    text-transform: uppercase;
+    color: $highlight-green;
+    font-weight: 800;
+    margin-bottom: 20px;
+  }
+  .card-score-big {
+    font-size: 18rem;
+    font-family: $font-mono;
+    font-weight: bold;
+    line-height: 1;
+    color: white;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    .small {
+      font-size: 6rem;
+      opacity: 0.5;
+    }
+  }
+  .card-text {
+    font-size: 2.5rem;
+    margin-top: 40px;
+    line-height: 1.4;
+    font-style: italic;
+    white-space: pre-wrap;
+  }
+  .card-footer {
+    margin-top: auto;
+    font-size: 2rem;
+    font-weight: bold;
+    background: white;
+    color: $prohib-black;
+    padding: 10px 40px;
+    border-radius: 50px;
+  }
+}
+
+/* LEADERBOARD TABLE */
 .leaderboard-wrapper {
   width: 100%;
   display: flex;
@@ -1282,25 +1473,6 @@ const rankInfo = computed(() => {
       margin-left: 5px;
       color: #666;
     }
-    .name-row {
-      display: flex;
-      align-items: center;
-    }
-    .social-icons {
-      display: flex;
-      gap: 5px;
-      margin-top: 3px;
-    }
-    .s-lnk {
-      text-decoration: none;
-      font-size: 0.8rem;
-      opacity: 0.7;
-      transition: transform 0.2s;
-      &:hover {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-    }
     &.top-3 .rank {
       color: $gold;
       font-size: 1.1rem;
@@ -1321,15 +1493,6 @@ const rankInfo = computed(() => {
       }
     }
   }
-}
-.final-actions {
-  width: 100%;
-  max-width: 450px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  margin-top: 10px;
 }
 .link-join {
   color: $prohib-black;
