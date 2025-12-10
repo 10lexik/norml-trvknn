@@ -54,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         _id: `${targetLang}_${targetLevel}_${index}`
       }))
       .sort(() => 0.5 - Math.random())
-      .slice(0, 1) // ATTENTION : A MODIFIER POUR AVOIR 20 QUESTIONS !
+      .slice(0, 20) // ATTENTION : A MODIFIER POUR AVOIR 20 QUESTIONS !
       .map(({ category, question, options, _id }: any) => ({
         _id,
         category,
