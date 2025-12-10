@@ -1254,12 +1254,19 @@ const socialNetworks = computed(() => {
     align-items: center;
     justify-content: center;
     color: #ccc;
-    grayscale: 1;
     opacity: 0.7;
+    filter: grayscale(1);
+
+    transition:
+      transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.2s ease,
+      box-shadow 0.2s ease;
+
     &:hover {
       transform: scale(1.1);
       border-color: #ccc;
       opacity: 1;
+      filter: grayscale(0);
     }
     &.active {
       border-color: $prohib-black;
@@ -1268,6 +1275,7 @@ const socialNetworks = computed(() => {
       opacity: 1;
       transform: scale(1.15);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      filter: grayscale(0);
     }
   }
 }
