@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import confetti from 'canvas-confetti'
 import html2canvas from 'html2canvas'
 
-// --- 1. IMPORTS & FALLBACKS ---
+// --- 1. IMPORTS DES LOCALES ---
 import fr from '../locales/fr.json'
 import en from '../locales/en.json'
 import es from '../locales/es.json'
@@ -19,19 +19,19 @@ interface Question {
   explanation?: string
 }
 
-// Configuration UNIFIÉE (Input + Share)
 interface UnifiedNetworkConfig {
   id: string
   label: string
   icon: string
-  url: string // Url de partage
+  url: string
   color: string
-  baseUrl: string // Url de profil (pour le nettoyage input)
+  baseUrl: string
 }
 
 interface LeaderboardEntry {
   name: string
   score: number
+  time?: number
   memberId?: string
   isUser?: boolean
   socials?: Record<string, string>
@@ -92,8 +92,12 @@ const form = reactive({
   leaderboard: [] as LeaderboardEntry[]
 })
 
+// Variables Chronomètre
+const startTime = ref(0)
+const endTime = ref(0)
+
 // UI States
-const visibleNetworks = ref<string[]>([]) // Pour l'accordéon inputs
+const visibleNetworks = ref<string[]>([])
 const shareCardRef = ref<HTMLElement | null>(null)
 const isGenerating = ref(false)
 const showShareModal = ref(false)
@@ -101,6 +105,19 @@ const generatedImageUrl = ref<string | null>(null)
 
 // --- 5. LOGIQUE CMS ---
 const hydrateContent = async () => {
+  // 1. On lit la variable d'environnement.
+  // L'astuce "(import.meta as any)" permet d'éviter l'erreur TypeScript
+  // sans casser votre configuration "CommonJS".
+  const forceLocal =
+    (import.meta as any).env.VITE_FORCE_LOCAL_CONTENT === 'true'
+
+  // 2. Si la variable est 'true', on garde le fichier JSON local.
+  if (forceLocal) {
+    console.log('🚧 Mode Local Forcé (.env) : JSON local utilisé.')
+    return
+  }
+
+  // 3. Sinon (si 'false' ou absent), on appelle l'API (MongoDB).
   try {
     const res = await fetch(`/api/get_content?lang=${locale.value}`)
     if (res.ok) {
@@ -110,12 +127,15 @@ const hydrateContent = async () => {
         setLocaleMessage(locale.value, cleanData)
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Erreur API CMS', e)
+  }
 }
 
 // --- 6. CYCLE DE VIE ---
 onMounted(async () => {
   hydrateContent()
+
   const localUser = localStorage.getItem('norml_user_infos')
   if (localUser) {
     try {
@@ -132,18 +152,9 @@ onMounted(async () => {
       console.error(e)
     }
   }
-  const savedScores = localStorage.getItem('norml_quiz_scores')
+
   const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
-  let data = [...mocks]
-  if (savedScores) {
-    try {
-      const parsed = JSON.parse(savedScores)
-      if (Array.isArray(parsed)) data = [...data, ...parsed]
-    } catch (e) {
-      console.error(e)
-    }
-  }
-  form.leaderboard = data.sort((a, b) => b.score - a.score).slice(0, 20)
+  form.leaderboard = mocks.slice(0, 10)
 })
 
 // --- 7. ACTIONS JEU ---
@@ -171,6 +182,7 @@ const startGame = async (difficulty: string) => {
     game.questions = data
     prepareNewQuestion()
     resetStep()
+    startTime.value = Date.now()
     game.status = 'playing'
   } catch (e: any) {
     ui.error = t('errors.server_unavailable')
@@ -234,6 +246,7 @@ const resetStep = () => {
   ui.verifyingIdx = null
 }
 const endGame = () => {
+  endTime.value = Date.now()
   game.status = 'end'
   if (game.score >= game.questions.length * 0.75)
     confetti({
@@ -244,7 +257,7 @@ const endGame = () => {
     })
 }
 
-// --- 8. UI INPUTS (ACCORDÉON) ---
+// --- 8. UI INPUTS ---
 const toggleInputNetwork = (id: string) => {
   if (visibleNetworks.value.includes(id)) {
     if (!form.socials[id])
@@ -286,9 +299,16 @@ const handleShareClick = (network: UnifiedNetworkConfig) => {
     link.click()
   }
   let finalUrl = network.url
+  const shareTextRaw = t('share.default_text', {
+    score: game.score,
+    total: game.questions.length
+  })
   const shareText = encodeURIComponent(
-    `Score NORML: ${game.score}/${game.questions.length} ! 🌿`
+    shareTextRaw !== 'share.default_text'
+      ? shareTextRaw
+      : `Score NORML: ${game.score}/${game.questions.length}`
   )
+
   const shareUrl = encodeURIComponent('https://norml.fr')
   finalUrl = finalUrl.replace('{text}', shareText).replace('{url}', shareUrl)
   window.open(finalUrl, '_blank')
@@ -298,10 +318,11 @@ const handleShareClick = (network: UnifiedNetworkConfig) => {
 const submitScore = async () => {
   if (!form.name) return
   ui.isLoading = true
+  ui.error = null
 
+  const timeSpent = Math.floor((endTime.value - startTime.value) / 1000)
   const finalSocials: Record<string, string> = {}
 
-  // Utilisation de la liste unifiée pour créer les liens
   socialNetworks.value.forEach((net) => {
     const handle = form.socials[net.id]
     if (handle) {
@@ -321,19 +342,28 @@ const submitScore = async () => {
       score: game.score,
       memberId: form.memberId,
       socials: finalSocials,
-      difficulty: game.difficulty
+      difficulty: game.difficulty,
+      time: timeSpent
     }
-    const res = await fetch('/api/submit_score', {
+
+    const res = await fetch(`/api/submit_score?lang=${locale.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    if (!res.ok) throw new Error('Erreur sauvegarde')
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}))
+      throw new Error(errJson.error || 'Server Error')
+    }
+
     const realTop10 = await res.json()
-    form.leaderboard = realTop10.map((entry: LeaderboardEntry) => ({
+
+    form.leaderboard = realTop10.map((entry: any) => ({
       ...entry,
       isUser: entry.name === form.name
     }))
+
     localStorage.setItem(
       'norml_user_infos',
       JSON.stringify({
@@ -345,7 +375,7 @@ const submitScore = async () => {
     form.isSaved = true
   } catch (e) {
     console.error(e)
-    ui.error = 'Erreur sauvegarde.'
+    ui.error = t('errors.server_unavailable')
   } finally {
     ui.isLoading = false
   }
@@ -414,7 +444,6 @@ const rankInfo = computed(() => {
   }
 })
 
-// LISTE UNIQUE (Sert pour Inputs ET Share)
 const socialNetworks = computed(() => {
   const nets = getI18nArray('end.share_modal.networks')
   return nets as UnifiedNetworkConfig[]
@@ -427,9 +456,7 @@ const socialNetworks = computed(() => {
       <div class="header-top">
         <div
           class="lang-switcher"
-          :style="{
-            visibility: game.status === 'start' ? 'visible' : 'hidden'
-          }"
+          :class="{ 'is-hidden': game.status !== 'start' }"
         >
           <button
             v-for="l in availableLocales"
@@ -460,7 +487,7 @@ const socialNetworks = computed(() => {
       <p>{{ t('ui.loading') }}</p>
     </div>
     <div v-else-if="ui.error" class="screen error-screen">
-      <h3 style="color: #d32f2f">{{ t('ui.error_title') }}</h3>
+      <h3 class="error-title">{{ t('ui.error_title') }}</h3>
       <p>{{ ui.error }}</p>
       <button class="btn-primary" @click="reloadPage">
         {{ t('ui.btn_retry') }}
@@ -670,7 +697,12 @@ const socialNetworks = computed(() => {
                       </template>
                     </div>
                   </td>
-                  <td class="score-val">{{ entry.score }}</td>
+                  <td class="score-val">
+                    {{ entry.score }}
+                    <span v-if="entry.time" class="time-spent">
+                      {{ Math.floor(entry.time / 60) }}m {{ entry.time % 60 }}s
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -776,6 +808,11 @@ const socialNetworks = computed(() => {
 .lang-switcher {
   display: flex;
   gap: 15px;
+  // AJOUT: Gestion de la visibilité via CSS
+  &.is-hidden {
+    visibility: hidden;
+  }
+
   button {
     background: transparent;
     border: none;
@@ -845,6 +882,11 @@ const socialNetworks = computed(() => {
 .end-screen {
   text-align: center;
   justify-content: center;
+}
+
+/* AJOUT: Classe pour le titre d'erreur */
+.error-title {
+  color: $error-red; // Utilisation de la variable SCSS
 }
 
 /* ANIMATIONS FLUIDES */
@@ -953,6 +995,8 @@ const socialNetworks = computed(() => {
     font-size: 1.3rem;
     margin-top: 15px;
     line-height: 1.3;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
   }
 }
 .options-grid {
@@ -1650,6 +1694,15 @@ const socialNetworks = computed(() => {
       text-align: right;
       color: $reg-green;
     }
+
+    /* AJOUT: Classe pour l'affichage du temps dans le classement */
+    .time-spent {
+      display: block;
+      font-size: 1em;
+      opacity: 0.5;
+      font-weight: normal;
+    }
+
     .badge-member {
       font-size: 0.7rem;
       background: #eee;

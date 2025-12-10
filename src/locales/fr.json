@@ -1,10 +1,10 @@
 {
-  "header": { "brand": "NORML FRANCE ACADEMY", "score_label": "NOTE" },
+  "header": { "brand": "NORML FRANCE ACADEMY", "score_label": "STATUT" },
   "start": {
-    "title": "Stop aux Idées Reçues",
-    "subtitle": "La prohibition échoue. Testez votre lucidité.",
-    "btn": "Relever le défi",
-    "choose_level": "Choisissez votre niveau :"
+    "title": "Cannabis en France : La Certification Citoyenne",
+    "subtitle": "Avoir une opinion est facile. Avoir raison est une autre histoire. Êtes-vous légitime pour débattre du sujet ? NORML France vous offre l'opportunité de valider vos acquis. Que le résultat soit excellent ou perfectible, ne repartez pas avec des doutes, mais avec une certification claire de votre niveau.",
+    "btn": "Obtenir ma certification",
+    "choose_level": "Niveau de certification visé :"
   },
   "levels": {
     "easy": { "label": "Curieux", "icon": "🌱" },
@@ -13,47 +13,47 @@
   },
   "game": {
     "letters": ["A", "B", "C", "D"],
-    "correct": "✅ Exact !",
-    "wrong": "❌ Faux !",
-    "argument_label": "Explication :",
-    "btn_next": "Suivant →",
-    "btn_results": "Voir mon Score",
+    "correct": "✅ Acquis validé.",
+    "wrong": "❌ Idée reçue.",
+    "argument_label": "Le point de référence :",
+    "btn_next": "Question suivante →",
+    "btn_results": "Voir ma Certification",
     "point_popup": "+1 PT"
   },
   "ui": {
-    "loading": "Chargement des questions...",
-    "error_title": "Une erreur est survenue",
-    "btn_retry": "Réessayer"
+    "loading": "Génération de la session...",
+    "error_title": "Module indisponible",
+    "btn_retry": "Relancer"
   },
   "errors": {
-    "fetch_fail": "Erreur lors du chargement des questions.",
-    "no_questions": "Aucune question disponible pour ce niveau.",
-    "server_unavailable": "Impossible de lancer le jeu. Serveur indisponible.",
-    "internal": "Erreur interne du jeu (Question introuvable)."
+    "fetch_fail": "Accès aux données impossible.",
+    "no_questions": "Aucune certification disponible.",
+    "server_unavailable": "Serveur en maintenance.",
+    "internal": "Erreur de traitement."
   },
   "end": {
-    "btn_retry": "🔄 Rejouer une partie",
+    "btn_retry": "🔄 Tenter un autre niveau",
     "btn_join": {
-      "text": "Adhérer à NORML France →",
+      "text": "Valider mon statut (Adhérer) →",
       "url": "https://www.norml.fr/boutique/adhesion-norml-france/"
     },
-    "btn_save": "Enregistrer mon score",
-    "btn_skip": "Ne pas enregistrer et Rejouer",
-    "leaderboard_title": "Tableau d'Honneur",
-    "placeholder_name": "Pseudo",
-    "placeholder_id": "N° Adhérent (Optionnel)",
-    "score_label": "NOTE FINALE",
-    "top_10": "🏆 TOP 10 -",
+    "btn_save": "Obtenir mon certificat",
+    "btn_skip": "Terminer",
+    "leaderboard_title": "Tableau des Certifiés",
+    "placeholder_name": "Nom / Pseudo",
+    "placeholder_id": "N° Adhérent (Facultatif)",
+    "score_label": "NIVEAU VALIDÉ",
+    "top_10": "🏆 MEILLEURS RÉSULTATS -",
     "col_rank": "#",
-    "col_name": "Militant",
+    "col_name": "Candidat",
     "col_score": "Note",
     "share_card": {
-      "tagline": "La prohibition échoue. Testez votre lucidité.",
-      "website": "norml.fr"
+      "tagline": "Cannabis : J'ai obtenu ma certification de connaissances avec NORML France.",
+      "website": "academy.norml.fr"
     },
     "share_modal": {
-      "title": "📤 Partage ton exploit !",
-      "hint": "L'image a été téléchargée. Publie-la où tu veux :",
+      "title": "📤 Afficher ma légitimité",
+      "hint": "Partagez votre statut pour prouver votre niveau :",
       "btn_close": "Fermer",
       "networks": [
         {
@@ -84,16 +84,16 @@
     },
     "ranks": {
       "expert": {
-        "title": "Ambassadeur de la Régulation",
-        "desc": "Excellent ! Vous maîtrisez le sujet sur le bout des doigts. Aidez-nous à diffuser ces vérités !"
+        "title": "Légitimité Confirmée",
+        "desc": "Excellente maîtrise. Votre parole est crédible et nécessaire. Ne gardez pas ce savoir pour vous : l'adhésion à NORML France est le levier indispensable pour porter cette expertise dans le débat public."
       },
       "intermediate": {
-        "title": "Citoyen Éclairé",
-        "desc": "Bien joué. Vous avez de bonnes bases, mais quelques préjugés persistent. Nos articles sont là pour vous."
+        "title": "Légitimité en Construction",
+        "desc": "Les bases sont là, mais des zones d'ombre persistent. Votre opinion a de la valeur, mais elle doit être affinée. Rejoindre NORML France est la meilleure façon de transformer ces acquis en véritable expertise."
       },
       "beginner": {
-        "title": "Victime de la Prohibition",
-        "desc": "Ne vous en faites pas, on nous ment depuis 50 ans. C'est le moment de découvrir la vérité avec NORML."
+        "title": "Besoin de Mise à Niveau",
+        "desc": "Le sujet est complexe et les idées reçues nombreuses. En l'état, votre opinion risque d'être contredite par les faits. Ce n'est pas une fatalité : l'adhésion à NORML France vous donnera les clés pour comprendre."
       }
     }
   },

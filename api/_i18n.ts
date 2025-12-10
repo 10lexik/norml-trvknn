@@ -1,5 +1,3 @@
-// api/_i18n.ts
-
 const MESSAGES: Record<string, any> = {
   fr: {
     db_empty: 'Base de données vide',
