@@ -61,21 +61,24 @@
           "label": "Instagram",
           "icon": "📸",
           "url": "https://instagram.com",
-          "color": "#E1306C"
+          "color": "#E1306C",
+          "baseUrl": "instagram.com"
         },
         {
           "id": "x",
           "label": "X / Twitter",
           "icon": "✖️",
           "url": "https://x.com/intent/tweet?text={text}",
-          "color": "#000000"
+          "color": "#000000",
+          "baseUrl": "x.com"
         },
         {
           "id": "facebook",
           "label": "Facebook",
           "icon": "f",
           "url": "https://www.facebook.com/sharer/sharer.php?u={url}",
-          "color": "#1877F2"
+          "color": "#1877F2",
+          "baseUrl": "facebook.com"
         }
       ]
     },

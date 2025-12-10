@@ -19,12 +19,14 @@ interface Question {
   explanation?: string
 }
 
-interface ShareNetworkConfig {
+// Configuration UNIFIÉE (Input + Share)
+interface UnifiedNetworkConfig {
   id: string
   label: string
   icon: string
-  url: string
+  url: string // Url de partage
   color: string
+  baseUrl: string // Url de profil (pour le nettoyage input)
 }
 
 interface LeaderboardEntry {
@@ -32,19 +34,17 @@ interface LeaderboardEntry {
   score: number
   memberId?: string
   isUser?: boolean
+  socials?: Record<string, string>
 }
 
-// --- 2.5. HELPER TYPO (Défini ici pour être accessible partout) ---
+// --- 2.5. HELPER TYPO ---
 const autoFixTypo = (data: any): any => {
-  // Si c'est du texte, on applique l'espace insécable avant : ! ? ;
   if (typeof data === 'string') {
     return data.replace(/ ([!?:;])/g, '\u00A0$1')
   }
-  // Si c'est une liste, on nettoie chaque élément
   if (Array.isArray(data)) {
     return data.map((item) => autoFixTypo(item))
   }
-  // Si c'est un objet, on nettoie chaque clé
   if (data && typeof data === 'object') {
     const sorted: any = {}
     Object.keys(data).forEach((key) => {
@@ -60,7 +60,6 @@ const LEVEL_IDS = ['easy', 'medium', 'hard']
 const { t, tm, locale, setLocaleMessage } = useI18n()
 const availableLocales = ['fr', 'en', 'es']
 
-// Initialisation avec nettoyage automatique des fichiers locaux
 setLocaleMessage('fr', autoFixTypo(fr))
 setLocaleMessage('en', autoFixTypo(en))
 setLocaleMessage('es', autoFixTypo(es))
@@ -88,11 +87,13 @@ const game = reactive({
 const form = reactive({
   name: '',
   memberId: '',
+  socials: {} as Record<string, string>,
   isSaved: false,
   leaderboard: [] as LeaderboardEntry[]
 })
 
-// Gestion du partage
+// UI States
+const visibleNetworks = ref<string[]>([]) // Pour l'accordéon inputs
 const shareCardRef = ref<HTMLElement | null>(null)
 const isGenerating = ref(false)
 const showShareModal = ref(false)
@@ -105,7 +106,6 @@ const hydrateContent = async () => {
     if (res.ok) {
       const remoteData = await res.json()
       if (remoteData && Object.keys(remoteData).length > 0) {
-        // Nettoyage automatique des données reçues du serveur
         const cleanData = autoFixTypo(remoteData)
         setLocaleMessage(locale.value, cleanData)
       }
@@ -122,6 +122,12 @@ onMounted(async () => {
       const u = JSON.parse(localUser)
       form.name = u.name || ''
       form.memberId = u.memberId || ''
+      if (u.socials) {
+        form.socials = u.socials
+        visibleNetworks.value = Object.keys(u.socials).filter(
+          (k) => u.socials[k]
+        )
+      }
     } catch (e) {
       console.error(e)
     }
@@ -159,10 +165,8 @@ const startGame = async (difficulty: string) => {
       `/api/start_game?lang=${locale.value}&level=${difficulty}`
     )
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
-    // On nettoie aussi les questions qui arrivent de l'API start_game
     const rawData = await res.json()
     const data = autoFixTypo(rawData)
-
     if (!data || data.length === 0) throw new Error(t('errors.no_questions'))
     game.questions = data
     prepareNewQuestion()
@@ -202,7 +206,6 @@ const selectAnswer = async (visualIndex: number) => {
       game.score++
       game.showPointPopup = true
     }
-    // On nettoie l'explication qui arrive du serveur
     game.questions[game.currentQIndex].correct = result.correctIndex
     game.questions[game.currentQIndex].explanation = autoFixTypo(
       result.explanation
@@ -241,7 +244,22 @@ const endGame = () => {
     })
 }
 
-// --- 8. SYSTÈME DE PARTAGE ---
+// --- 8. UI INPUTS (ACCORDÉON) ---
+const toggleInputNetwork = (id: string) => {
+  if (visibleNetworks.value.includes(id)) {
+    if (!form.socials[id])
+      visibleNetworks.value = visibleNetworks.value.filter((n) => n !== id)
+  } else {
+    visibleNetworks.value.push(id)
+  }
+}
+
+const clearInputSocial = (id: string) => {
+  form.socials[id] = ''
+  toggleInputNetwork(id)
+}
+
+// --- 9. PARTAGE VIRAL ---
 const openShareModal = async () => {
   if (!shareCardRef.value) return
   isGenerating.value = true
@@ -260,7 +278,7 @@ const openShareModal = async () => {
   }
 }
 
-const handleShareClick = (network: ShareNetworkConfig) => {
+const handleShareClick = (network: UnifiedNetworkConfig) => {
   if (generatedImageUrl.value) {
     const link = document.createElement('a')
     link.download = 'score-norml.png'
@@ -276,15 +294,33 @@ const handleShareClick = (network: ShareNetworkConfig) => {
   window.open(finalUrl, '_blank')
 }
 
-// --- 9. SAUVEGARDE ---
+// --- 10. SAUVEGARDE ---
 const submitScore = async () => {
   if (!form.name) return
   ui.isLoading = true
+
+  const finalSocials: Record<string, string> = {}
+
+  // Utilisation de la liste unifiée pour créer les liens
+  socialNetworks.value.forEach((net) => {
+    const handle = form.socials[net.id]
+    if (handle) {
+      const clean = handle
+        .replace(/^@/, '')
+        .replace(/https?:\/\//, '')
+        .replace('www.', '')
+        .replace(net.baseUrl + '/', '')
+        .trim()
+      if (clean) finalSocials[net.id] = `https://${net.baseUrl}/${clean}`
+    }
+  })
+
   try {
     const payload = {
       name: form.name,
       score: game.score,
       memberId: form.memberId,
+      socials: finalSocials,
       difficulty: game.difficulty
     }
     const res = await fetch('/api/submit_score', {
@@ -300,7 +336,11 @@ const submitScore = async () => {
     }))
     localStorage.setItem(
       'norml_user_infos',
-      JSON.stringify({ name: form.name, memberId: form.memberId })
+      JSON.stringify({
+        name: form.name,
+        memberId: form.memberId,
+        socials: form.socials
+      })
     )
     form.isSaved = true
   } catch (e) {
@@ -311,12 +351,9 @@ const submitScore = async () => {
   }
 }
 
-// Fonction pour recharger la page (car le template ne voit pas 'window')
-const reloadPage = () => {
-  window.location.reload()
-}
+// --- 11. HELPERS ---
+const reloadPage = () => window.location.reload()
 
-// --- 10. HELPERS ---
 const getI18nArray = (key: string): any[] => {
   const d = tm(key)
   return Array.isArray(d)
@@ -376,9 +413,11 @@ const rankInfo = computed(() => {
     desc: t('end.ranks.beginner.desc')
   }
 })
-const shareNetworks = computed(() => {
+
+// LISTE UNIQUE (Sert pour Inputs ET Share)
+const socialNetworks = computed(() => {
   const nets = getI18nArray('end.share_modal.networks')
-  return nets as ShareNetworkConfig[]
+  return nets as UnifiedNetworkConfig[]
 })
 </script>
 
@@ -507,6 +546,7 @@ const shareNetworks = computed(() => {
 
       <div v-if="!form.isSaved" class="save-form">
         <h4>{{ t('end.leaderboard_title') }}</h4>
+
         <div class="form-row main-row">
           <span class="prefix-icon">👤</span>
           <input
@@ -517,6 +557,42 @@ const shareNetworks = computed(() => {
             class="main-input"
           />
         </div>
+
+        <div class="social-section" v-if="socialNetworks.length">
+          <div class="social-bar">
+            <button
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="icon-btn"
+              :class="{
+                active: visibleNetworks.includes(net.id) || form.socials[net.id]
+              }"
+              @click="toggleInputNetwork(net.id)"
+              :title="net.label"
+            >
+              {{ net.icon }}
+            </button>
+          </div>
+          <transition-group name="slide">
+            <div
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="form-row social-row"
+              v-show="visibleNetworks.includes(net.id) || form.socials[net.id]"
+            >
+              <span class="prefix-icon social-icon">{{ net.icon }}</span>
+              <input
+                type="text"
+                v-model="form.socials[net.id]"
+                :placeholder="net.label"
+              />
+              <button class="close-btn" @click="clearInputSocial(net.id)">
+                ×
+              </button>
+            </div>
+          </transition-group>
+        </div>
+
         <div class="form-row secondary-row">
           <span class="prefix-icon">#</span>
           <input
@@ -525,6 +601,7 @@ const shareNetworks = computed(() => {
             :placeholder="t('end.placeholder_id')"
           />
         </div>
+
         <div class="actions-row">
           <button
             class="btn-primary"
@@ -532,13 +609,6 @@ const shareNetworks = computed(() => {
             :disabled="!form.name || ui.isLoading"
           >
             {{ ui.isLoading ? '...' : t('end.btn_save') }}
-          </button>
-          <button
-            class="btn-action-trigger"
-            @click="openShareModal"
-            :disabled="isGenerating"
-          >
-            {{ isGenerating ? '...' : t('end.share_modal.title') }}
           </button>
           <button class="btn-skip" @click="game.status = 'start'">
             {{ t('end.btn_skip') }}
@@ -556,6 +626,7 @@ const shareNetworks = computed(() => {
             {{ isGenerating ? '...' : t('end.share_modal.title') }}
           </button>
         </div>
+
         <div class="leaderboard-container">
           <h4>
             {{ t('end.top_10') }}
@@ -578,10 +649,26 @@ const shareNetworks = computed(() => {
                 >
                   <td class="rank">{{ index + 1 }}</td>
                   <td class="name">
-                    {{ entry.name }}
-                    <span v-if="entry.memberId" class="badge-member"
-                      >#{{ entry.memberId }}</span
+                    <div class="name-row">
+                      <span>{{ entry.name }}</span>
+                      <span v-if="entry.memberId" class="badge-member"
+                        >#{{ entry.memberId }}</span
+                      >
+                    </div>
+                    <div
+                      class="social-icons"
+                      v-if="entry.socials && socialNetworks.length"
                     >
+                      <template v-for="net in socialNetworks" :key="net.id">
+                        <a
+                          v-if="entry.socials[net.id]"
+                          :href="entry.socials[net.id]"
+                          target="_blank"
+                          class="s-lnk"
+                          >{{ net.icon }}</a
+                        >
+                      </template>
+                    </div>
                   </td>
                   <td class="score-val">{{ entry.score }}</td>
                 </tr>
@@ -618,7 +705,7 @@ const shareNetworks = computed(() => {
         </div>
         <div class="share-buttons-grid">
           <button
-            v-for="net in shareNetworks"
+            v-for="net in socialNetworks"
             :key="net.id"
             class="btn-network-option"
             :style="{ backgroundColor: net.color }"
@@ -760,11 +847,13 @@ const shareNetworks = computed(() => {
   justify-content: center;
 }
 
-/* ANIMATIONS FLUIDES BOUTONS STANDARD */
+/* ANIMATIONS FLUIDES */
 .btn-diff,
 .btn-option,
 .btn-primary,
+.btn-action-trigger,
 .btn-network-option,
+.icon-btn,
 .btn-close-modal {
   transition:
     transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -897,9 +986,6 @@ const shareNetworks = computed(() => {
     margin-right: 15px;
     font-weight: bold;
     flex-shrink: 0;
-    transition:
-      background 0.2s,
-      color 0.2s;
   }
   .mini-loader {
     width: 16px;
@@ -914,14 +1000,10 @@ const shareNetworks = computed(() => {
   &:hover:not(:disabled) {
     background: $prohib-black;
     color: white;
-    transform: translateY(-2px);
     .letter {
       background: white;
       color: black;
     }
-  }
-  &:active:not(:disabled) {
-    transform: translateY(0);
   }
   &.is-verifying {
     background: color.scale($prohib-black, $lightness: 90%);
@@ -1096,7 +1178,6 @@ const shareNetworks = computed(() => {
   }
 }
 
-/* CHAMPS GENERIQUES */
 .form-row {
   display: flex;
   align-items: center;
@@ -1142,6 +1223,101 @@ const shareNetworks = computed(() => {
   }
 }
 
+/* SOCIAL SECTION (ACCORDÉON INPUTS) */
+.social-section {
+  margin: 20px 0;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #ddd;
+  .label-tiny {
+    font-size: 0.7rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    display: block;
+  }
+}
+.social-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid #eee;
+    background: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    grayscale: 1;
+    opacity: 0.7;
+    &:hover {
+      transform: scale(1.1);
+      border-color: #ccc;
+      opacity: 1;
+    }
+    &.active {
+      border-color: $prohib-black;
+      background: $prohib-black;
+      color: white;
+      opacity: 1;
+      transform: scale(1.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+.social-row {
+  margin-bottom: 8px;
+  animation: slideIn 0.25s ease-out;
+  border-color: #eee;
+  .social-icon {
+    font-size: 1rem;
+    width: 36px;
+  }
+  input {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+  .close-btn {
+    width: 30px;
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: #ccc;
+    cursor: pointer;
+    &:hover {
+      color: $error-red;
+    }
+  }
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
 /* ACTIONS */
 .final-actions {
   width: 100%;
@@ -1177,25 +1353,21 @@ const shareNetworks = computed(() => {
   }
 }
 
-/* --- SHARE BUTTON (SEUL BOUTON MODIFIÉ) --- */
+/* --- SHARE BUTTON (VIRAL - DOUBLE LAYER) --- */
 .btn-action-trigger {
   @include btn-base;
   position: relative;
   z-index: 1;
   background: transparent;
-  overflow: hidden; /* Important pour double layer */
+  overflow: hidden;
   color: white;
   width: 100%;
   margin-bottom: 10px;
   font-weight: bold;
   box-shadow: 0 4px 15px rgba(200, 50, 100, 0.3);
-
-  /* Transition fluide transformation + ombre seulement */
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-
-  /* Layer 1 : Le Vert (Fond, révélé au hover) */
   &::before {
     content: '';
     position: absolute;
@@ -1203,8 +1375,6 @@ const shareNetworks = computed(() => {
     background-color: $reg-green;
     z-index: -2;
   }
-
-  /* Layer 2 : Le Dégradé (Dessus, masqué au hover) */
   &::after {
     content: '';
     position: absolute;
@@ -1219,17 +1389,15 @@ const shareNetworks = computed(() => {
       #cc2366 75%,
       #bc1888 100%
     );
-    transition: opacity 0.4s ease; /* LA CLÉ : On joue sur l'opacité */
+    transition: opacity 0.4s ease;
   }
-
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     &::after {
       opacity: 0;
-    } /* On cache le dégradé pour montrer le vert dessous */
+    }
   }
-
   &:active {
     transform: translateY(0);
   }
@@ -1302,6 +1470,10 @@ const shareNetworks = computed(() => {
   justify-content: center;
   gap: 8px;
   font-size: 0.9rem;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+  will-change: transform;
   &:hover {
     filter: brightness(1.1);
     transform: translateY(-2px);
@@ -1477,6 +1649,25 @@ const shareNetworks = computed(() => {
       border-radius: 4px;
       margin-left: 5px;
       color: #666;
+    }
+    .name-row {
+      display: flex;
+      align-items: center;
+    }
+    .social-icons {
+      display: flex;
+      gap: 5px;
+      margin-top: 3px;
+    }
+    .s-lnk {
+      text-decoration: none;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      transition: transform 0.2s;
+      &:hover {
+        transform: scale(1.2);
+        opacity: 1;
+      }
     }
     &.top-3 .rank {
       color: $gold;
