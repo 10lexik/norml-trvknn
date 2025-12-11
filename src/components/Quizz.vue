@@ -996,7 +996,7 @@ const socialNetworks = computed(() => {
     margin-top: 15px;
     line-height: 1.3;
     padding-bottom: 20px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid $prohib-black;
   }
 }
 .options-grid {
