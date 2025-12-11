@@ -24,7 +24,6 @@ if (!global._mongoClientPromise && uri) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // 1. Récupération des textes selon la langue
   const lang = (req.query.lang as string) || 'fr'
   const texts = getApiText(lang)
 
@@ -41,15 +40,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       time
     } = req.body
 
-    // Utilisation de texts.params_missing
     if (!name || score === undefined) throw new Error(texts.params_missing)
 
     const client = await global._mongoClientPromise
-    // Utilisation de texts.db_empty
     if (!client) throw new Error(texts.db_empty)
 
     const collection = client.db('norml_trvknn').collection('leaderboard')
 
+    // ÉTAPE 1 : On insère ou met à jour le joueur actuel
     await collection.updateOne(
       { name: name, difficulty: difficulty },
       {
@@ -65,6 +63,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { upsert: true }
     )
 
+    // ÉTAPE 2 : IDENTIFICATION DES SURVIVANTS (Le Top 10)
+    // On cherche les 10 meilleurs pour CETTE difficulté spécifique
+    const survivors = await collection
+      .find({ difficulty: difficulty }) // Filtre important !
+      .sort({ score: -1, time: 1 }) // Score haut d'abord, temps court ensuite
+      .limit(10) // On en garde que 10
+      .project({ _id: 1 }) // On ne récupère que l'ID pour aller vite
+      .toArray()
+
+    const survivorIds = survivors.map((doc) => doc._id)
+
+    // ÉTAPE 3 : LA PURGE
+    // Si on a des survivants, on supprime tous les autres de cette difficulté
+    if (survivorIds.length > 0) {
+      await collection.deleteMany({
+        difficulty: difficulty, // On ne touche pas aux autres niveaux (easy/hard)
+        _id: { $nin: survivorIds } // $nin = "Not In" (Tout ce qui n'est PAS dans la liste des survivants)
+      })
+    }
+
+    // ÉTAPE 4 : On renvoie le Top 10 propre au frontend
     const top10 = await collection
       .find({ difficulty: difficulty })
       .sort({ score: -1, time: 1 })
@@ -74,8 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json(top10)
   } catch (e: any) {
-    console.error(e) // Log technique serveur (invisible pour l'utilisateur)
-    // On renvoie le message d'erreur (qui vient de texts.* s'il a été throw plus haut)
+    console.error(e)
     res.status(500).json({ error: e.message })
   }
 }
