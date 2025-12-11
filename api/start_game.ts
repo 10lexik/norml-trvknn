@@ -1,10 +1,7 @@
 import { MongoClient } from 'mongodb'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-
-// Import simple, local, typé.
 import { getApiText } from './_i18n'
 
-// ... Déclaration TypeScript pour éviter l'erreur "implicitly any" ...
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined
 }
@@ -17,20 +14,23 @@ if (!global._mongoClientPromise) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { lang = 'fr', level = 'medium' } = req.query
-  const targetLang = lang as string
-  const targetLevel = level as string
+  // 🛡️ SÉCURITÉ : LISTES BLANCHES
+  const ALLOWED_LANGS = ['fr', 'en', 'es']
+  const ALLOWED_LEVELS = ['easy', 'medium', 'hard']
+
+  // Récupération et nettoyage
+  const rawLang = String(req.query.lang || 'fr')
+  const rawLevel = String(req.query.level || 'medium')
+
+  // Validation stricte : Si c'est pas dans la liste, on force la valeur par défaut
+  const targetLang = ALLOWED_LANGS.includes(rawLang) ? rawLang : 'fr'
+  const targetLevel = ALLOWED_LEVELS.includes(rawLevel) ? rawLevel : 'medium'
 
   const T = getApiText(targetLang)
 
   try {
     const client = await global._mongoClientPromise
-
-    // --- CORRECTION : SAFETY CHECK ---
-    if (!client) {
-      throw new Error('Database client not initialized')
-    }
-    // ---------------------------------
+    if (!client) throw new Error('Database client not initialized')
 
     const collection = client.db('norml_trvknn').collection('trivia')
     const data = await collection.findOne({})
@@ -48,13 +48,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`${T.level_empty} ${targetLevel}`)
     }
 
+    // Mélange et sélection
     const safeQuestions = levelQuestions
       .map((q: any, index: number) => ({
         ...q,
         _id: `${targetLang}_${targetLevel}_${index}`
       }))
       .sort(() => 0.5 - Math.random())
-      .slice(0, 20) // ATTENTION : A MODIFIER POUR AVOIR 20 QUESTIONS !
+      .slice(0, 20)
       .map(({ category, question, options, _id }: any) => ({
         _id,
         category,
