@@ -37,7 +37,7 @@ interface LeaderboardEntry {
   socials?: Record<string, string>
 }
 
-// --- 2.5. HELPER TYPO ---
+// --- 2.5. HELPER TYPO (Indispensable pour la charte graphique) ---
 const autoFixTypo = (data: any): any => {
   if (typeof data === 'string') {
     return data.replace(/ ([!?:;])/g, '\u00A0$1')
@@ -105,21 +105,14 @@ const generatedImageUrl = ref<string | null>(null)
 
 // --- 5. LOGIQUE CMS ---
 const hydrateContent = async () => {
-  // 1. On lit la variable d'environnement.
-  // L'astuce "(import.meta as any)" permet d'éviter l'erreur TypeScript
-  // sans casser votre configuration "CommonJS".
   const forceLocal =
     (import.meta as any).env.VITE_FORCE_LOCAL_CONTENT === 'true'
-
-  // 2. Si la variable est 'true', on garde le fichier JSON local.
   if (forceLocal) {
     console.log('🚧 Mode Local Forcé (.env) : JSON local utilisé.')
     return
   }
-
-  // 3. Sinon (si 'false' ou absent), on appelle l'API (MongoDB).
   try {
-    const res = await fetch(`/api/get_content?lang=${locale.value}`)
+    const res = await fetch(`/api/content/get?lang=${locale.value}`)
     if (res.ok) {
       const remoteData = await res.json()
       if (remoteData && Object.keys(remoteData).length > 0) {
@@ -135,7 +128,6 @@ const hydrateContent = async () => {
 // --- 6. CYCLE DE VIE ---
 onMounted(async () => {
   hydrateContent()
-
   const localUser = localStorage.getItem('norml_user_infos')
   if (localUser) {
     try {
@@ -152,7 +144,6 @@ onMounted(async () => {
       console.error(e)
     }
   }
-
   const mocks = getI18nArray('end.mock_leaderboard') as LeaderboardEntry[]
   form.leaderboard = mocks.slice(0, 10)
 })
@@ -173,7 +164,7 @@ const startGame = async (difficulty: string) => {
   showShareModal.value = false
   try {
     const res = await fetch(
-      `/api/start_game?lang=${locale.value}&level=${difficulty}`
+      `/api/game/start?lang=${locale.value}&level=${difficulty}`
     )
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
     const rawData = await res.json()
@@ -205,7 +196,7 @@ const selectAnswer = async (visualIndex: number) => {
   ui.verifyingIdx = visualIndex
   game.selectedAnswer = visualIndex
   try {
-    const res = await fetch('/api/check_answer', {
+    const res = await fetch('/api/game/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -308,21 +299,21 @@ const handleShareClick = (network: UnifiedNetworkConfig) => {
       ? shareTextRaw
       : `Score NORML: ${game.score}/${game.questions.length}`
   )
-
   const shareUrl = encodeURIComponent('https://norml.fr')
   finalUrl = finalUrl.replace('{text}', shareText).replace('{url}', shareUrl)
   window.open(finalUrl, '_blank')
 }
 
-// --- 10. SAUVEGARDE ---
+// --- 10. SAUVEGARDE (Logique augmentée pour la vérification du pseudo) ---
 const submitScore = async () => {
   if (!form.name) return
   ui.isLoading = true
   ui.error = null
 
   const timeSpent = Math.floor((endTime.value - startTime.value) / 1000)
-  const finalSocials: Record<string, string> = {}
 
+  // Nettoyage complet des réseaux sociaux (Logique d'origine conservée)
+  const finalSocials: Record<string, string> = {}
   socialNetworks.value.forEach((net) => {
     const handle = form.socials[net.id]
     if (handle) {
@@ -346,20 +337,24 @@ const submitScore = async () => {
       time: timeSpent
     }
 
-    const res = await fetch(`/api/submit_score?lang=${locale.value}`, {
+    const res = await fetch(`/api/game/score?lang=${locale.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}))
-      throw new Error(errJson.error || 'Server Error')
+    const data = await res.json()
+
+    // Gestion spécifique du conflit de pseudo (409)
+    if (res.status === 409) {
+      ui.error = data.error
+      ui.isLoading = false
+      return
     }
 
-    const realTop10 = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Server Error')
 
-    form.leaderboard = realTop10.map((entry: any) => ({
+    form.leaderboard = data.map((entry: any) => ({
       ...entry,
       isUser: entry.name === form.name
     }))
@@ -373,15 +368,15 @@ const submitScore = async () => {
       })
     )
     form.isSaved = true
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
-    ui.error = t('errors.server_unavailable')
+    ui.error = e.message || t('errors.server_unavailable')
   } finally {
     ui.isLoading = false
   }
 }
 
-// --- 11. HELPERS ---
+// --- 11. HELPERS COMPUTED ---
 const reloadPage = () => window.location.reload()
 
 const getI18nArray = (key: string): any[] => {
@@ -416,6 +411,7 @@ const progress = computed(() =>
     ? ((game.currentQIndex + 1) / game.questions.length) * 100
     : 0
 )
+
 const getOptionClass = (idx: number) => {
   if (ui.verifyingIdx === idx) return 'is-verifying'
   if (!game.hasAnswered || currentQuestion.value.correct === undefined)
@@ -426,6 +422,7 @@ const getOptionClass = (idx: number) => {
   if (game.selectedAnswer === idx) return 'wrong'
   return 'dimmed'
 }
+
 const rankInfo = computed(() => {
   const s = game.score
   if (s >= 18)
@@ -444,10 +441,9 @@ const rankInfo = computed(() => {
   }
 })
 
-const socialNetworks = computed(() => {
-  const nets = getI18nArray('end.share_modal.networks')
-  return nets as UnifiedNetworkConfig[]
-})
+const socialNetworks = computed(
+  () => getI18nArray('end.share_modal.networks') as UnifiedNetworkConfig[]
+)
 </script>
 
 <template>

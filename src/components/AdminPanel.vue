@@ -97,7 +97,7 @@ const loadContent = async (lang: string) => {
   statusMsg.value = '...'
 
   try {
-    const res = await fetch(`/api/admin/manage_content?lang=${lang}`, {
+    const res = await fetch(`/api/admin/manage?lang=${lang}`, {
       headers: { 'x-admin-secret': secret.value }
     })
 
@@ -134,7 +134,7 @@ const loadContent = async (lang: string) => {
 const saveContent = async () => {
   try {
     isLoading.value = true
-    const res = await fetch('/api/admin/manage_content', {
+    const res = await fetch('/api/admin/manage', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -359,7 +359,7 @@ const removeQuestion = (difficulty: string, index: number) => {
                 class="question-card"
               >
                 <div class="card-top">
-                  <span class="idx">#{{ idx + 1 }}</span>
+                  <span class="idx">#{{ (idx as number) + 1 }}</span>
                   <input
                     type="text"
                     v-model="q.category"
@@ -368,7 +368,7 @@ const removeQuestion = (difficulty: string, index: number) => {
                   />
                   <button
                     class="btn-delete"
-                    @click="removeQuestion(activeTab, idx)"
+                    @click="removeQuestion(activeTab, idx as number)"
                   >
                     🗑️
                   </button>

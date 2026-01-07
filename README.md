@@ -11,30 +11,33 @@ This project is an interactive web application developed for **NORML France**. I
 
 ## ✨ Features
 
-* **⚡ Modern Stack:** Vue 3 (Composition API), Vite, and TypeScript for maximum performance.
-* **🌍 Internationalization (i18n):** Native support for French, English, and Spanish.
-* **🔀 Smart Randomization:**
-    * Questions are shuffled every game.
-    * Answer options are shuffled (impossible to memorize by position).
-* **🏆 Score & Ranking System:** Local storage of scores and Leaderboard.
-* **🎨 Polished UI/UX:** Activist and elegant design, fluid animations, confetti, responsive design.
-* **📚 Educational Content:** Detailed explanations after each answer to maximize learning.
+- **⚡ Modern Stack:** Vue 3 (Composition API), Vite, and TypeScript for maximum performance.
+- **🌍 Internationalization (i18n):** Native support for French, English, and Spanish.
+- **🔀 Smart Randomization:**
+  - Questions are shuffled every game.
+  - Answer options are shuffled (impossible to memorize by position).
+- **🏆 Score & Ranking System:** Local storage of scores and Leaderboard.
+- **🎨 Polished UI/UX:** Activist and elegant design, fluid animations, confetti, responsive design.
+- **📚 Educational Content:** Detailed explanations after each answer to maximize learning.
 
 ## 🛠️ Prerequisites
 
 Before you begin, ensure you have met the following requirements:
-* [Node.js](https://nodejs.org/) (LTS version recommended, v18+)
-* [Git](https://git-scm.com/)
+
+- [Node.js](https://nodejs.org/) (LTS version recommended, v18+)
+- [Git](https://git-scm.com/)
 
 ## 🚀 Installation & Setup
 
 1.  **Clone the repository:**
+
     ```bash
-    git clone [https://github.com/YOUR_USER/norml-trvknn.git](https://github.com/10lexik/norml-trvknn.git)
+    git clone [https://github.com/10lexik/norml-trvknn.git]
     cd norml-trvknn
     ```
 
 2.  **Install dependencies:**
+
     ```bash
     npm install
     ```
@@ -58,3 +61,4 @@ src/
 ├── main.ts          # Entry point & i18n initialization
 ├── style.css        # Global styles
 └── vite-env.d.ts    # TypeScript declarations for Vite
+```
