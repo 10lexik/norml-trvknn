@@ -7,7 +7,7 @@
     "choose_level": "Niveau de certification visé :"
   },
   "levels": {
-    "easy": { "label": "prout", "icon": "🌱" },
+    "easy": { "label": "Novice", "icon": "🌱" },
     "medium": { "label": "Adhérent", "icon": "🌿" },
     "hard": { "label": "Expert", "icon": "🌳" }
   },
