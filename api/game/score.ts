@@ -2,6 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { atlasClientPromise, DEFAULTS } from '../_core/_db'
 import { getApiText } from '../_core/_i18n'
 
+// Regex stricte : 2 à 15 caractères, alphanumérique + accents, espaces, tirets
+const NAME_REGEX = /^[a-zA-Z0-9\u00C0-\u00FF _-]{2,15}$/
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lang = (req.query.lang as string) || DEFAULTS.LANG
   const T = getApiText(lang)
@@ -31,6 +34,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(T.invalid_score)
 
     const safeName = String(name).trim().substring(0, DEFAULTS.NAME_MAX)
+
+    // VALIDATION REGEX DU NOM
+    if (!NAME_REGEX.test(safeName)) {
+      return res.status(400).json({ error: T.invalid_name })
+    }
+
     const providedId = memberId
       ? String(memberId).trim().substring(0, DEFAULTS.NAME_MAX)
       : ''
@@ -59,7 +68,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (existingUser) {
       // Si le nom existe mais que le memberId ne correspond pas -> Conflit (409)
-      // Note: On compare avec l'ID existant en base.
       if (existingUser.memberId !== providedId) {
         return res
           .status(409)
@@ -68,7 +76,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 3. MISE À JOUR OU CRÉATION
-    // Utilisation de $max pour le score et $set pour les métadonnées
     await collection.updateOne(
       { name: safeName, difficulty },
       {

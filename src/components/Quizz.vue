@@ -37,7 +37,7 @@ interface LeaderboardEntry {
   socials?: Record<string, string>
 }
 
-// --- 2.5. HELPER TYPO (Indispensable pour la charte graphique) ---
+// --- 2.5. HELPER TYPO ---
 const autoFixTypo = (data: any): any => {
   if (typeof data === 'string') {
     return data.replace(/ ([!?:;])/g, '\u00A0$1')
@@ -66,10 +66,12 @@ setLocaleMessage('es', autoFixTypo(es))
 
 // --- 4. STATE ---
 const ui = reactive({
-  isLoading: false,
+  isLoading: true, // FIX: true par défaut pour éviter le flash
   isChecking: false,
+  isSubmitting: false, // AJOUT: Loader spécifique bouton save
   verifyingIdx: null as number | null,
-  error: null as string | null
+  error: null as string | null,
+  nameError: null as string | null // AJOUT: Pour tooltip
 })
 
 const game = reactive({
@@ -127,7 +129,12 @@ const hydrateContent = async () => {
 
 // --- 6. CYCLE DE VIE ---
 onMounted(async () => {
-  hydrateContent()
+  try {
+    await hydrateContent() // FIX: Attendre le contenu
+  } finally {
+    ui.isLoading = false // Libérer l'UI
+  }
+
   const localUser = localStorage.getItem('norml_user_infos')
   if (localUser) {
     try {
@@ -151,7 +158,9 @@ onMounted(async () => {
 // --- 7. ACTIONS JEU ---
 const setLang = async (l: string) => {
   locale.value = l
+  ui.isLoading = true
   await hydrateContent()
+  ui.isLoading = false
 }
 
 const startGame = async (difficulty: string) => {
@@ -263,6 +272,10 @@ const clearInputSocial = (id: string) => {
   toggleInputNetwork(id)
 }
 
+const clearNameError = () => {
+  ui.nameError = null
+}
+
 // --- 9. PARTAGE VIRAL ---
 const openShareModal = async () => {
   if (!shareCardRef.value) return
@@ -304,15 +317,15 @@ const handleShareClick = (network: UnifiedNetworkConfig) => {
   window.open(finalUrl, '_blank')
 }
 
-// --- 10. SAUVEGARDE (Logique augmentée pour la vérification du pseudo) ---
+// --- 10. SAUVEGARDE (Logique augmentée UI) ---
 const submitScore = async () => {
   if (!form.name) return
-  ui.isLoading = true
+  ui.isSubmitting = true // Utilise isSubmitting pour ne pas bloquer tout l'écran
   ui.error = null
+  ui.nameError = null
 
   const timeSpent = Math.floor((endTime.value - startTime.value) / 1000)
 
-  // Nettoyage complet des réseaux sociaux (Logique d'origine conservée)
   const finalSocials: Record<string, string> = {}
   socialNetworks.value.forEach((net) => {
     const handle = form.socials[net.id]
@@ -345,10 +358,10 @@ const submitScore = async () => {
 
     const data = await res.json()
 
-    // Gestion spécifique du conflit de pseudo (409)
-    if (res.status === 409) {
-      ui.error = data.error
-      ui.isLoading = false
+    // Gestion spécifique des erreurs de validation (400) et conflits (409)
+    if (res.status === 409 || res.status === 400) {
+      ui.nameError = data.error
+      ui.isSubmitting = false
       return
     }
 
@@ -372,7 +385,7 @@ const submitScore = async () => {
     console.error(e)
     ui.error = e.message || t('errors.server_unavailable')
   } finally {
-    ui.isLoading = false
+    ui.isSubmitting = false
   }
 }
 
@@ -570,14 +583,21 @@ const socialNetworks = computed(
       <div v-if="!form.isSaved" class="save-form">
         <h4>{{ t('end.leaderboard_title') }}</h4>
 
-        <div class="form-row main-row">
+        <div class="form-row main-row" style="position: relative">
+          <div v-if="ui.nameError" class="input-tooltip">
+            {{ ui.nameError }}
+            <div class="tooltip-arrow"></div>
+          </div>
+
           <span class="prefix-icon">👤</span>
           <input
             type="text"
             v-model="form.name"
+            @input="clearNameError"
             :placeholder="t('end.placeholder_name')"
             maxlength="15"
             class="main-input"
+            :class="{ 'has-error': ui.nameError }"
           />
         </div>
 
@@ -629,9 +649,10 @@ const socialNetworks = computed(
           <button
             class="btn-primary"
             @click="submitScore"
-            :disabled="!form.name || ui.isLoading"
+            :disabled="!form.name || ui.isSubmitting"
           >
-            {{ ui.isLoading ? '...' : t('end.btn_save') }}
+            <span v-if="ui.isSubmitting" class="mini-loader-white"></span>
+            <span v-else>{{ t('end.btn_save') }}</span>
           </button>
           <button class="btn-skip" @click="game.status = 'start'">
             {{ t('end.btn_skip') }}
@@ -768,6 +789,64 @@ const socialNetworks = computed(
 @use '@/assets/scss/abstracts/mixins' as *;
 @use 'sass:color';
 
+/* ... STYLES EXISTANTS CONSERVÉS ... */
+
+/* TOOLTIP STYLES (AJOUT) */
+.input-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $error-red;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+
+  .tooltip-arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: $error-red transparent transparent transparent;
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.has-error {
+  color: $error-red !important;
+}
+
+/* MINI LOADER WHITE pour le bouton SAVE */
+.mini-loader-white {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ... RESTE DU CSS STANDARD (quiz-module, header, etc.) ... */
 .quiz-module {
   width: 100%;
   max-width: 600px;
@@ -804,7 +883,6 @@ const socialNetworks = computed(
 .lang-switcher {
   display: flex;
   gap: 15px;
-  // AJOUT: Gestion de la visibilité via CSS
   &.is-hidden {
     visibility: hidden;
   }
@@ -879,10 +957,8 @@ const socialNetworks = computed(
   text-align: center;
   justify-content: center;
 }
-
-/* AJOUT: Classe pour le titre d'erreur */
 .error-title {
-  color: $error-red; // Utilisation de la variable SCSS
+  color: $error-red;
 }
 
 /* ANIMATIONS FLUIDES */
@@ -1691,7 +1767,6 @@ const socialNetworks = computed(
       color: $reg-green;
     }
 
-    /* AJOUT: Classe pour l'affichage du temps dans le classement */
     .time-spent {
       display: block;
       font-size: 1em;
