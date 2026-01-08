@@ -17,7 +17,7 @@ export const DEFAULTS = {
   ENV: { PROD: 'production', TRUE: 'true' },
   ALLOWED_LANGS: ['fr', 'en', 'es'],
   ALLOWED_LEVELS: ['easy', 'medium', 'hard'],
-  SCORE_LIMIT: 1,
+  SCORE_LIMIT: 20,
   LB_LIMIT: 10,
   SCORE_RANGE: { MIN: 0, MAX: 50 },
   NAME_MAX: 20,
