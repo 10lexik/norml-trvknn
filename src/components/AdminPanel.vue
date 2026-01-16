@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 // --- CONSTANTES ---
 const STORAGE_KEY = 'norml_admin_secret'
@@ -19,7 +19,15 @@ const showRawJson = ref(false)
 const cmsData = ref<any>({})
 const languages = ['fr', 'en', 'es']
 
+// Pour la gestion des catégories
+const creatingCategoryFor = ref<string | null>(null)
+
 let inactivityTimer: any = null
+
+// --- DIRECTIVES ---
+const vFocus = {
+  mounted: (el: HTMLElement) => el.focus()
+}
 
 // --- CYCLE DE VIE ---
 onMounted(() => {
@@ -28,6 +36,22 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopInactivityTracking()
+})
+
+// --- COMPUTED ---
+// Extrait la liste unique des catégories existantes dans tous les pools
+const availableCategories = computed(() => {
+  const cats = new Set<string>()
+  if (!cmsData.value.questions_pool) return []
+
+  const pools = ['easy', 'medium', 'hard']
+  pools.forEach((level) => {
+    cmsData.value.questions_pool[level]?.forEach((q: any) => {
+      if (q.category) cats.add(q.category)
+    })
+  })
+
+  return Array.from(cats).sort()
 })
 
 // --- GESTION INACTIVITÉ ---
@@ -171,7 +195,7 @@ const addQuestion = (difficulty: string) => {
     cmsData.value.questions_pool[difficulty] = []
   }
   cmsData.value.questions_pool[difficulty].unshift({
-    category: 'Nouvelle catégorie',
+    category: availableCategories.value[0] || 'Général',
     question: '',
     options: ['', '', '', ''],
     correct: 0,
@@ -182,6 +206,13 @@ const addQuestion = (difficulty: string) => {
 const removeQuestion = (difficulty: string, index: number) => {
   if (confirm('Supprimer cette question ?')) {
     cmsData.value.questions_pool[difficulty].splice(index, 1)
+  }
+}
+
+const handleCategoryChange = (val: string, level: string, idx: number) => {
+  if (val === 'ADD_NEW') {
+    creatingCategoryFor.value = `${level}-${idx}`
+    cmsData.value.questions_pool[level][idx].category = ''
   }
 }
 </script>
@@ -196,6 +227,7 @@ const removeQuestion = (difficulty: string, index: number) => {
           type="password"
           placeholder="Mot de passe"
           @keyup.enter="login"
+          autocomplete="current-password"
         />
         <button class="btn-primary" @click="login" :disabled="isLoading">
           Entrer
@@ -207,7 +239,7 @@ const removeQuestion = (difficulty: string, index: number) => {
       <div class="top-bar">
         <div class="bar-header">
           <div class="brand-group">
-            <span class="brand">NORL FR ADMIN</span>
+            <span class="brand">NORML FR ADMIN</span>
             <div class="lang-switcher">
               <button
                 v-for="l in languages"
@@ -227,7 +259,6 @@ const removeQuestion = (difficulty: string, index: number) => {
 
         <div class="bar-actions">
           <span class="status" v-if="statusMsg">{{ statusMsg }}</span>
-
           <div class="buttons-group">
             <button class="btn-secondary" @click="showRawJson = !showRawJson">
               {{ showRawJson ? 'Form' : 'JSON' }}
@@ -297,15 +328,27 @@ const removeQuestion = (difficulty: string, index: number) => {
             <div class="form-section">
               <div class="form-group">
                 <label>Titre</label>
-                <input type="text" v-model="cmsData.start.title" />
+                <input
+                  type="text"
+                  v-model="cmsData.start.title"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
                 <label>Sous-titre</label>
-                <textarea v-model="cmsData.start.subtitle" rows="3"></textarea>
+                <textarea
+                  v-model="cmsData.start.subtitle"
+                  rows="3"
+                  autocomplete="off"
+                ></textarea>
               </div>
               <div class="form-group">
                 <label>Bouton</label>
-                <input type="text" v-model="cmsData.start.btn" />
+                <input
+                  type="text"
+                  v-model="cmsData.start.btn"
+                  autocomplete="off"
+                />
               </div>
             </div>
 
@@ -313,11 +356,19 @@ const removeQuestion = (difficulty: string, index: number) => {
             <div class="form-section">
               <div class="form-group">
                 <label>Titre Leaderboard</label>
-                <input type="text" v-model="cmsData.end.leaderboard_title" />
+                <input
+                  type="text"
+                  v-model="cmsData.end.leaderboard_title"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
                 <label>Tagline Partage</label>
-                <input type="text" v-model="cmsData.end.share_card.tagline" />
+                <input
+                  type="text"
+                  v-model="cmsData.end.share_card.tagline"
+                  autocomplete="off"
+                />
               </div>
             </div>
           </div>
@@ -326,20 +377,36 @@ const removeQuestion = (difficulty: string, index: number) => {
             <h3>Textes Jeu</h3>
             <div class="form-section grid-2">
               <div class="form-group">
-                <label>Correct</label>
-                <input type="text" v-model="cmsData.game.correct" />
+                <label>Correct</label
+                ><input
+                  type="text"
+                  v-model="cmsData.game.correct"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Incorrect</label>
-                <input type="text" v-model="cmsData.game.wrong" />
+                <label>Incorrect</label
+                ><input
+                  type="text"
+                  v-model="cmsData.game.wrong"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Label Info</label>
-                <input type="text" v-model="cmsData.game.argument_label" />
+                <label>Label Info</label
+                ><input
+                  type="text"
+                  v-model="cmsData.game.argument_label"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Btn Suivant</label>
-                <input type="text" v-model="cmsData.game.btn_next" />
+                <label>Btn Suivant</label
+                ><input
+                  type="text"
+                  v-model="cmsData.game.btn_next"
+                  autocomplete="off"
+                />
               </div>
             </div>
           </div>
@@ -355,17 +422,50 @@ const removeQuestion = (difficulty: string, index: number) => {
             <div class="questions-list">
               <div
                 v-for="(q, idx) in cmsData.questions_pool[activeTab]"
-                :key="idx"
+                :key="activeTab + '-' + idx"
                 class="question-card"
               >
                 <div class="card-top">
                   <span class="idx">#{{ (idx as number) + 1 }}</span>
-                  <input
-                    type="text"
-                    v-model="q.category"
-                    class="cat-input"
-                    placeholder="Catégorie"
-                  />
+
+                  <div class="cat-selector-group">
+                    <select
+                      v-if="creatingCategoryFor !== activeTab + '-' + idx"
+                      v-model="q.category"
+                      class="cat-input select"
+                      @change="
+                        (e) =>
+                          handleCategoryChange(
+                            (e.target as HTMLSelectElement).value,
+                            activeTab,
+                            idx as number
+                          )
+                      "
+                    >
+                      <option
+                        v-for="cat in availableCategories"
+                        :key="cat"
+                        :value="cat"
+                      >
+                        {{ cat }}
+                      </option>
+                      <option value="ADD_NEW">
+                        ➕ Ajouter une catégorie...
+                      </option>
+                    </select>
+
+                    <input
+                      v-else
+                      v-model="q.category"
+                      v-focus
+                      type="text"
+                      class="cat-input new-cat"
+                      placeholder="Nom de la catégorie..."
+                      @blur="creatingCategoryFor = null"
+                      @keyup.enter="creatingCategoryFor = null"
+                    />
+                  </div>
+
                   <button
                     class="btn-delete"
                     @click="removeQuestion(activeTab, idx as number)"
@@ -380,6 +480,7 @@ const removeQuestion = (difficulty: string, index: number) => {
                     v-model="q.question"
                     class="q-input"
                     placeholder="Question..."
+                    autocomplete="off"
                   />
                 </div>
 
@@ -392,14 +493,17 @@ const removeQuestion = (difficulty: string, index: number) => {
                   >
                     <input
                       type="radio"
-                      :name="'correct-' + activeTab + idx"
+                      :id="'radio-' + activeTab + '-' + idx + '-' + optIdx"
+                      :name="'correct-' + activeTab + '-' + idx"
                       :value="optIdx"
                       v-model="q.correct"
+                      autocomplete="off"
                     />
                     <input
                       type="text"
                       v-model="q.options[optIdx]"
                       placeholder="Réponse..."
+                      autocomplete="off"
                     />
                   </div>
                 </div>
@@ -410,6 +514,7 @@ const removeQuestion = (difficulty: string, index: number) => {
                     v-model="q.explanation"
                     rows="2"
                     placeholder="Savoir..."
+                    autocomplete="off"
                   ></textarea>
                 </div>
               </div>
@@ -425,7 +530,6 @@ const removeQuestion = (difficulty: string, index: number) => {
 @use '@/assets/scss/abstracts/variables' as *;
 @use 'sass:color';
 
-// --- LAYOUT ---
 .admin-wrapper {
   display: flex;
   justify-content: center;
@@ -434,13 +538,8 @@ const removeQuestion = (difficulty: string, index: number) => {
   padding: 20px;
   font-family: $font-main;
   color: $prohib-black;
-
-  @media (max-width: 768px) {
-    padding: 10px;
-  }
 }
 
-/* --- UI ELEMENTS --- */
 button {
   font-family: $font-main;
   font-weight: 800;
@@ -448,11 +547,9 @@ button {
   cursor: pointer;
   border: 2px solid $prohib-black;
   transition: all 0.2s;
-  font-size: 0.9rem;
 }
 
 .btn-primary {
-  width: auto;
   background: $prohib-black;
   color: white;
   padding: 8px 16px;
@@ -470,7 +567,6 @@ button {
 
 .btn-secondary {
   background: white;
-  color: $prohib-black;
   padding: 8px 16px;
   &:hover {
     background: #eee;
@@ -500,7 +596,8 @@ button {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 10px;
   border: 2px solid #ddd;
@@ -513,7 +610,22 @@ textarea {
   }
 }
 
-/* --- LOGIN (FIX MOBILE: ROW) --- */
+/* --- CATEGORY SELECTOR --- */
+.cat-selector-group {
+  flex: 1;
+  display: flex;
+  .cat-input {
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    height: 35px;
+    &.new-cat {
+      border: 2px solid $reg-green;
+      background: #f0fff0;
+    }
+  }
+}
+
 .login-container {
   width: 100%;
   max-width: 400px;
@@ -521,29 +633,18 @@ textarea {
   padding: 30px;
   border: 2px solid $prohib-black;
   text-align: center;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.1);
-
   .input-group {
     display: flex;
     gap: 10px;
     margin-top: 20px;
-    input {
-      flex: 1;
-      min-width: 0;
-    } /* min-width: 0 pour éviter le débordement flex */
-    button {
-      flex-shrink: 0;
-    }
   }
 }
 
-/* --- DASHBOARD --- */
 .dashboard {
   width: 100%;
   max-width: 1000px;
 }
 
-/* --- TOP BAR (REFONTE) --- */
 .top-bar {
   background: white;
   padding: 15px;
@@ -552,19 +653,13 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 99;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
-
-  /* PARTIE GAUCHE: Logo + Langues + Logout */
   .bar-header {
     display: flex;
     align-items: center;
     gap: 15px;
-
     .brand-group {
       display: flex;
       align-items: center;
@@ -573,39 +668,17 @@ textarea {
     .brand {
       font-weight: 900;
       font-size: 1.1rem;
-      white-space: nowrap;
-    }
-
-    .lang-switcher {
-      display: flex;
-      gap: 5px;
-      .btn-lang {
-        background: transparent;
-        border: 1px solid transparent;
-        opacity: 0.5;
-        padding: 5px;
-        margin: 0;
-        &.active {
-          opacity: 1;
-          border-bottom: 2px solid $prohib-black;
-        }
-      }
     }
   }
-
-  /* PARTIE DROITE: Actions */
   .bar-actions {
     display: flex;
     align-items: center;
     gap: 10px;
-
     .status {
       font-weight: bold;
       color: $reg-green;
       font-size: 0.8rem;
-      white-space: nowrap;
     }
-
     .buttons-group {
       display: flex;
       gap: 10px;
@@ -613,61 +686,43 @@ textarea {
   }
 }
 
-/* --- TABS --- */
 .tabs-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 15px;
-
   button {
     background: #e0e0e0;
     border: 2px solid transparent;
     padding: 8px 12px;
     color: #666;
-
     &.active {
       background: white;
       border-color: $prohib-black;
       color: $prohib-black;
     }
   }
-  .sep {
-    width: 10px;
-  }
-
   .level-tab.easy.active {
     border-color: $light-green;
-    color: color.scale($light-green, $lightness: -20%);
   }
   .level-tab.medium.active {
     border-color: $highlight-green;
-    color: color.scale($highlight-green, $lightness: -20%);
   }
   .level-tab.hard.active {
     border-color: $reg-green;
-    color: color.scale($reg-green, $lightness: -20%);
   }
 }
 
-/* --- CONTENT --- */
 .content-area {
   background: white;
   padding: 20px;
   border: 2px solid $prohib-black;
-
   h3 {
-    margin-top: 0;
     border-bottom: 2px solid $prohib-black;
     padding-bottom: 5px;
-    margin-bottom: 20px;
+    margin: 20px 0;
     text-transform: uppercase;
-    font-size: 1.1rem;
   }
-}
-
-.form-section {
-  margin-bottom: 25px;
 }
 .form-group {
   margin-bottom: 15px;
@@ -675,19 +730,16 @@ textarea {
     display: block;
     font-weight: bold;
     margin-bottom: 5px;
-    font-size: 0.8rem;
-    text-transform: uppercase;
+    font-size: 0.7rem;
     color: #666;
   }
 }
-
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
 }
 
-/* --- RAW MODE --- */
 .raw-mode textarea {
   width: 100%;
   height: 70vh;
@@ -697,20 +749,10 @@ textarea {
   padding: 15px;
 }
 
-/* --- QUESTIONS --- */
-.questions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
 .question-card {
-  background: #fff;
   border: 2px solid #eee;
   padding: 15px;
   margin-bottom: 15px;
-
   .card-top {
     display: flex;
     align-items: center;
@@ -718,157 +760,53 @@ textarea {
     margin-bottom: 10px;
     background: #f9f9f9;
     padding: 8px;
-
-    .idx {
-      font-weight: bold;
-      color: $prohib-black;
-    }
-    .cat-input {
-      width: auto;
-      flex: 1;
-      padding: 5px;
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
   }
-
   .q-input {
     font-size: 1rem;
     font-weight: bold;
     border: none;
     border-bottom: 2px solid #eee;
-    padding-left: 0;
-    &:focus {
-      border-color: $prohib-black;
-    }
   }
-
   .options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin: 10px 0;
-
     .opt-row {
       display: flex;
       align-items: center;
       gap: 5px;
       padding: 4px;
-      border: 1px solid transparent;
-
       &.is-correct {
         background: rgba(66, 185, 131, 0.1);
-        border-color: $reg-green;
-        input[type='text'] {
-          color: color.scale($reg-green, $lightness: -20%);
-          font-weight: bold;
-        }
+        border: 1px solid $reg-green;
       }
-
       input[type='radio'] {
         width: 20px;
         height: 20px;
-        flex-shrink: 0;
         accent-color: $reg-green;
-      }
-      input[type='text'] {
-        border: 1px solid #eee;
-        font-size: 0.9rem;
-        padding: 8px;
       }
     }
   }
 }
 
-/* ========================================= */
-/* RESPONSIVE MOBILE ( < 768px )       */
-/* ========================================= */
 @media (max-width: 768px) {
-  /* LOGIN FIX : Garder la ligne */
-  .login-container {
-    padding: 20px;
-    .input-group {
-      flex-direction: row;
-    }
-  }
-
-  /* TOP BAR : Passage en 2 lignes forcées */
   .top-bar {
     flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px;
-
-    /* LIGNE 1 : Tout en haut */
-    .bar-header {
-      justify-content: space-between;
-      width: 100%;
-
-      .brand-group {
-        gap: 10px;
-      }
-      .brand {
-        font-size: 1rem;
-      } /* Un peu plus petit */
-    }
-
-    /* LIGNE 2 : Boutons d'action pleine largeur */
+    .bar-header,
     .bar-actions {
-      flex-direction: column;
       width: 100%;
-
-      .status {
-        margin-bottom: 5px;
-      }
-
-      .buttons-group {
-        width: 100%;
-        display: flex;
-        gap: 10px;
-        button {
-          flex: 1;
-          padding: 12px;
-        } /* 50% - 50% */
+    }
+    .buttons-group {
+      width: 100%;
+      button {
+        flex: 1;
       }
     }
   }
-
-  /* Onglets */
-  .tabs-nav {
-    gap: 5px;
-    button {
-      width: 48%;
-      padding: 10px 5px;
-      font-size: 0.8rem;
-    }
-    .sep {
-      display: none;
-    }
-  }
-
-  /* Contenu */
-  .content-area {
-    padding: 15px;
-  }
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
+  .grid-2,
   .options-grid {
     grid-template-columns: 1fr !important;
-  }
-
-  .question-card {
-    .card-top {
-      flex-wrap: wrap;
-      .cat-input {
-        width: 100%;
-        margin-bottom: 5px;
-      }
-      .btn-delete {
-        width: 100%;
-        margin-top: 5px;
-      }
-    }
   }
 }
 </style>
