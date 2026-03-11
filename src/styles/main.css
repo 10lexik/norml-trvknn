@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap');
+
+/* ============================================================
+   DESIGN TOKENS — équivalents des variables SCSS du projet
+   ============================================================ */
+@theme {
+  /* Couleurs */
+  --color-poster-beige: #e4e9d5;
+  --color-prohib-black: #141414;
+  --color-reg-green: #297534;
+  --color-highlight-green: #4caf50;
+  --color-light-green: #8bc34a;
+  --color-error-red: #d32f2f;
+  --color-gold: #d4af37;
+  --color-silver: #c0c0c0;
+  --color-bronze: #cd7f32;
+
+  /* Typographie */
+  --font-main: 'Space Grotesk', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+}
+
+/* ============================================================
+   RESET & BASE GLOBAUX
+   ============================================================ */
+body {
+  margin: 0;
+  padding: 0;
+  * {
+    box-sizing: border-box;
+  }
+}
+
+#app-container {
+  font-family: var(--font-main);
+  background-color: var(--color-poster-beige);
+  color: var(--color-prohib-black);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: radial-gradient(#d0d6c0 1px, transparent 1px);
+  background-size: 20px 20px;
+  width: 100%;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  animation: fadeIn 0.4s ease;
+}
+
+/* ============================================================
+   ANIMATIONS GLOBALES
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
+  to   { opacity: 1; transform: translate(-50%, 0)    scale(1);   }
+}
+
+/* ============================================================
+   COMPOSANTS GLOBAUX
+   ============================================================ */
+
+/* Bouton principal (utilisé dans Quizz + AdminPanel) */
+.btn-primary {
+  background: var(--color-reg-green);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-family: var(--font-main);
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  display: inline-block;
+  text-align: center;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-reg-green) 90%, black);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Loader global */
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--color-reg-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+/* Bouton géant restart */
+.btn-giant-restart {
+  background: var(--color-prohib-black);
+  color: white;
+  border: 3px solid var(--color-prohib-black);
+  font-family: var(--font-main);
+  padding: 18px 40px;
+  font-weight: 900;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+    background: white;
+    color: var(--color-prohib-black);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}

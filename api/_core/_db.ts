@@ -3,6 +3,32 @@ import fs from 'fs'
 import path from 'path'
 import { getApiText } from './_i18n'
 
+// Fallback manual dotenv loader for Vercel CLI local bug
+const loadEnv = () => {
+  try {
+    const envPath = path.resolve(process.cwd(), '.env')
+    const localEnvPath = path.resolve(process.cwd(), '.env.local')
+    const parse = (file: string) => {
+      if (!fs.existsSync(file)) return
+      const content = fs.readFileSync(file, 'utf8')
+      content.split('\n').forEach((line) => {
+        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/)
+        if (match) {
+          const key = match[1]
+          let val = (match[2] || '').trim()
+          if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
+          if (!process.env[key]) process.env[key] = val
+        }
+      })
+    }
+    parse(envPath)
+    parse(localEnvPath)
+  } catch (e) {
+    // ignore
+  }
+}
+if (!process.env.MONGODB_URI) loadEnv()
+
 const { NODE_ENV, USE_LOCAL_DB, MONGODB_URI, MONGODB_LOCAL_URI } = process.env
 const S = getApiText('fr')
 
@@ -17,7 +43,7 @@ export const DEFAULTS = {
   ENV: { PROD: 'production', TRUE: 'true' },
   ALLOWED_LANGS: ['fr', 'en', 'es'],
   ALLOWED_LEVELS: ['easy', 'medium', 'hard'],
-  SCORE_LIMIT: 20,
+  SCORE_LIMIT: 2,
   LB_LIMIT: 10,
   SCORE_RANGE: { MIN: 0, MAX: 50 },
   NAME_MAX: 20,

@@ -784,10 +784,10 @@ const socialNetworks = computed(
   </div>
 </template>
 
-<style scoped lang="scss">
-@use '@/assets/scss/abstracts/variables' as *;
+<style scoped>
+
 @use '@/assets/scss/abstracts/mixins' as *;
-@use 'sass:color';
+
 
 /* ... STYLES EXISTANTS CONSERVÉS ... */
 
@@ -797,7 +797,7 @@ const socialNetworks = computed(
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: $error-red;
+  background-color: var(--color-error-red);
   color: white;
   padding: 5px 10px;
   border-radius: 4px;
@@ -816,7 +816,7 @@ const socialNetworks = computed(
     transform: translateX(-50%);
     border-width: 6px;
     border-style: solid;
-    border-color: $error-red transparent transparent transparent;
+    border-color: var(--color-error-red) transparent transparent transparent;
   }
 }
 
@@ -832,7 +832,7 @@ const socialNetworks = computed(
 }
 
 .has-error {
-  color: $error-red !important;
+  color: var(--color-error-red) !important;
 }
 
 /* MINI LOADER WHITE pour le bouton SAVE */
@@ -875,7 +875,7 @@ const socialNetworks = computed(
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 2px;
-    border-bottom: 3px solid $prohib-black;
+    border-bottom: 3px solid var(--color-prohib-black);
     padding-bottom: 5px;
     margin-bottom: 15px;
   }
@@ -890,7 +890,7 @@ const socialNetworks = computed(
   button {
     background: transparent;
     border: none;
-    color: $prohib-black;
+    color: var(--color-prohib-black);
     opacity: 0.5;
     font-weight: 900;
     cursor: pointer;
@@ -906,26 +906,26 @@ const socialNetworks = computed(
   }
 }
 .score-display {
-  background: $prohib-black;
-  color: $highlight-green;
+  background: var(--color-prohib-black);
+  color: var(--color-highlight-green);
   padding: 5px 10px;
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: $font-mono;
+  font-family: var(--font-mono);
   .level-badge {
     font-size: 0.7rem;
     color: white;
     text-transform: uppercase;
     &.easy {
-      color: $light-green;
+      color: var(--color-light-green);
     }
     &.medium {
-      color: $highlight-green;
+      color: var(--color-highlight-green);
     }
     &.hard {
-      color: $reg-green;
+      color: var(--color-reg-green);
     }
   }
   .score-value {
@@ -941,7 +941,7 @@ const socialNetworks = computed(
   overflow: hidden;
   .fill {
     height: 100%;
-    background: $reg-green;
+    background: var(--color-reg-green);
     transition: width 0.3s ease;
   }
 }
@@ -958,7 +958,7 @@ const socialNetworks = computed(
   justify-content: center;
 }
 .error-title {
-  color: $error-red;
+  color: var(--color-error-red);
 }
 
 /* ANIMATIONS FLUIDES */
@@ -993,7 +993,7 @@ const socialNetworks = computed(
     width: 80px;
     height: 80px;
     margin-bottom: 20px;
-    color: $reg-green;
+    color: var(--color-reg-green);
     svg {
       width: 100%;
       height: 100%;
@@ -1015,36 +1015,36 @@ const socialNetworks = computed(
 }
 .btn-diff {
   padding: 15px;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   background: white;
-  color: $prohib-black;
-  font-family: $font-main;
+  color: var(--color-prohib-black);
+  font-family: var(--font-main);
   font-weight: 800;
   text-transform: uppercase;
   cursor: pointer;
   font-size: 1rem;
   &:hover {
     transform: translateX(5px);
-    box-shadow: -5px 5px 0 $prohib-black;
+    box-shadow: -5px 5px 0 var(--color-prohib-black);
   }
   &.easy {
-    border-color: $light-green;
+    border-color: var(--color-light-green);
     &:hover {
-      background: $light-green;
+      background: var(--color-light-green);
       color: white;
     }
   }
   &.medium {
-    border-color: $highlight-green;
+    border-color: var(--color-highlight-green);
     &:hover {
-      background: $highlight-green;
+      background: var(--color-highlight-green);
       color: white;
     }
   }
   &.hard {
-    border-color: $reg-green;
+    border-color: var(--color-reg-green);
     &:hover {
-      background: $reg-green;
+      background: var(--color-reg-green);
       color: white;
     }
   }
@@ -1055,7 +1055,7 @@ const socialNetworks = computed(
   text-align: center;
   margin-bottom: 30px;
   .category-tag {
-    background: $prohib-black;
+    background: var(--color-prohib-black);
     color: white;
     padding: 4px 8px;
     font-size: 0.7rem;
@@ -1068,7 +1068,7 @@ const socialNetworks = computed(
     margin-top: 15px;
     line-height: 1.3;
     padding-bottom: 20px;
-    border-bottom: 1px solid $prohib-black;
+    border-bottom: 1px solid var(--color-prohib-black);
   }
 }
 .options-grid {
@@ -1079,10 +1079,10 @@ const socialNetworks = computed(
 }
 .btn-option {
   background: white;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   padding: 15px;
   text-align: left;
-  font-family: $font-main;
+  font-family: var(--font-main);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -1091,7 +1091,7 @@ const socialNetworks = computed(
   position: relative;
   overflow: hidden;
   .letter {
-    background: $prohib-black;
+    background: var(--color-prohib-black);
     color: white;
     width: 24px;
     height: 24px;
@@ -1107,14 +1107,14 @@ const socialNetworks = computed(
     width: 16px;
     height: 16px;
     border: 3px solid rgba(0, 0, 0, 0.1);
-    border-left-color: $prohib-black;
+    border-left-color: var(--color-prohib-black);
     border-radius: 50%;
     margin-right: 15px;
     animation: spin 1s linear infinite;
     display: inline-block;
   }
   &:hover:not(:disabled) {
-    background: $prohib-black;
+    background: var(--color-prohib-black);
     color: white;
     .letter {
       background: white;
@@ -1122,7 +1122,7 @@ const socialNetworks = computed(
     }
   }
   &.is-verifying {
-    background: color.scale($prohib-black, $lightness: 90%);
+    background: color-mix(in srgb, var(--color-prohib-black), white 90%);
     cursor: wait;
     .letter {
       display: none;
@@ -1132,22 +1132,22 @@ const socialNetworks = computed(
     }
   }
   &.correct {
-    background: $reg-green;
-    border-color: $reg-green;
+    background: var(--color-reg-green);
+    border-color: var(--color-reg-green);
     color: white;
     .letter {
       background: white;
-      color: $reg-green;
+      color: var(--color-reg-green);
     }
   }
   &.wrong {
-    background: $error-red;
-    border-color: $error-red;
+    background: var(--color-error-red);
+    border-color: var(--color-error-red);
     color: white;
     opacity: 0.8;
     .letter {
       background: white;
-      color: $error-red;
+      color: var(--color-error-red);
     }
   }
   &.dimmed {
@@ -1169,8 +1169,8 @@ const socialNetworks = computed(
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  background: $highlight-green;
-  color: $prohib-black;
+  background: var(--color-highlight-green);
+  color: var(--color-prohib-black);
   font-weight: 900;
   padding: 5px 10px;
   border-radius: 20px;
@@ -1203,10 +1203,10 @@ const socialNetworks = computed(
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
   &.success {
-    border-color: $reg-green;
+    border-color: var(--color-reg-green);
   }
   &.error {
-    border-color: $error-red;
+    border-color: var(--color-error-red);
   }
   .feedback-header {
     font-weight: 900;
@@ -1221,15 +1221,26 @@ const socialNetworks = computed(
     strong {
       display: block;
       margin-bottom: 5px;
-      color: $prohib-black;
+      color: var(--color-prohib-black);
     }
   }
 }
 .btn-next {
-  @include btn-base;
-  background: $prohib-black;
+  background: var(--color-prohib-black);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-family: var(--font-main);
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  display: inline-block;
+  text-align: center;
   &:hover {
-    background: color.adjust($prohib-black, $lightness: 15%);
+    background: color-mix(in srgb, var(--color-prohib-black), white 15%);
   }
 }
 
@@ -1238,7 +1249,7 @@ const socialNetworks = computed(
   .score-circle {
     width: 120px;
     height: 120px;
-    background: $prohib-black;
+    background: var(--color-prohib-black);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -1246,14 +1257,14 @@ const socialNetworks = computed(
     justify-content: center;
     align-items: center;
     margin-bottom: 20px;
-    border: 4px solid $reg-green;
+    border: 4px solid var(--color-reg-green);
     .label-xp {
       font-size: 0.7rem;
-      color: $highlight-green;
+      color: var(--color-highlight-green);
       margin-bottom: 5px;
     }
     .big-score {
-      font-family: $font-mono;
+      font-family: var(--font-mono);
       font-size: 3.5rem;
       line-height: 1;
     }
@@ -1280,7 +1291,7 @@ const socialNetworks = computed(
   max-width: 400px;
   background: white;
   padding: 25px;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   margin: auto;
   margin-bottom: 20px;
   text-align: left;
@@ -1305,7 +1316,7 @@ const socialNetworks = computed(
     border-color 0.2s,
     background 0.2s;
   &:focus-within {
-    border-color: $prohib-black;
+    border-color: var(--color-prohib-black);
     background: white;
   }
   .prefix-icon {
@@ -1321,10 +1332,10 @@ const socialNetworks = computed(
     padding: 12px 10px;
     border: none;
     background: transparent;
-    font-family: $font-main;
+    font-family: var(--font-main);
     font-size: 0.95rem;
     outline: none;
-    color: $prohib-black;
+    color: var(--color-prohib-black);
     &::placeholder {
       color: #aaa;
       font-weight: normal;
@@ -1332,7 +1343,7 @@ const socialNetworks = computed(
   }
 }
 .main-row {
-  border-color: $prohib-black;
+  border-color: var(--color-prohib-black);
   .main-input {
     font-weight: bold;
     font-size: 1.1rem;
@@ -1385,8 +1396,8 @@ const socialNetworks = computed(
       filter: grayscale(0);
     }
     &.active {
-      border-color: $prohib-black;
-      background: $prohib-black;
+      border-color: var(--color-prohib-black);
+      background: var(--color-prohib-black);
       color: white;
       opacity: 1;
       transform: scale(1.15);
@@ -1415,7 +1426,7 @@ const socialNetworks = computed(
     color: #ccc;
     cursor: pointer;
     &:hover {
-      color: $error-red;
+      color: var(--color-error-red);
     }
   }
 }
@@ -1464,22 +1475,34 @@ const socialNetworks = computed(
 .btn-skip {
   background: transparent;
   border: none;
-  color: $prohib-black;
+  color: var(--color-prohib-black);
   cursor: pointer;
-  font-family: $font-main;
+  font-family: var(--font-main);
   font-size: 0.85rem;
   text-decoration: underline;
   opacity: 0.6;
   width: 100%;
   &:hover {
     opacity: 1;
-    color: $error-red;
+    color: var(--color-error-red);
   }
 }
 
 /* --- SHARE BUTTON (VIRAL - DOUBLE LAYER) --- */
 .btn-action-trigger {
-  @include btn-base;
+  background: var(--color-reg-green);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-family: var(--font-main);
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+  display: inline-block;
+  text-align: center;
   position: relative;
   z-index: 1;
   background: transparent;
@@ -1496,7 +1519,7 @@ const socialNetworks = computed(
     content: '';
     position: absolute;
     inset: 0;
-    background-color: $reg-green;
+    background-color: var(--color-reg-green);
     z-index: -2;
   }
   &::after {
@@ -1558,7 +1581,7 @@ const socialNetworks = computed(
   h3 {
     margin-top: 0;
     text-transform: uppercase;
-    color: $prohib-black;
+    color: var(--color-prohib-black);
   }
   .modal-hint {
     font-size: 0.9rem;
@@ -1586,7 +1609,7 @@ const socialNetworks = computed(
   padding: 12px;
   border-radius: 8px;
   color: white;
-  font-family: $font-main;
+  font-family: var(--font-main);
   font-weight: bold;
   cursor: pointer;
   display: flex;
@@ -1615,8 +1638,8 @@ const socialNetworks = computed(
   font-weight: bold;
   color: #666;
   &:hover {
-    border-color: $prohib-black;
-    color: $prohib-black;
+    border-color: var(--color-prohib-black);
+    color: var(--color-prohib-black);
   }
 }
 
@@ -1646,16 +1669,16 @@ const socialNetworks = computed(
   top: 0;
   width: 1080px;
   height: 1080px;
-  background: $prohib-black;
+  background: var(--color-prohib-black);
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: $font-main;
+  font-family: var(--font-main);
   text-align: center;
   z-index: -1;
   .card-content {
-    border: 20px solid $reg-green;
+    border: 20px solid var(--color-reg-green);
     width: 90%;
     height: 90%;
     display: flex;
@@ -1676,13 +1699,13 @@ const socialNetworks = computed(
   .card-rank {
     font-size: 5rem;
     text-transform: uppercase;
-    color: $highlight-green;
+    color: var(--color-highlight-green);
     font-weight: 800;
     margin-bottom: 20px;
   }
   .card-score-big {
     font-size: 18rem;
-    font-family: $font-mono;
+    font-family: var(--font-mono);
     font-weight: bold;
     line-height: 1;
     color: white;
@@ -1704,7 +1727,7 @@ const socialNetworks = computed(
     font-size: 2rem;
     font-weight: bold;
     background: white;
-    color: $prohib-black;
+    color: var(--color-prohib-black);
     padding: 10px 40px;
     border-radius: 50px;
   }
@@ -1726,20 +1749,20 @@ const socialNetworks = computed(
     margin: 0 0 10px 0;
     text-transform: uppercase;
     font-size: 1rem;
-    border-bottom: 3px solid $prohib-black;
+    border-bottom: 3px solid var(--color-prohib-black);
     display: inline-block;
   }
 }
 .leaderboard-scroll {
   max-height: 250px;
   overflow-y: auto;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
 }
 .leaderboard-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  font-family: $font-main;
+  font-family: var(--font-main);
   thead th {
     padding: 8px;
     text-align: left;
@@ -1747,7 +1770,7 @@ const socialNetworks = computed(
     font-size: 0.8rem;
     position: sticky;
     top: 0;
-    background: $prohib-black;
+    background: var(--color-prohib-black);
     color: white;
   }
   tbody tr {
@@ -1764,7 +1787,7 @@ const socialNetworks = computed(
     .score-val {
       font-weight: bold;
       text-align: right;
-      color: $reg-green;
+      color: var(--color-reg-green);
     }
 
     .time-spent {
@@ -1802,36 +1825,36 @@ const socialNetworks = computed(
       }
     }
     &.top-3 .rank {
-      color: $gold;
+      color: var(--color-gold);
       font-size: 1.1rem;
     }
     &:nth-child(2) .rank {
-      color: $silver;
+      color: var(--color-silver);
     }
     &:nth-child(3) .rank {
-      color: $bronze;
+      color: var(--color-bronze);
     }
     &.current-user {
       background: rgba(76, 175, 80, 0.15);
-      border-left: 4px solid $reg-green;
+      border-left: 4px solid var(--color-reg-green);
       font-weight: bold;
       .name {
-        color: $reg-green;
+        color: var(--color-reg-green);
         text-transform: uppercase;
       }
     }
   }
 }
 .link-join {
-  color: $prohib-black;
+  color: var(--color-prohib-black);
   font-weight: 700;
   text-decoration: none;
   font-size: 0.9rem;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s;
   &:hover {
-    border-bottom-color: $reg-green;
-    color: $reg-green;
+    border-bottom-color: var(--color-reg-green);
+    color: var(--color-reg-green);
   }
 }
 </style>

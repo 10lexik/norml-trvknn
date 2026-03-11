@@ -1,5 +1,5 @@
 // src/main.ts
-import './assets/scss/main.scss'
+import './styles/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import i18n from './plugins/i18n'

@@ -526,9 +526,9 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
   </div>
 </template>
 
-<style scoped lang="scss">
-@use '@/assets/scss/abstracts/variables' as *;
-@use 'sass:color';
+<style scoped>
+
+
 
 .admin-wrapper {
   display: flex;
@@ -536,25 +536,25 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
-  font-family: $font-main;
-  color: $prohib-black;
+  font-family: var(--font-main);
+  color: var(--color-prohib-black);
 }
 
 button {
-  font-family: $font-main;
+  font-family: var(--font-main);
   font-weight: 800;
   text-transform: uppercase;
   cursor: pointer;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: $prohib-black;
+  background: var(--color-prohib-black);
   color: white;
   padding: 8px 16px;
   &:hover {
-    background: color.scale($prohib-black, $lightness: 20%);
+    background: color-mix(in srgb, var(--color-prohib-black), white 20%);
   }
   &:disabled {
     opacity: 0.5;
@@ -575,12 +575,12 @@ button {
 
 .btn-delete {
   background: transparent;
-  color: $error-red;
-  border: 1px solid $error-red;
+  color: var(--color-error-red);
+  border: 1px solid var(--color-error-red);
   padding: 4px 8px;
   font-size: 0.8rem;
   &:hover {
-    background: $error-red;
+    background: var(--color-error-red);
     color: white;
   }
 }
@@ -590,8 +590,8 @@ button {
   border: 2px solid #ccc;
   padding: 8px;
   &:hover {
-    border-color: $error-red;
-    color: $error-red;
+    border-color: var(--color-error-red);
+    color: var(--color-error-red);
   }
 }
 
@@ -601,11 +601,11 @@ select {
   width: 100%;
   padding: 10px;
   border: 2px solid #ddd;
-  font-family: $font-main;
+  font-family: var(--font-main);
   font-size: 16px;
   border-radius: 4px;
   &:focus {
-    border-color: $prohib-black;
+    border-color: var(--color-prohib-black);
     outline: none;
   }
 }
@@ -620,7 +620,7 @@ select {
     padding: 5px 10px;
     height: 35px;
     &.new-cat {
-      border: 2px solid $reg-green;
+      border: 2px solid var(--color-reg-green);
       background: #f0fff0;
     }
   }
@@ -631,7 +631,7 @@ select {
   max-width: 400px;
   background: white;
   padding: 30px;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   text-align: center;
   .input-group {
     display: flex;
@@ -648,7 +648,7 @@ select {
 .top-bar {
   background: white;
   padding: 15px;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   margin-bottom: 20px;
   position: sticky;
   top: 0;
@@ -676,7 +676,7 @@ select {
     gap: 10px;
     .status {
       font-weight: bold;
-      color: $reg-green;
+      color: var(--color-reg-green);
       font-size: 0.8rem;
     }
     .buttons-group {
@@ -698,27 +698,27 @@ select {
     color: #666;
     &.active {
       background: white;
-      border-color: $prohib-black;
-      color: $prohib-black;
+      border-color: var(--color-prohib-black);
+      color: var(--color-prohib-black);
     }
   }
   .level-tab.easy.active {
-    border-color: $light-green;
+    border-color: var(--color-light-green);
   }
   .level-tab.medium.active {
-    border-color: $highlight-green;
+    border-color: var(--color-highlight-green);
   }
   .level-tab.hard.active {
-    border-color: $reg-green;
+    border-color: var(--color-reg-green);
   }
 }
 
 .content-area {
   background: white;
   padding: 20px;
-  border: 2px solid $prohib-black;
+  border: 2px solid var(--color-prohib-black);
   h3 {
-    border-bottom: 2px solid $prohib-black;
+    border-bottom: 2px solid var(--color-prohib-black);
     padding-bottom: 5px;
     margin: 20px 0;
     text-transform: uppercase;
@@ -743,7 +743,7 @@ select {
 .raw-mode textarea {
   width: 100%;
   height: 70vh;
-  background: $prohib-black;
+  background: var(--color-prohib-black);
   color: #eee;
   font-family: monospace;
   padding: 15px;
@@ -779,12 +779,12 @@ select {
       padding: 4px;
       &.is-correct {
         background: rgba(66, 185, 131, 0.1);
-        border: 1px solid $reg-green;
+        border: 1px solid var(--color-reg-green);
       }
       input[type='radio'] {
         width: 20px;
         height: 20px;
-        accent-color: $reg-green;
+        accent-color: var(--color-reg-green);
       }
     }
   }
