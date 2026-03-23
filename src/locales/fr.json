@@ -38,6 +38,7 @@
       "url": "https://www.norml.fr/boutique/adhesion-norml-france/"
     },
     "btn_save": "Obtenir mon certificat",
+    "btn_save_no_medal": "Enregistrer mon score",
     "btn_skip": "Terminer",
     "leaderboard_title": "Tableau des Certifiés",
     "placeholder_name": "Nom / Pseudo",
@@ -49,7 +50,12 @@
     "col_score": "Note",
     "share_card": {
       "tagline": "Cannabis : J'ai obtenu ma certification de connaissances avec NORML France.",
-      "website": "academy.norml.fr"
+      "website": "academy.norml.fr",
+      "certificate_subtitle": "Certification de Connaissances",
+      "medal_gold": "Médaille d'Or",
+      "medal_silver": "Médaille d'Argent",
+      "medal_bronze": "Médaille de Bronze",
+      "delivered_on": "Délivré le"
     },
     "share_modal": {
       "title": "📤 Afficher ma légitimité",

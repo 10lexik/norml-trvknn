@@ -8,6 +8,7 @@ const props = defineProps<{
   score: number
   total: number
   rankInfo: { title: string; desc: string }
+  hasMedal: boolean
   isSaved: boolean
   leaderboard: LeaderboardEntry[]
   nameError: string | null
@@ -133,7 +134,7 @@ const onSocialInput = (key: string, e: Event) => {
           :disabled="!nameModel || isSubmitting"
         >
           <span v-if="isSubmitting" class="mini-loader-white"></span>
-          <span v-else>{{ t('end.btn_save') }}</span>
+          <span v-else>{{ hasMedal ? t('end.btn_save') : t('end.btn_save_no_medal') }}</span>
         </button>
         <button class="btn-skip" @click="emit('restart')">
           {{ t('end.btn_skip') }}
@@ -142,7 +143,7 @@ const onSocialInput = (key: string, e: Event) => {
     </div>
 
     <div v-else class="leaderboard-wrapper">
-      <div class="final-actions top-actions">
+      <div v-if="hasMedal" class="final-actions top-actions">
         <button class="btn-action-trigger" @click="emit('share')" :disabled="isGenerating">
           {{ isGenerating ? '...' : t('end.share_modal.title') }}
         </button>

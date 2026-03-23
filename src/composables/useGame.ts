@@ -42,6 +42,15 @@ export function useGame() {
     return { title: t('end.ranks.beginner.title'), desc: t('end.ranks.beginner.desc') }
   })
 
+  const medalInfo = computed(() => {
+    if (!state.questions.length) return { medal: null as null | 'gold' | 'silver' | 'bronze', percentage: 0 }
+    const ratio = state.score / state.questions.length
+    if (ratio === 1)    return { medal: 'gold'   as const, percentage: 100 }
+    if (ratio >= 0.9)   return { medal: 'silver' as const, percentage: Math.round(ratio * 100) }
+    if (ratio >= 0.8)   return { medal: 'bronze' as const, percentage: Math.round(ratio * 100) }
+    return { medal: null, percentage: Math.round(ratio * 100) }
+  })
+
   // Methods
   const prepareNewQuestion = () => {
     const q = state.questions[state.currentQIndex]
@@ -91,6 +100,7 @@ export function useGame() {
     isLastQuestion,
     progress,
     rankInfo,
+    medalInfo,
     prepareNewQuestion,
     selectAnswer,
     nextQuestion,

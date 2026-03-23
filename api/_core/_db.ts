@@ -69,7 +69,10 @@ if (!global._mongoClientPromise && uri) {
     family: DEFAULTS.MONGO.FAMILY,
     serverSelectionTimeoutMS: DEFAULTS.MONGO.TIMEOUT
   })
-  global._mongoClientPromise = conn.connect().catch((e) => Promise.reject(e))
+  global._mongoClientPromise = conn.connect().catch((e) => {
+    console.warn(`[DB] Connexion principale échouée (${uri}):`, e.message)
+    return null as any
+  })
 }
 
 // 2. Connexion Atlas forcée (dédiée au Leaderboard)
@@ -78,9 +81,10 @@ if (!global._atlasClientPromise && MONGODB_URI) {
     family: DEFAULTS.MONGO.FAMILY,
     serverSelectionTimeoutMS: 5000
   })
-  global._atlasClientPromise = atlasConn
-    .connect()
-    .catch((e) => Promise.reject(e))
+  global._atlasClientPromise = atlasConn.connect().catch((e) => {
+    console.error(`[DB] Connexion Atlas Leaderboard échouée:`, e.message)
+    return null as any
+  })
 }
 
 export const clientPromise = global._mongoClientPromise

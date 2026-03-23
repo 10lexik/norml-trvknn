@@ -25,7 +25,7 @@ const uiVerifyingIdx = ref<number | null>(null)
 
 // Init composables
 const { t, locale, hydrateContent, getI18nArray } = useI18nCMS()
-const { state: game, startTime, endTime, currentQuestion, isCorrect, isLastQuestion, progress, rankInfo, prepareNewQuestion, selectAnswer: localSelectAnswer, nextQuestion: localNextQuestion, resetGame } = useGame()
+const { state: game, startTime, endTime, currentQuestion, isCorrect, isLastQuestion, progress, rankInfo, medalInfo, prepareNewQuestion, selectAnswer: localSelectAnswer, nextQuestion: localNextQuestion, resetGame } = useGame()
 const { form, uiLeader, initLeaderboard, saveScore, validateName, clearNameError } = useLeaderboard(getI18nArray, t)
 
 const availableLocales = ['fr', 'en', 'es']
@@ -280,6 +280,7 @@ const reloadPage = () => window.location.reload()
       :score="game.score"
       :total="game.questions.length"
       :rankInfo="rankInfo"
+      :hasMedal="!!medalInfo.medal"
       :isSaved="form.isSaved"
       :leaderboard="form.leaderboard"
       :nameError="uiLeader.nameError"
@@ -309,6 +310,8 @@ const reloadPage = () => window.location.reload()
       :score="game.score"
       :total="game.questions.length"
       :rankTitle="rankInfo.title"
+      :rankDesc="rankInfo.desc"
+      :medal="medalInfo.medal"
       :t="t"
     />
   </div>

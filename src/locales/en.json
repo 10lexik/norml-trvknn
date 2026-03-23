@@ -26,6 +26,7 @@
     "btn_retry": "Play Again",
     "btn_join": "Join NORML",
     "btn_save": "Save Score",
+    "btn_save_no_medal": "Save Score",
     "btn_skip": "Skip & Replay",
     "leaderboard_title": "Leaderboard",
     "placeholder_name": "Name",
@@ -47,6 +48,15 @@
         "title": "Beginner",
         "desc": "Keep learning."
       }
+    },
+    "share_card": {
+      "tagline": "Cannabis: I got my knowledge certification with NORML France.",
+      "website": "academy.norml.fr",
+      "certificate_subtitle": "Knowledge Certification",
+      "medal_gold": "Gold Medal",
+      "medal_silver": "Silver Medal",
+      "medal_bronze": "Bronze Medal",
+      "delivered_on": "Issued on"
     }
   },
   "questions_pool": {

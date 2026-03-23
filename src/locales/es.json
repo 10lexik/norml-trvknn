@@ -26,6 +26,7 @@
     "btn_retry": "Reintentar",
     "btn_join": "Unirse",
     "btn_save": "Guardar",
+    "btn_save_no_medal": "Guardar puntuación",
     "btn_skip": "Saltar y Jugar",
     "leaderboard_title": "Clasificación",
     "placeholder_name": "Apodo",
@@ -47,6 +48,15 @@
         "title": "Principiante",
         "desc": "Sigue aprendiendo."
       }
+    },
+    "share_card": {
+      "tagline": "Cannabis: Obtuvé mi certificación de conocimientos con NORML France.",
+      "website": "academy.norml.fr",
+      "certificate_subtitle": "Certificación de Conocimientos",
+      "medal_gold": "Medalla de Oro",
+      "medal_silver": "Medalla de Plata",
+      "medal_bronze": "Medalla de Bronce",
+      "delivered_on": "Emitido el"
     }
   },
   "questions_pool": {
