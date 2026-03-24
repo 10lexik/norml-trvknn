@@ -3,6 +3,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap');
 
 /* ============================================================
+   POLICES LOCALES (COMMERCIAL TYPE)
+   ============================================================ */
+@font-face {
+  font-family: 'Platform';
+  src: url('/fonts/platform/Platform-Regular-Web.woff2') format('woff2'),
+       url('/fonts/platform/Platform-Regular-Web.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Platform';
+  src: url('/fonts/platform/Platform-RegularItalic-Web.woff2') format('woff2'),
+       url('/fonts/platform/Platform-RegularItalic-Web.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Platform';
+  src: url('/fonts/platform/Platform-Medium-Web.woff2') format('woff2'),
+       url('/fonts/platform/Platform-Medium-Web.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Platform';
+  src: url('/fonts/platform/Platform-Bold-Web.woff2') format('woff2'),
+       url('/fonts/platform/Platform-Bold-Web.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Platform';
+  src: url('/fonts/platform/Platform-BoldItalic-Web.woff2') format('woff2'),
+       url('/fonts/platform/Platform-BoldItalic-Web.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+/* ============================================================
    DESIGN TOKENS — équivalents des variables SCSS du projet
    ============================================================ */
 @theme {
@@ -18,7 +61,7 @@
   --color-bronze: #cd7f32;
 
   /* Typographie */
-  --font-main: 'Space Grotesk', sans-serif;
+  --font-main: 'Platform', 'Space Grotesk', sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
 }
 
@@ -28,9 +71,17 @@
 body {
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   * {
     box-sizing: border-box;
   }
+}
+
+/* Forcer le gras sur tous les titres car Tailwind les reset par défaut */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
 }
 
 #app-container {

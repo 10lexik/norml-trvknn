@@ -37,16 +37,20 @@
     "col_score": "Puntos",
     "ranks": {
       "expert": {
-        "title": "Experto",
-        "desc": "¡Perfecto!"
+        "title": "Dominio Perfecto",
+        "desc": "Una actuación impecable impresionante. Su experiencia en el tema es innegable y extremadamente valiosa. NORML Francia necesita perfiles altamente especializados como el suyo para llevar argumentos sólidos y avanzar en el debate público."
+      },
+      "advanced": {
+        "title": "Legitimidad Confirmada",
+        "desc": "Excelente dominio. Su voz es creíble y necesaria. No guarde este conocimiento para usted mismo: unirse a NORML France es la palanca esencial para llevar esta experiencia al debate público."
       },
       "intermediate": {
-        "title": "Intermedio",
-        "desc": "Buen trabajo."
+        "title": "Legitimidad en Construcción",
+        "desc": "Los conceptos básicos están ahí, pero persisten algunas zonas grises. Su opinión tiene valor, pero debe refinarse. Unirse a NORML France es la mejor manera de transformar estos logros en verdadera experiencia."
       },
       "beginner": {
-        "title": "Principiante",
-        "desc": "Sigue aprendiendo."
+        "title": "Necesidad de Actualización",
+        "desc": "El tema es complejo y abundan los conceptos erróneos. Tal como están las cosas, su opinión corre el riesgo de ser contradicha por los hechos. No es una fatalidad: unirse a NORML France le dará las claves para comprender."
       }
     },
     "share_card": {

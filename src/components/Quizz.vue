@@ -25,7 +25,17 @@ const uiVerifyingIdx = ref<number | null>(null)
 
 // Init composables
 const { t, locale, hydrateContent, getI18nArray } = useI18nCMS()
-const { state: game, startTime, endTime, currentQuestion, isCorrect, isLastQuestion, progress, rankInfo, medalInfo, prepareNewQuestion, selectAnswer: localSelectAnswer, nextQuestion: localNextQuestion, resetGame } = useGame()
+const {
+  state: game,
+  startTime,
+  endTime,
+  currentQuestion,
+  isCorrect,
+  isLastQuestion,
+  progress,
+  playerPerformance,
+  rankInfo,
+  medalInfo, prepareNewQuestion, selectAnswer: localSelectAnswer, nextQuestion: localNextQuestion, resetGame } = useGame()
 const { form, uiLeader, initLeaderboard, saveScore, validateName, clearNameError } = useLeaderboard(getI18nArray, t)
 
 const availableLocales = ['fr', 'en', 'es']
@@ -130,7 +140,8 @@ const nextQuestion = () => {
   if (isLastQuestion.value) {
     endTime.value = Date.now()
     game.status = 'end'
-    if (game.score >= game.questions.length * 0.75) fireConfetti()
+    // Confettis uniquement pour les réussites via performance isSuccess DRY !
+    if (playerPerformance.value.isSuccess) fireConfetti()
   } else {
     game.currentQIndex++
     game.selectedAnswer = null

@@ -31,24 +31,37 @@ export function useGame() {
     return ((state.currentQIndex + 1) / state.questions.length) * 100
   })
 
+  const playerPerformance = computed(() => {
+    if (!state.questions.length) {
+      return { ratio: 0, percentage: 0, medal: null as null | 'gold' | 'silver' | 'bronze', rank: 'beginner', isSuccess: false }
+    }
+    const ratio = state.score / state.questions.length
+    const percentage = Math.round(ratio * 100)
+    let medal: 'gold' | 'silver' | 'bronze' | null = null
+    let rank = 'beginner'
+
+    if (ratio === 1) {
+      medal = 'gold'
+      rank = 'expert'
+    } else if (ratio >= 0.9) {
+      medal = 'silver'
+      rank = 'advanced'
+    } else if (ratio >= 0.8) {
+      medal = 'bronze'
+      rank = 'intermediate'
+    }
+
+    return { ratio, percentage, medal, rank, isSuccess: ratio >= 0.8 }
+  })
+
   const rankInfo = computed(() => {
+    const { rank } = playerPerformance.value
     if (!state.questions.length) return { title: '', desc: '' }
-    if (state.score >= 18) {
-      return { title: t('end.ranks.expert.title'), desc: t('end.ranks.expert.desc') }
-    }
-    if (state.score >= 10) {
-      return { title: t('end.ranks.intermediate.title'), desc: t('end.ranks.intermediate.desc') }
-    }
-    return { title: t('end.ranks.beginner.title'), desc: t('end.ranks.beginner.desc') }
+    return { title: t(`end.ranks.${rank}.title`), desc: t(`end.ranks.${rank}.desc`) }
   })
 
   const medalInfo = computed(() => {
-    if (!state.questions.length) return { medal: null as null | 'gold' | 'silver' | 'bronze', percentage: 0 }
-    const ratio = state.score / state.questions.length
-    if (ratio === 1)    return { medal: 'gold'   as const, percentage: 100 }
-    if (ratio >= 0.9)   return { medal: 'silver' as const, percentage: Math.round(ratio * 100) }
-    if (ratio >= 0.8)   return { medal: 'bronze' as const, percentage: Math.round(ratio * 100) }
-    return { medal: null, percentage: Math.round(ratio * 100) }
+    return { medal: playerPerformance.value.medal, percentage: playerPerformance.value.percentage }
   })
 
   // Methods
@@ -99,6 +112,7 @@ export function useGame() {
     isCorrect,
     isLastQuestion,
     progress,
+    playerPerformance,
     rankInfo,
     medalInfo,
     prepareNewQuestion,

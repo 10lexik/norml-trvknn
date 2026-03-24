@@ -37,16 +37,20 @@
     "col_score": "Score",
     "ranks": {
       "expert": {
-        "title": "Expert",
-        "desc": "Perfect!"
+        "title": "Perfect Mastery",
+        "desc": "An impressive flawless performance. Your expertise on the subject is undeniable and extremely valuable. NORML France needs highly specialized profiles like yours to carry solid arguments and advance the public debate."
+      },
+      "advanced": {
+        "title": "Confirmed Legitimacy",
+        "desc": "Excellent mastery. Your voice is credible and necessary. Don't keep this knowledge to yourself: joining NORML France is the essential lever to bring this expertise into the public debate."
       },
       "intermediate": {
-        "title": "Intermediate",
-        "desc": "Good job."
+        "title": "Legitimacy in Progress",
+        "desc": "The basics are there, but some gray areas remain. Your opinion has value, but it needs to be refined. Joining NORML France is the best way to transform these achievements into true expertise."
       },
       "beginner": {
-        "title": "Beginner",
-        "desc": "Keep learning."
+        "title": "Need for an Upgrade",
+        "desc": "The subject is complex and misconceptions are numerous. As it stands, your opinion risks being contradicted by facts. It is not an inevitability: joining NORML France will give you the keys to understand."
       }
     },
     "share_card": {
