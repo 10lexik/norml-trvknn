@@ -103,8 +103,9 @@ const startGame = async (difficulty: string) => {
       })
     }
 
-    startTime.value = Date.now()
     game.status = 'playing'
+    // Scroll au sommet pour le début du quiz
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } catch (e: any) {
     uiError.value = t('errors.server_unavailable')
   } finally {
@@ -173,6 +174,8 @@ const nextQuestion = () => {
     game.showPointPopup = false
     uiVerifyingIdx.value = null
     prepareNewQuestion()
+    // Scroll au sommet pour la question suivante
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 

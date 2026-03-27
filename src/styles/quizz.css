@@ -152,10 +152,29 @@
   will-change: transform;
 }
 
+/* Transitions Vue pour les écrans et questions */
+.slide-fade-enter-active {
+  transition: all 0.4s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.slide-fade-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
 /* START */
 .start-screen {
   h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     /* Mobile-first smaller size */
     line-height: 1;
     margin: 0 0 10px 0;
