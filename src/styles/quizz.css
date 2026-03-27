@@ -4,6 +4,7 @@
   margin: auto;
   background: transparent;
   min-height: 500px;
+  justify-content: center;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -459,6 +460,7 @@
 
 /* FIN & FORM */
 .end-screen {
+
   .score-circle {
     width: 120px;
     height: 120px;
@@ -515,6 +517,19 @@
   text-align: left;
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.05);
 
+  +.share-modal-overlay .share-modal-content {
+    overflow: scroll;
+    height: 100%;
+
+    @media (min-width: 601px) {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: auto;
+    }
+  }
+
   h4 {
     margin: 0 0 20px 0;
     text-transform: uppercase;
@@ -529,6 +544,27 @@
     margin: 25px auto 20px auto;
     height: 1px;
     background: repeating-linear-gradient(90deg, #e5e5e5, #e5e5e5 4px, transparent 4px, transparent 8px);
+  }
+
+  .optional-title {
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-align: center;
+    margin: 0 0 8px 0;
+    color: var(--color-prohib-black);
+    font-weight: 800;
+  }
+
+  .optional-subtitle {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
@@ -906,17 +942,6 @@
   text-align: center;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   animation: slideUpModal 0.3s;
-
-  overflow: scroll;
-  height: 100%;
-
-  @media (min-width: 601px) {
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    height: auto;
-  }
 
   .modal-hint {
     font-size: 0.9rem;

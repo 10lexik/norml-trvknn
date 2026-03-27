@@ -256,7 +256,7 @@ const reloadPage = () => window.location.reload()
 <template>
   <div class="quiz-module">
     <header class="quiz-header">
-      <div class="header-top">
+      <!-- <div class="header-top">
         <div class="lang-switcher" :class="{ 'is-hidden': game.status !== 'start' }">
           <button
             v-for="l in availableLocales"
@@ -271,7 +271,7 @@ const reloadPage = () => window.location.reload()
           <span class="level-badge" :class="game.difficulty">{{ t('levels.' + game.difficulty + '.label') }}</span>
           <span class="score-value">{{ game.score }} / {{ game.questions.length }}</span>
         </div>
-      </div>
+      </div> -->
       <div class="logo-area">
         <img src="../assets/img/logo.svg" :alt="t('header.brand')" class="main-logo" />
       </div>

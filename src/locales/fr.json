@@ -63,6 +63,8 @@
     "placeholder_email": "E-mail (Confidentiel)",
     "placeholder_id": "N° Adhérent (Facultatif)",
     "rgpd_consent": "Je souhaite recevoir les actualités de NORML France (désabonnement en 1 clic)",
+    "optional_title": "FIGUREZ AU CLASSEMENT OFFICIEL",
+    "social_subtitle": "Partagez vos réseaux sociaux à côté de votre pseudo sur le leaderboard.",
     "rgpd_global_disclaimer": "En validant, j'accepte que mon profil public figure au classement et j'approuve la {privacy_policy}. Mon email restera privé.",
     "privacy_policy_title": "Politique de confidentialité",
     "privacy_policy_text": "1. Données collectées\nNous recueillons votre pseudonyme, vos éventuels liens de réseaux sociaux (Instagram, X, Facebook), votre identifiant de membre, ainsi que vos statistiques d'utilisation (score, temps de réponse, difficulté). Des données techniques (adresse IP, navigateur) peuvent également être enregistrées.\n\n2. Finalités et Base Légale\nLe traitement a pour but :\n• L'établissement et l'affichage du classement public.\n• L'analyse statistique de l'engagement.\n• La transmission de vos coordonnées à nos partenaires tiers rigoureusement sélectionnés, à des fins de prospection et de communication d'offres ciblées.\n\n3. Conservation et Partage\nEn validant l'enregistrement de votre score, vous consentez explicitement à la collecte de ces données et à leur transfert éventuel à nos partenaires commerciaux. Les données sont conservées le temps nécessaire aux finalités décrites.\n\n4. Vos Droits (RGPD)\nVous disposez d'un droit d'accès, de rectification, d'opposition et de suppression de vos données. Pour l'exercer, contactez : info{'@'}norml.fr.",

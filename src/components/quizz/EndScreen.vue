@@ -130,6 +130,9 @@ const showPrivacyModal = ref(false)
 
       <!-- 2. OPTIONNEL (Gamification / Public) -->
       <div class="form-group optional-group">
+        <h4 class="optional-title">{{ t('end.optional_title') }}</h4>
+        <p class="optional-subtitle">{{ t('end.social_subtitle') }}</p>
+
         <div class="form-row">
           <span class="prefix-icon">#</span>
           <input
