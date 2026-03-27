@@ -324,6 +324,7 @@ const reloadPage = () => window.location.reload()
       :isGenerating="isGenerating"
       :showShareModal="showShareModal"
       :generatedImageUrl="generatedImageUrl"
+      :medal="medalInfo.medal"
       @save="handleSaveScore"
       @clearError="clearEmailError(); clearNameError()"
       @toggleNetwork="toggleNetwork"

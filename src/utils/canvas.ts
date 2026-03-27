@@ -1,29 +1,47 @@
 import confetti from 'canvas-confetti'
 import html2canvas from 'html2canvas'
 
-export const fireConfetti = (duration = 3000) => {
+export const fireConfetti = (duration = 2000) => {
   const end = Date.now() + duration
-  const colors = ['#2cd18f', '#ffffff']
+  const colors = ['#e4e9d5', '#2E8A42', '#d4af37', '#ffffff', '#fbb03b']
 
-  ;(function frame() {
-    confetti({
-      particleCount: 5,
-      angle: 60,
-      spread: 55,
-      origin: { x: 0 },
-      colors: colors,
-      disableForReducedMotion: true
-    })
-    confetti({
-      particleCount: 5,
-      angle: 120,
-      spread: 55,
-      origin: { x: 1 },
-      colors: colors,
-      disableForReducedMotion: true
-    })
-    if (Date.now() < end) requestAnimationFrame(frame)
-  })()
+    ; (function frame() {
+      // Top corners
+      confetti({
+        particleCount: colors.length,
+        angle: 315,
+        spread: 100,
+        origin: { x: 0, y: 0 },
+        colors: colors,
+        disableForReducedMotion: true
+      })
+      confetti({
+        particleCount: colors.length,
+        angle: 225,
+        spread: 100,
+        origin: { x: 1, y: 0 },
+        colors: colors,
+        disableForReducedMotion: true
+      })
+      // Bottom corners
+      confetti({
+        particleCount: colors.length,
+        angle: 45,
+        spread: 100,
+        origin: { x: 0, y: 1 },
+        colors: colors,
+        disableForReducedMotion: true
+      })
+      confetti({
+        particleCount: colors.length,
+        angle: 135,
+        spread: 100,
+        origin: { x: 1, y: 1 },
+        colors: colors,
+        disableForReducedMotion: true
+      })
+      if (Date.now() < end) requestAnimationFrame(frame)
+    })()
 }
 
 export const generateShareImage = async (element: HTMLElement | null): Promise<string> => {
