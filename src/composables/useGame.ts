@@ -73,29 +73,6 @@ export function useGame() {
       .sort(() => 0.5 - Math.random()) // Shuffle
   }
 
-  const selectAnswer = (index: number) => {
-    if (state.hasAnswered) return
-    state.selectedAnswer = state.shuffledOptions[index].originalIndex
-    state.hasAnswered = true
-    if (isCorrect.value) {
-      state.score++
-      state.showPointPopup = true
-      setTimeout(() => (state.showPointPopup = false), 1500)
-    }
-  }
-
-  const nextQuestion = () => {
-    if (isLastQuestion.value) {
-      endTime.value = Date.now()
-      state.status = 'end'
-    } else {
-      state.currentQIndex++
-      state.hasAnswered = false
-      state.selectedAnswer = null
-      prepareNewQuestion()
-    }
-  }
-
   const resetGame = () => {
     state.score = 0
     state.currentQIndex = 0
@@ -116,8 +93,6 @@ export function useGame() {
     rankInfo,
     medalInfo,
     prepareNewQuestion,
-    selectAnswer,
-    nextQuestion,
     resetGame
   }
 }

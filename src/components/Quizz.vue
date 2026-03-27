@@ -35,8 +35,8 @@ const {
   progress,
   playerPerformance,
   rankInfo,
-  medalInfo, prepareNewQuestion, selectAnswer: localSelectAnswer, nextQuestion: localNextQuestion, resetGame } = useGame()
-const { form, uiLeader, initLeaderboard, saveScore, validateName, clearNameError } = useLeaderboard(getI18nArray, t)
+  medalInfo, prepareNewQuestion, resetGame } = useGame()
+const { form, uiLeader, initLeaderboard, saveScore, validateName, validateEmail, clearNameError, clearEmailError } = useLeaderboard(getI18nArray, t)
 
 const availableLocales = ['fr', 'en', 'es']
 const LEVEL_IDS = ['easy', 'medium', 'hard']
@@ -58,6 +58,12 @@ onMounted(async () => {
   initLeaderboard()
   // Synchronise form.socials avec visibleNetworks
   visibleNetworks.value = Object.keys(form.socials).filter((k) => form.socials[k])
+  
+  // DEV Fallback: Auto-fill email and name to avoid typing on every test
+  if (import.meta.env.DEV) {
+      form.name = form.name || 'AdminTest'
+      form.email = form.email || 'test@norml.fr'
+  }
 })
 
 const setLang = async (l: string) => {
@@ -68,11 +74,10 @@ const setLang = async (l: string) => {
 }
 
 const startGame = async (difficulty: string) => {
+  resetGame()
   uiIsLoading.value = true
   uiError.value = null
   game.difficulty = difficulty
-  game.score = 0
-  game.currentQIndex = 0
   form.isSaved = false
   showShareModal.value = false
   
@@ -91,6 +96,13 @@ const startGame = async (difficulty: string) => {
     game.showPointPopup = false
     uiVerifyingIdx.value = null
     
+    // Track event
+    if (window.mixpanel) {
+      window.mixpanel.track('quiz_started', {
+        level: difficulty
+      })
+    }
+
     startTime.value = Date.now()
     game.status = 'playing'
   } catch (e: any) {
@@ -140,8 +152,20 @@ const nextQuestion = () => {
   if (isLastQuestion.value) {
     endTime.value = Date.now()
     game.status = 'end'
+    // Scroll au sommet pour que l'utilisateur voie bien son score
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     // Confettis uniquement pour les réussites via performance isSuccess DRY !
     if (playerPerformance.value.isSuccess) fireConfetti()
+    
+    // Track completing
+    if (window.mixpanel) {
+      window.mixpanel.track('quiz_completed', {
+        level: game.difficulty,
+        score: game.score,
+        total: game.questions.length,
+        isSuccess: playerPerformance.value.isSuccess
+      })
+    }
   } else {
     game.currentQIndex++
     game.selectedAnswer = null
@@ -162,33 +186,26 @@ const toggleNetwork = (id: string) => {
 }
 
 const handleSaveScore = () => {
+  if (!validateEmail()) return;
+
   const timeSpent = Math.floor((endTime.value - startTime.value) / 1000)
-  
-  // Format socials to full URL before save (like current logic)
-  const finalSocials: Record<string, string> = {}
-  socialNetworks.value.forEach((net) => {
-    const handle = form.socials[net.id]
-    if (handle) {
-      const clean = handle
-        .replace(/^@/, '')
-        .replace(/https?:\/\//, '')
-        .replace('www.', '')
-        .replace(net.baseUrl + '/', '')
-        .trim()
-      if (clean) finalSocials[net.id] = `https://${net.baseUrl}/${clean}`
-    }
-  })
-  
-  // Temporary switch to clean data before save
-  const originalSocials = {...form.socials}
-  form.socials = finalSocials
   
   saveScore(
     game.difficulty, 
     game.score, 
-    timeSpent, 
-    () => { /* success */ }, 
-    (err) => { uiError.value = err; form.socials = originalSocials }
+    timeSpent,
+    socialNetworks.value,
+    () => { 
+        // Track save score
+        if (window.mixpanel) {
+          window.mixpanel.track('score_saved', {
+            score: game.score,
+            level: game.difficulty,
+            opt_in: form.consent
+          })
+        }
+    }, 
+    (err) => { uiError.value = err }
   )
 }
 
@@ -255,7 +272,9 @@ const reloadPage = () => window.location.reload()
           <span class="score-value">{{ game.score }} / {{ game.questions.length }}</span>
         </div>
       </div>
-      <div class="logo-area">{{ t('header.brand') }}</div>
+      <div class="logo-area">
+        <img src="../assets/img/logo.svg" :alt="t('header.brand')" class="main-logo" />
+      </div>
       <div class="progress-bar" v-if="game.status === 'playing'">
         <div class="fill" :style="{ width: progress + '%' }"></div>
       </div>
@@ -265,7 +284,6 @@ const reloadPage = () => window.location.reload()
       v-if="game.status === 'start'"
       :isLoading="uiIsLoading"
       :error="uiError"
-      :t="t"
       @start="startGame"
       @retry="reloadPage"
     />
@@ -281,7 +299,6 @@ const reloadPage = () => window.location.reload()
       :selectedAnswer="game.selectedAnswer"
       :showPointPopup="game.showPointPopup"
       :verifyingIdx="uiVerifyingIdx"
-      :t="t"
       @select="selectAnswer"
       @next="nextQuestion"
     />
@@ -295,8 +312,11 @@ const reloadPage = () => window.location.reload()
       :isSaved="form.isSaved"
       :leaderboard="form.leaderboard"
       :nameError="uiLeader.nameError"
+      :emailError="uiLeader.emailError"
       :isSubmitting="uiLeader.isSubmitting"
       v-model:nameModel="form.name"
+      v-model:emailModel="form.email"
+      v-model:consentModel="form.consent"
       v-model:memberIdModel="form.memberId"
       v-model:socialsModel="form.socials"
       :socialNetworks="socialNetworks"
@@ -304,9 +324,8 @@ const reloadPage = () => window.location.reload()
       :isGenerating="isGenerating"
       :showShareModal="showShareModal"
       :generatedImageUrl="generatedImageUrl"
-      :t="t"
       @save="handleSaveScore"
-      @clearError="clearNameError"
+      @clearError="clearEmailError(); clearNameError()"
       @toggleNetwork="toggleNetwork"
       @restart="resetGame"
       @share="generateShare"
@@ -323,7 +342,6 @@ const reloadPage = () => window.location.reload()
       :rankTitle="rankInfo.title"
       :rankDesc="rankInfo.desc"
       :medal="medalInfo.medal"
-      :t="t"
     />
   </div>
 </template>

@@ -4,6 +4,8 @@ import { getApiText } from '../_core/_i18n'
 
 // Regex stricte : 2 à 15 caractères, alphanumérique + accents, espaces, tirets
 const NAME_REGEX = /^[a-zA-Z0-9\u00C0-\u00FF _-]{2,15}$/
+// Regex email simple
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lang = (req.query.lang as string) || DEFAULTS.LANG
@@ -15,6 +17,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const {
       name,
+      email,
+      consent,
       score,
       memberId,
       socials,
@@ -22,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       time
     } = req.body
 
-    if (!name || score === undefined) throw new Error(T.params_missing)
+    if (!name || score === undefined || !email) throw new Error(T.params_missing)
 
     // 1. Validation et Nettoyage technique
     const safeScore = parseInt(score, DEFAULTS.RADIX)
@@ -38,6 +42,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // VALIDATION REGEX DU NOM
     if (!NAME_REGEX.test(safeName)) {
       return res.status(400).json({ error: T.invalid_name })
+    }
+
+    const safeEmail = String(email).trim()
+    if (!EMAIL_REGEX.test(safeEmail)) {
+      return res.status(400).json({ error: "L'email est invalide." })
     }
 
     const providedId = memberId
@@ -81,6 +90,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       {
         $max: { score: safeScore },
         $set: {
+          email: safeEmail,
+          consent: Boolean(consent),
           memberId: providedId,
           socials: safeSocials,
           time,

@@ -4,6 +4,8 @@ import type { LeaderboardEntry } from '../types/quizz'
 export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: string) => string) {
   const form = reactive({
     name: '',
+    email: '',
+    consent: true,
     memberId: '',
     socials: {} as Record<string, string>,
     isSaved: false,
@@ -12,6 +14,7 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
   
   const ui = reactive({
     nameError: null as string | null,
+    emailError: null as string | null,
     isSubmitting: false,
     verifyingIdx: null as number | null
   })
@@ -54,10 +57,47 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
     ui.nameError = null
   }
 
+  const validateEmail = () => {
+    const safeEmail = form.email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!safeEmail) {
+      ui.emailError = t('errors.email_required')
+      return false
+    }
+    if (!emailRegex.test(safeEmail)) {
+      ui.emailError = t('errors.invalid_email')
+      return false
+    }
+    ui.emailError = null
+    return true
+  }
+
+  const clearEmailError = () => {
+    ui.emailError = null
+  }
+
+  const formatSocials = (networks: any[]) => {
+    const finalSocials: Record<string, string> = {}
+    networks.forEach((net) => {
+      const handle = form.socials[net.id]
+      if (handle) {
+        const clean = handle
+          .replace(/^@/, '')
+          .replace(/https?:\/\//, '')
+          .replace('www.', '')
+          .replace(net.baseUrl + '/', '')
+          .trim()
+        if (clean) finalSocials[net.id] = `https://${net.baseUrl}/${clean}`
+      }
+    })
+    return finalSocials
+  }
+
   const saveScore = async (
     difficulty: string,
     score: number,
     timeMs: number,
+    networks: any[],
     onSuccess: () => void,
     onError: (msg: string) => void
   ) => {
@@ -67,11 +107,13 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
     try {
       const payload = {
         name: form.name.trim(),
+        email: form.email.trim(),
+        consent: form.consent,
         memberId: form.memberId.trim() || undefined,
         score,
         difficulty,
         time: timeMs,
-        socials: form.socials
+        socials: formatSocials(networks)
       }
 
       const res = await fetch('/api/game/score', {
@@ -122,6 +164,8 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
     initLeaderboard,
     saveScore,
     validateName,
-    clearNameError
+    validateEmail,
+    clearNameError,
+    clearEmailError
   }
 }

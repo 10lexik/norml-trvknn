@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Question } from '../../types/quizz'
 
@@ -22,6 +23,16 @@ const emit = defineEmits<{
 }>()
 
 const optionLetters = ['A', 'B', 'C', 'D']
+const feedbackBox = ref<HTMLElement | null>(null)
+
+watch(() => props.hasAnswered, async (newVal) => {
+  if (newVal) {
+    await nextTick()
+    if (feedbackBox.value) {
+      feedbackBox.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+})
 
 const getOptionClass = (
   idx: number,
@@ -69,6 +80,7 @@ const getOptionClass = (
 
     <div
       v-if="hasAnswered"
+      ref="feedbackBox"
       class="feedback-box"
       :class="isCorrect ? 'success' : 'error'"
     >

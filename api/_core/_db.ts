@@ -43,20 +43,20 @@ export const DEFAULTS = {
   ENV: { PROD: 'production', TRUE: 'true' },
   ALLOWED_LANGS: ['fr', 'en', 'es'],
   ALLOWED_LEVELS: ['easy', 'medium', 'hard'],
-  SCORE_LIMIT: 5,
+  SCORE_LIMIT: 2,
   LB_LIMIT: 10,
   SCORE_RANGE: { MIN: 0, MAX: 50 },
   NAME_MAX: 20,
   SOCIAL_MAX: 100,
   HEADERS: { ADMIN: 'x-admin-secret' },
-  SOCIALS: ['instagram', 'x', 'facebook'],
-  MONGO: { FAMILY: 4, TIMEOUT: 500 },
+  SOCIALS: ['instagram', 'x', 'facebook', 'bluesky', 'tiktok'],
+  MONGO: { FAMILY: undefined, TIMEOUT: 500, ATLAS_TIMEOUT: 10000 },
   METHODS: { POST: 'POST', GET: 'GET' }
 }
 
-const isLocal =
-  NODE_ENV !== DEFAULTS.ENV.PROD && USE_LOCAL_DB === DEFAULTS.ENV.TRUE
-const uri = isLocal ? MONGODB_LOCAL_URI! : MONGODB_URI!
+const isProd = NODE_ENV === DEFAULTS.ENV.PROD
+const useLocalMongo = USE_LOCAL_DB === DEFAULTS.ENV.TRUE
+const uri = isProd ? MONGODB_URI : (useLocalMongo ? MONGODB_LOCAL_URI : undefined)
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined
@@ -66,7 +66,7 @@ declare global {
 // 1. Connexion principale (suit le réglage USE_LOCAL_DB)
 if (!global._mongoClientPromise && uri) {
   const conn = new MongoClient(uri, {
-    family: DEFAULTS.MONGO.FAMILY,
+    family: DEFAULTS.MONGO.FAMILY as any,
     serverSelectionTimeoutMS: DEFAULTS.MONGO.TIMEOUT
   })
   global._mongoClientPromise = conn.connect().catch((e) => {
@@ -78,8 +78,8 @@ if (!global._mongoClientPromise && uri) {
 // 2. Connexion Atlas forcée (dédiée au Leaderboard)
 if (!global._atlasClientPromise && MONGODB_URI) {
   const atlasConn = new MongoClient(MONGODB_URI, {
-    family: DEFAULTS.MONGO.FAMILY,
-    serverSelectionTimeoutMS: 5000
+    family: DEFAULTS.MONGO.FAMILY as any,
+    serverSelectionTimeoutMS: DEFAULTS.MONGO.ATLAS_TIMEOUT
   })
   global._atlasClientPromise = atlasConn.connect().catch((e) => {
     console.error(`[DB] Connexion Atlas Leaderboard échouée:`, e.message)
@@ -95,14 +95,16 @@ export const getData = async (lang: string) => {
   try {
     if (clientPromise) {
       const client = await clientPromise
-      const doc = await client
-        .db(DEFAULTS.DB.NAME)
-        .collection(DEFAULTS.DB.TRIVIA)
-        .findOne({})
-      if (doc && doc[lang]) return doc[lang]
+      if (client) {
+        const doc = await client
+          .db(DEFAULTS.DB.NAME)
+          .collection(DEFAULTS.DB.TRIVIA)
+          .findOne({})
+        if (doc && doc[lang]) return doc[lang]
+      }
     }
   } catch (e: any) {
-    if (!isLocal) {
+    if (isProd) {
       console.warn(`${S.log_db_error}${e.message}`)
       console.warn(S.log_db_fallback)
     }
@@ -126,7 +128,7 @@ export const getData = async (lang: string) => {
       if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'))
     }
 
-    if (isLocal) console.error(S.log_fallback_fail, possiblePaths)
+    if (!isProd && useLocalMongo) console.error(S.log_fallback_fail, possiblePaths)
   } catch (e: any) {
     console.error(`${S.log_file_error}${e.message}`)
   }

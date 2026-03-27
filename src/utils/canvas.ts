@@ -35,7 +35,7 @@ export const generateShareImage = async (element: HTMLElement | null): Promise<s
     top: '-9999px',
     left: '-9999px',
     width: '1080px',
-    height: '1080px',
+    height: '1350px',
     transform: 'none',
     display: 'flex'
   })

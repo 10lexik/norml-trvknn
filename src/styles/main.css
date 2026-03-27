@@ -8,43 +8,48 @@
 @font-face {
   font-family: 'Platform';
   src: url('/fonts/platform/Platform-Regular-Web.woff2') format('woff2'),
-       url('/fonts/platform/Platform-Regular-Web.woff') format('woff');
+    url('/fonts/platform/Platform-Regular-Web.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Platform';
   src: url('/fonts/platform/Platform-RegularItalic-Web.woff2') format('woff2'),
-       url('/fonts/platform/Platform-RegularItalic-Web.woff') format('woff');
+    url('/fonts/platform/Platform-RegularItalic-Web.woff') format('woff');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Platform';
   src: url('/fonts/platform/Platform-Medium-Web.woff2') format('woff2'),
-       url('/fonts/platform/Platform-Medium-Web.woff') format('woff');
+    url('/fonts/platform/Platform-Medium-Web.woff') format('woff');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Platform';
   src: url('/fonts/platform/Platform-Bold-Web.woff2') format('woff2'),
-       url('/fonts/platform/Platform-Bold-Web.woff') format('woff');
+    url('/fonts/platform/Platform-Bold-Web.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Platform';
   src: url('/fonts/platform/Platform-BoldItalic-Web.woff2') format('woff2'),
-       url('/fonts/platform/Platform-BoldItalic-Web.woff') format('woff');
+    url('/fonts/platform/Platform-BoldItalic-Web.woff') format('woff');
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
+
 /* ============================================================
    DESIGN TOKENS — équivalents des variables SCSS du projet
    ============================================================ */
@@ -74,13 +79,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
   * {
     box-sizing: border-box;
   }
 }
 
 /* Forcer le gras sur tous les titres car Tailwind les reset par défaut */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
 }
 
@@ -102,7 +113,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 0 20px 20px;
   animation: fadeIn 0.4s ease;
 }
 
@@ -110,22 +121,43 @@ h1, h2, h3, h4, h5, h6 {
    ANIMATIONS GLOBALES
    ============================================================ */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes popIn {
-  from { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
-  to   { opacity: 1; transform: translate(-50%, 0)    scale(1);   }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
 /* ============================================================
@@ -151,6 +183,7 @@ h1, h2, h3, h4, h5, h6 {
   &:hover {
     background: color-mix(in srgb, var(--color-reg-green) 90%, black);
   }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -176,7 +209,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main);
   padding: 18px 40px;
   font-weight: 900;
-  font-size: 1.2rem;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
@@ -189,12 +222,17 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 10px;
 
+  @media (min-width: 601px) {
+    font-size: 1.2rem;
+  }
+
   &:hover {
     transform: translateY(-3px) scale(1.02);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
     background: white;
     color: var(--color-prohib-black);
   }
+
   &:active {
     transform: translateY(1px);
   }

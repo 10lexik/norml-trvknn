@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { LeaderboardEntry, UnifiedNetworkConfig } from '../../types/quizz'
 
@@ -21,6 +22,9 @@ const props = defineProps<{
   isGenerating: boolean
   showShareModal: boolean
   generatedImageUrl: string | null
+  emailModel: string
+  consentModel: boolean
+  emailError: string | null
 }>()
 
 const emit = defineEmits<{
@@ -35,11 +39,22 @@ const emit = defineEmits<{
   (e: 'share'): void
   (e: 'closeModal'): void
   (e: 'download', net: UnifiedNetworkConfig): void
+  (e: 'update:emailModel', value: string): void
+  (e: 'update:consentModel', value: boolean): void
 }>()
 
 const onNameInput = (e: Event) => {
   emit('update:nameModel', (e.target as HTMLInputElement).value)
   emit('clearError')
+}
+
+const onEmailInput = (e: Event) => {
+  emit('update:emailModel', (e.target as HTMLInputElement).value)
+  emit('clearError')
+}
+
+const onConsentChange = (e: Event) => {
+  emit('update:consentModel', (e.target as HTMLInputElement).checked)
 }
 
 const onMemberIdInput = (e: Event) => {
@@ -51,6 +66,8 @@ const onSocialInput = (key: string, e: Event) => {
   const newSocials = { ...props.socialsModel, [key]: (e.target as HTMLInputElement).value }
   emit('update:socialsModel', newSocials)
 }
+
+const showPrivacyModal = ref(false)
 
 </script>
 
@@ -65,73 +82,114 @@ const onSocialInput = (key: string, e: Event) => {
     <p class="rank-desc">{{ rankInfo.desc }}</p>
 
     <div v-if="!isSaved" class="save-form">
-      <h4>{{ t('end.leaderboard_title') }}</h4>
-
-      <div class="form-row main-row" style="position: relative">
-        <div v-if="nameError" class="input-tooltip">
-          {{ nameError }}
-          <div class="tooltip-arrow"></div>
-        </div>
-
-        <span class="prefix-icon">👤</span>
-        <input
-          type="text"
-          :value="nameModel"
-          @input="onNameInput"
-          :placeholder="t('end.placeholder_name')"
-          maxlength="15"
-          class="main-input"
-          :class="{ 'has-error': nameError }"
-        />
-      </div>
-
-      <div class="social-section" v-if="socialNetworks.length">
-        <div class="social-bar">
-          <button
-            v-for="net in socialNetworks"
-            :key="net.id"
-            class="icon-btn"
-            :class="{ active: visibleNetworks.includes(net.id) || socialsModel[net.id] }"
-            @click="emit('toggleNetwork', net.id)"
-            :title="net.label"
-          >
-            <span v-html="net.icon"></span>
-          </button>
-        </div>
-        <transition-group name="slide">
-          <div
-            v-for="net in socialNetworks"
-            :key="net.id"
-            class="form-row social-row"
-            v-show="visibleNetworks.includes(net.id) || socialsModel[net.id]"
-          >
-            <span class="prefix-icon social-icon" v-html="net.icon"></span>
-            <input
-              type="text"
-              :value="socialsModel[net.id]"
-              @input="(e) => onSocialInput(net.id, e)"
-              :placeholder="net.label"
-            />
-            <button class="close-btn" @click="emit('clearInputSocial', net.id)">×</button>
+      <!-- 1. IDENTITÉ & CONTACT (Essentiel) -->
+      <div class="form-group primary-group">
+        <div class="form-row" :class="{ 'has-error': nameError }">
+          <div v-if="nameError" class="input-tooltip">
+            {{ nameError }}
+            <div class="tooltip-arrow"></div>
           </div>
-        </transition-group>
+          <span class="prefix-icon">👤</span>
+          <input
+            type="text"
+            :value="nameModel"
+            @input="onNameInput"
+            :placeholder="t('end.placeholder_name')"
+            maxlength="15"
+          />
+        </div>
+
+        <div class="form-row" :class="{ 'has-error': emailError }">
+           <div v-if="emailError" class="input-tooltip">
+            {{ emailError }}
+            <div class="tooltip-arrow"></div>
+          </div>
+          <span class="prefix-icon">✉️</span>
+          <input
+            type="email"
+            :value="emailModel"
+            @input="onEmailInput"
+            :placeholder="t('end.placeholder_email')"
+          />
+        </div>
+
+        <div class="consent-row">
+          <label class="consent-label">
+            <input 
+              type="checkbox" 
+              :checked="consentModel"
+              @change="onConsentChange"
+            />
+            <span class="consent-text">{{ t('end.rgpd_consent') }}</span>
+          </label>
+        </div>
       </div>
 
-      <div class="form-row secondary-row">
-        <span class="prefix-icon">#</span>
-        <input
-          type="text"
-          :value="memberIdModel"
-          @input="onMemberIdInput"
-          :placeholder="t('end.placeholder_id')"
-        />
+      <!-- SÉPARATEUR VISUEL LÉGER -->
+      <div class="private-separator"></div>
+
+      <!-- 2. OPTIONNEL (Gamification / Public) -->
+      <div class="form-group optional-group">
+        <div class="form-row">
+          <span class="prefix-icon">#</span>
+          <input
+            type="text"
+            :value="memberIdModel"
+            @input="onMemberIdInput"
+            :placeholder="t('end.placeholder_id')"
+          />
+        </div>
+
+        <div class="social-section" v-if="socialNetworks.length">
+          <div class="social-bar">
+            <button
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="icon-btn"
+              :class="{ active: visibleNetworks.includes(net.id) || socialsModel[net.id] }"
+              @click="emit('toggleNetwork', net.id)"
+              :title="net.label"
+            >
+              <span v-html="net.icon"></span>
+            </button>
+          </div>
+          <transition-group name="slide">
+            <div
+              v-for="net in socialNetworks"
+              :key="net.id"
+              class="form-row social-row"
+              v-show="visibleNetworks.includes(net.id) || socialsModel[net.id]"
+            >
+              <span class="prefix-icon social-icon" v-html="net.icon"></span>
+              <input
+                type="text"
+                :value="socialsModel[net.id]"
+                @input="(e) => onSocialInput(net.id, e)"
+                :placeholder="net.label"
+              />
+              <button class="close-btn" @click="emit('clearInputSocial', net.id)">×</button>
+            </div>
+          </transition-group>
+        </div>
       </div>
+
+      <i18n-t
+        keypath="end.rgpd_global_disclaimer"
+        tag="p"
+        class="legal-disclaimer"
+      >
+        <template #privacy_policy>
+          <a href="#" class="privacy-link" @click.prevent="showPrivacyModal = true">
+            {{ t('end.privacy_policy_title') }}
+          </a>
+        </template>
+      </i18n-t>
 
       <div class="actions-row">
         <button
           class="btn-primary btn-action-trigger"
           @click="emit('save')"
-          :disabled="!nameModel || isSubmitting"
+          :disabled="!nameModel || !emailModel || isSubmitting"
         >
           <span v-if="isSubmitting" class="mini-loader-white"></span>
           <span v-else>{{ hasMedal ? t('end.btn_save') : t('end.btn_save_no_medal') }}</span>
@@ -208,23 +266,36 @@ const onSocialInput = (key: string, e: Event) => {
     <!-- MODALE DU CERTIFICAT (RESTAURÉE) -->
     <div v-if="showShareModal" class="share-modal-overlay" @click.self="emit('closeModal')">
       <div class="share-modal-content">
-        <h3>{{ t('end.share_modal.title') }}</h3>
-        <p class="modal-hint">{{ t('end.share_modal.hint') }}</p>
+        <h3 class="modal-hint">{{ t('end.share_modal.hint') }}</h3>
         <div class="preview-img-container">
           <img v-if="generatedImageUrl" :src="generatedImageUrl" alt="Score" class="preview-img" />
         </div>
-        <div class="share-buttons-grid">
+        <div class="share-buttons-row">
           <button
             v-for="net in socialNetworks"
             :key="net.id"
-            class="btn-network-option"
+            class="btn-network-circle"
             :style="{ backgroundColor: net.color }"
             @click="emit('download', net)"
+            :title="net.label"
           >
-           <span class="icon" v-html="net.icon"></span> {{ net.label }}
+           <span class="icon" v-html="net.icon"></span>
           </button>
         </div>
         <button class="btn-close-modal" @click="emit('closeModal')">
+          {{ t('end.share_modal.btn_close') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- MODALE PRIVACY (REUTILISATION DU STYLE) -->
+    <div v-if="showPrivacyModal" class="share-modal-overlay" @click.self="showPrivacyModal = false">
+      <div class="share-modal-content">
+        <h3>{{ t('end.privacy_policy_title') }}</h3>
+        <p class="modal-hint" style="text-align: left; margin-bottom: 20px; line-height: 1.5; white-space: pre-line;">
+          {{ t('end.privacy_policy_text') }}
+        </p>
+        <button class="btn-close-modal" @click="showPrivacyModal = false">
           {{ t('end.share_modal.btn_close') }}
         </button>
       </div>

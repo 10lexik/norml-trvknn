@@ -32,7 +32,7 @@
     "prettier": "^3.7.4",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.9.3",
-    "vercel": "^50.31.1",
+    "vercel": "^50.37.1",
     "vite": "^7.2.4",
     "vue-i18n": "^11.2.2",
     "vue-tsc": "^3.1.4"
