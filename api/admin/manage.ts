@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const client = await clientPromise
-    if (!client) throw new Error(T.db_client_missing)
+    if (!client) return res.status(503).json({ error: T.db_client_missing })
     const collection = client
       .db(DEFAULTS.DB.NAME)
       .collection(DEFAULTS.DB.TRIVIA)
@@ -64,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .json({ success: true, message: `${T.save_success}${T.sep}${lang}` })
     }
   } catch (e: any) {
-    res.status(500).json({ error: e.message || T.server_error })
+    console.error(`[ADMIN_MANAGE_ERROR]`, e.message)
+    res.status(500).json({ error: `Erreur serveur : ${e.message || T.server_error}` })
   }
 }

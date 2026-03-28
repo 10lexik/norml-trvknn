@@ -50,13 +50,13 @@ export const DEFAULTS = {
   SOCIAL_MAX: 100,
   HEADERS: { ADMIN: 'x-admin-secret' },
   SOCIALS: ['instagram', 'x', 'facebook', 'bluesky', 'tiktok'],
-  MONGO: { FAMILY: undefined, TIMEOUT: 500, ATLAS_TIMEOUT: 10000 },
+  MONGO: { FAMILY: undefined, TIMEOUT: 5000, ATLAS_TIMEOUT: 15000 },
   METHODS: { POST: 'POST', GET: 'GET' }
 }
 
 const isProd = NODE_ENV === DEFAULTS.ENV.PROD
 const useLocalMongo = USE_LOCAL_DB === DEFAULTS.ENV.TRUE
-const uri = isProd ? MONGODB_URI : (useLocalMongo ? MONGODB_LOCAL_URI : undefined)
+const uri = isProd ? MONGODB_URI : (useLocalMongo ? MONGODB_LOCAL_URI : MONGODB_URI)
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined

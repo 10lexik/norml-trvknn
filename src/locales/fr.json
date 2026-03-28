@@ -340,7 +340,7 @@
           "1500 €"
         ],
         "correct": 2,
-        "explanation": "L'amende est de 200 € (minorée à 150 € si payée sous 15 jours). Attention, le paiement vaut reconnaissance de culpabilité et inscription au casier judiciaire."
+        "explanation": "L'amende est passée à 500 € fin 2025. Attention, le paiement vaut reconnaissance de culpabilité et inscription au casier judiciaire."
       },
       {
         "category": "⚖️ Droit",
@@ -1616,7 +1616,7 @@
           "Jamais"
         ],
         "correct": 1,
-        "explanation": "Elle a débuté en mars 2021 avec 3000 patients souffrant de pathologies graves (douleurs réfractaires, épilepsie, soins palliatifs)."
+        "explanation": "Elle a débuté en mars 2021 avec 3000 patients. L'expérimentation a été prolongée jusqu'au 31 mars 2026 dans l'attente d'une généralisation."
       },
       {
         "category": "🏛️ Politique",

@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const client = await atlasClientPromise
-    if (!client) throw new Error(T.db_client_missing)
+    if (!client) return res.status(503).json({ error: T.db_client_missing })
     const collection = client
       .db(DEFAULTS.DB.NAME)
       .collection(DEFAULTS.DB.SCORES)
@@ -128,7 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json(top10)
   } catch (e: any) {
-    console.error(T.log_score, e.message)
-    res.status(500).json({ error: e.message || T.server_error })
+    console.error(`[SCORE_SAVE_ERROR]`, e.message)
+    res.status(500).json({ error: `Erreur sauvegarde score : ${e.message || T.server_error}` })
   }
 }

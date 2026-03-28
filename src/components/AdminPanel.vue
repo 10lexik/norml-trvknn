@@ -136,6 +136,13 @@ const loadContent = async (lang: string) => {
       return
     }
 
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      statusMsg.value = errorData.error || `Erreur ${res.status}`
+      isLoading.value = false
+      return
+    }
+
     const data = await res.json()
     if (!data.questions_pool)
       data.questions_pool = { easy: [], medium: [], hard: [] }
@@ -147,9 +154,9 @@ const loadContent = async (lang: string) => {
     localStorage.setItem(STORAGE_TIME_KEY, new Date().getTime().toString())
     startInactivityTracking()
     statusMsg.value = ''
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
-    statusMsg.value = 'Erreur réseau'
+    statusMsg.value = 'Erreur réseau/Base de données'
   } finally {
     isLoading.value = false
   }
@@ -158,6 +165,7 @@ const loadContent = async (lang: string) => {
 const saveContent = async () => {
   try {
     isLoading.value = true
+    statusMsg.value = 'Sauvegarde...'
     const res = await fetch('/api/admin/manage', {
       method: 'POST',
       headers: {
@@ -176,10 +184,11 @@ const saveContent = async () => {
       resetInactivityTimer()
       setTimeout(() => (statusMsg.value = ''), 3000)
     } else {
-      statusMsg.value = '❌ Erreur'
+      const errorData = await res.json().catch(() => ({}))
+      statusMsg.value = `❌ ${errorData.error || 'Erreur'}`
     }
   } catch (e) {
-    alert('Erreur technique')
+    statusMsg.value = '❌ Erreur technique'
   } finally {
     isLoading.value = false
   }
