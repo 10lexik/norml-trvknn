@@ -47,30 +47,47 @@ export const fireConfetti = (duration = 2000) => {
 export const generateShareImage = async (element: HTMLElement | null): Promise<string> => {
   if (!element) throw new Error('Element is null')
 
+  // Attendre que les polices soient chargées pour éviter les polices système
+  await document.fonts.ready
+
   const clone = element.cloneNode(true) as HTMLElement
+  
+  // Appliquer une classe spécifique pour les correctifs CSS (ex: remplacer drop-shadow par box-shadow)
+  clone.classList.add('html2canvas-capturing')
+
   Object.assign(clone.style, {
     position: 'absolute',
-    top: '-9999px',
-    left: '-9999px',
+    top: '0',
+    left: '0',
     width: '1080px',
     height: '1350px',
     transform: 'none',
-    display: 'flex'
+    display: 'flex',
+    zIndex: '-9999',
+    visibility: 'visible',
+    opacity: '1'
   })
+
   document.body.appendChild(clone)
-  await new Promise((resolve) => setTimeout(resolve, 300))
+  
+  // Attendre un peu pour le rendu initial et le chargement des images du clone
+  await new Promise((resolve) => setTimeout(resolve, 500))
 
   try {
     const canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#0a0a0a',
-      logging: false
+      logging: false,
+      allowTaint: true,
+      windowWidth: 1080,
+      windowHeight: 1350
     })
     document.body.removeChild(clone)
-    return canvas.toDataURL('image/jpeg', 0.9)
+    // PNG pour une netteté parfaite des textes (Instagram supporte très bien le PNG)
+    return canvas.toDataURL('image/png')
   } catch (err) {
-    document.body.removeChild(clone)
+    if (document.body.contains(clone)) document.body.removeChild(clone)
     console.error('Erreur html2canvas', err)
     throw err
   }

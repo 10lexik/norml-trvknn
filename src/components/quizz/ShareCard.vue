@@ -14,13 +14,15 @@ const props = defineProps<{
   rankTitle: string
   rankDesc: string
   medal: 'gold' | 'silver' | 'bronze' | null
+  difficulty: string
+  mode?: 'hidden' | 'preview'
 }>()
 
 const cardElRef = ref<HTMLElement | null>(null)
 defineExpose({ cardEl: cardElRef })
 
 const medalLabel = computed(() => {
-  if (props.medal === 'gold')   return t('end.share_card.medal_gold')
+  if (props.medal === 'gold') return t('end.share_card.medal_gold')
   if (props.medal === 'silver') return t('end.share_card.medal_silver')
   if (props.medal === 'bronze') return t('end.share_card.medal_bronze')
   return ''
@@ -38,13 +40,20 @@ const generatedDate = computed(() => {
     day: '2-digit', month: 'long', year: 'numeric'
   })
 })
+
+const badgeColor = computed(() => {
+  switch (props.difficulty) {
+    case 'hard': return '#fbb03b'
+    case 'medium': return '#c0c0c0'
+    default: return '#bf8970'
+  }
+})
 </script>
 
 <template>
-  <div ref="cardElRef" class="share-card-hidden" :class="medal ? `medal-${medal}` : ''">
+  <div ref="cardElRef" class="share-card-hidden"
+    :class="[medal ? `medal-${medal}` : '', { 'is-preview': mode === 'preview' }]">
     <div class="cert-inner">
-
-
 
       <!-- BLOC MÉDAILLE -->
       <div class="cert-medal-block">
@@ -52,8 +61,19 @@ const generatedDate = computed(() => {
         <div class="medal-glow"></div>
         <img v-if="medalImageSrc" :src="medalImageSrc" class="medal-image" alt="Médaille du Quizz" />
 
+        <div class="cert-badge-container">
+          <svg viewBox="0 0 450 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="450" height="90" rx="45" :fill="badgeColor" />
+            <text x="225" y="48" font-family="Outfit, sans-serif" font-weight="900" font-size="44" fill="#0a0a0a"
+              text-anchor="middle" dominant-baseline="central" style="text-transform: uppercase; letter-spacing: 2px;">
+              {{ t('levels.' + difficulty + '.label') }}
+            </text>
+          </svg>
+        </div>
+
         <div class="cert-score-big" :style="{ color: `var(--medal-color-primary)` }">
-          {{ score }}<span class="small" :style="{ color: `var(--medal-color-primary)`, opacity: 0.6 }">/{{ total }}</span>
+          {{ score }}<span class="small" :style="{ color: `var(--medal-color-primary)`, opacity: 0.6 }">/{{ total
+          }}</span>
         </div>
       </div>
 

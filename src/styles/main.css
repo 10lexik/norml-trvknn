@@ -115,6 +115,10 @@ h6 {
   align-items: center;
   padding: 20px;
   animation: fadeIn 0.4s ease;
+
+  @media (min-width: 601px) {
+    padding: 0;
+  }
 }
 
 /* ============================================================

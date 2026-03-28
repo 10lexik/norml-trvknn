@@ -346,6 +346,7 @@ const reloadPage = () => window.location.reload()
       :rankTitle="rankInfo.title"
       :rankDesc="rankInfo.desc"
       :medal="medalInfo.medal"
+      :difficulty="game.difficulty"
     />
   </div>
 </template>
