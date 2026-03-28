@@ -17,6 +17,8 @@ const loadEnv = () => {
           const key = match[1]
           let val = (match[2] || '').trim()
           if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
+          // Nettoyage agressif des \n ou \r littéraux qui polluent l'URI
+          val = val.replace(/\\n/g, '').replace(/\\r/g, '').trim()
           if (!process.env[key]) process.env[key] = val
         }
       })
@@ -43,7 +45,7 @@ export const DEFAULTS = {
   ENV: { PROD: 'production', TRUE: 'true' },
   ALLOWED_LANGS: ['fr', 'en', 'es'],
   ALLOWED_LEVELS: ['easy', 'medium', 'hard'],
-  SCORE_LIMIT: 20,
+  SCORE_LIMIT: 2,
   LB_LIMIT: 10,
   SCORE_RANGE: { MIN: 0, MAX: 50 },
   NAME_MAX: 20,

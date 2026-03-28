@@ -26,7 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       time
     } = req.body
 
-    if (!name || score === undefined || !email) throw new Error(T.params_missing)
+    if (!name || score === undefined || !email) {
+      return res.status(400).json({ error: T.params_missing })
+    }
 
     // 1. Validation et Nettoyage technique
     const safeScore = parseInt(score, DEFAULTS.RADIX)
@@ -34,8 +36,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       isNaN(safeScore) ||
       safeScore < DEFAULTS.SCORE_RANGE.MIN ||
       safeScore > DEFAULTS.SCORE_RANGE.MAX
-    )
-      throw new Error(T.invalid_score)
+    ) {
+      return res.status(400).json({ error: T.invalid_score })
+    }
 
     const safeName = String(name).trim().substring(0, DEFAULTS.NAME_MAX)
 
@@ -129,6 +132,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json(top10)
   } catch (e: any) {
     console.error(`[SCORE_SAVE_ERROR]`, e.message)
-    res.status(500).json({ error: `Erreur sauvegarde score : ${e.message || T.server_error}` })
+    const isValidationError = [T.params_missing, T.invalid_score].includes(e.message)
+    res.status(isValidationError ? 400 : 500).json({ 
+      error: `Erreur sauvegarde score : ${e.message || T.server_error}` 
+    })
   }
 }
