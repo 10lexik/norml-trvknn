@@ -111,7 +111,8 @@ const logout = () => {
 // --- LOGIQUE API ---
 const login = async () => {
   if (!secret.value) return
-  secret.value = secret.value.trim()
+  // Nettoyage ultra-agressif (espaces, normalisation accents, guillemets parasites)
+  secret.value = secret.value.trim().normalize('NFC').replace(/^["']|["']$/g, '')
   isLoading.value = true
   statusMsg.value = 'Connexion...'
   await loadContent(currentLang.value)

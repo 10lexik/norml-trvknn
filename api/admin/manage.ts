@@ -8,9 +8,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const T = getApiText(lang)
 
   // --- RÉCUPÉRATION DU SECRET ---
-  // On nettoie systématiquement pour éviter les espaces ou retours à la ligne parasites
-  const adminSecret = (process.env.ADMIN_SECRET || '').trim()
-  const received = (req.headers[DEFAULTS.HEADERS.ADMIN] as string || '').trim()
+  const cleaner = (s: string) => (s || '').trim().normalize('NFC').replace(/^["']|["']$/g, '')
+  const adminSecret = cleaner(process.env.ADMIN_SECRET as string)
+  const received = cleaner(req.headers[DEFAULTS.HEADERS.ADMIN] as string)
 
   // --- VÉRIFICATION ---
   if (!received || !adminSecret || received !== adminSecret) {
