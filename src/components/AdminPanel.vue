@@ -127,28 +127,23 @@ const loadContent = async (lang: string) => {
       headers: { 'x-admin-secret': secret.value }
     })
 
-    if (res.status === 403) {
-      if (isAuthenticated.value) {
-        logout()
-      } else {
-        alert('⛔️ Mot de passe incorrect')
-      }
-      isAuthenticated.value = false
-      isLoading.value = false
-      return
-    }
-
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
       let msg = errorData.error || `Erreur ${res.status}`
       
-      // Ajout du diagnostic si disponible
-      if (res.status === 403 && errorData.debug) {
-        msg += ` (Diag: Env=${errorData.debug.envLoaded ? 'OK' : 'MISSING'}, L=${errorData.debug.sentLen}/${errorData.debug.expectedLen})`
+      // Ajout du diagnostic si disponible (notamment pour le 403)
+      if (res.status === 403) {
+        if (isAuthenticated.value) {
+          logout()
+        }
+        if (errorData.debug) {
+          msg += ` (Diag: Env=${errorData.debug.envLoaded ? 'OK' : 'MISSING'}, L=${errorData.debug.sentLen}/${errorData.debug.expectedLen})`
+        }
       }
       
       statusMsg.value = msg
       isLoading.value = false
+      isAuthenticated.value = false
       return
     }
 
@@ -250,6 +245,9 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
         <button class="btn-primary" @click="login" :disabled="isLoading">
           Entrer
         </button>
+      </div>
+      <div v-if="statusMsg" class="login-status" :class="{ error: statusMsg.includes('⛔') || statusMsg.includes('Diag') }">
+        {{ statusMsg }}
       </div>
     </div>
 
@@ -655,6 +653,18 @@ select {
     display: flex;
     gap: 10px;
     margin-top: 20px;
+  }
+}
+
+.login-status {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  padding: 10px;
+  border-radius: 4px;
+  background: #f8f8f8;
+  &.error {
+    color: var(--color-error-red);
+    background: rgba(255, 0, 0, 0.05);
   }
 }
 
