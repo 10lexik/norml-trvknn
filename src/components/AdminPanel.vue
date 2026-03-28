@@ -17,6 +17,8 @@ const activeTab = ref('general')
 const showRawJson = ref(false)
 
 const cmsData = ref<any>({})
+const results = ref<any[]>([])
+const isLoadingResults = ref(false)
 const languages = ['fr', 'en', 'es']
 
 // Pour la gestion des catégories
@@ -131,7 +133,7 @@ const loadContent = async (lang: string) => {
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
       let msg = errorData.error || `Erreur ${res.status}`
-      
+
       // Ajout du diagnostic si disponible (notamment pour le 403)
       if (res.status === 403) {
         if (isAuthenticated.value) {
@@ -141,7 +143,7 @@ const loadContent = async (lang: string) => {
           msg += ` (Diag: Env=${errorData.debug.envLoaded ? 'OK' : 'MISSING'}, L=${errorData.debug.sentLen}/${errorData.debug.expectedLen})`
         }
       }
-      
+
       statusMsg.value = msg
       isLoading.value = false
       isAuthenticated.value = false
@@ -229,6 +231,97 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
     cmsData.value.questions_pool[level][idx].category = ''
   }
 }
+
+const loadResults = async () => {
+  isLoadingResults.value = true
+  try {
+    const res = await fetch('/api/admin/results', {
+      headers: { 'x-admin-secret': secret.value }
+    })
+    if (res.ok) {
+      results.value = await res.json()
+    } else {
+      statusMsg.value = 'Erreur lors du chargement des résultats'
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isLoadingResults.value = false
+  }
+}
+
+const getBrowserInfo = (ua: string) => {
+  if (!ua) return 'Inconnu'
+  const lower = ua.toLowerCase()
+  let os = 'Autre OS'
+  if (lower.includes('windows')) os = 'Windows'
+  else if (lower.includes('iphone') || lower.includes('ipad')) os = 'iOS'
+  else if (lower.includes('android')) os = 'Android'
+  else if (lower.includes('macintosh')) os = 'macOS'
+  else if (lower.includes('linux')) os = 'Linux'
+
+  let browser = 'Autre Navigateur'
+  if (lower.includes('firefox')) browser = 'Firefox'
+  else if (lower.includes('chrome')) browser = 'Chrome'
+  else if (lower.includes('safari') && !lower.includes('chrome')) browser = 'Safari'
+  else if (lower.includes('edge')) browser = 'Edge'
+
+  return `${browser} / ${os}`
+}
+
+const exportToCSV = () => {
+  if (!results.value.length) return
+
+  const headers = ['Date', 'Nom', 'Email', 'Score', 'Difficulté', 'Secondes', 'IP', 'Ville', 'Région', 'Pays', 'Navigateur', 'User Agent', 'Referrer', 'Largeur Écran', 'UTM Source', 'UTM Medium', 'UTM Campaign', 'Instagram', 'X', 'Facebook', 'Bluesky', 'TikTok', 'Consentement', 'Membre ID']
+  const rows = results.value.map(r => [
+    new Date(r.createdAt || r.updatedAt).toLocaleString(),
+    r.name,
+    r.email,
+    r.score,
+    r.difficulty,
+    r.time,
+    r.ip || '',
+    r.city || '',
+    r.region || '',
+    r.country || '',
+    getBrowserInfo(r.userAgent),
+    r.userAgent || '',
+    r.referrer || '',
+    r.screenWidth || '',
+    r.utm_source || '',
+    r.utm_medium || '',
+    r.utm_campaign || '',
+    r.socials?.instagram || '',
+    r.socials?.x || '',
+    r.socials?.facebook || '',
+    r.socials?.bluesky || '',
+    r.socials?.tiktok || '',
+    r.consent ? '1' : '0',
+    r.memberId || ''
+  ])
+
+  const csvContent = [
+    headers.join(';'),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  link.setAttribute('download', `leads_quizz_${new Date().toISOString().split('T')[0]}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const switchTab = (tab: string) => {
+  activeTab.value = tab
+  if (tab === 'results') {
+    loadResults()
+  }
+}
 </script>
 
 <template>
@@ -236,18 +329,14 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
     <div v-if="!isAuthenticated" class="login-container">
       <h2>🔐 Accès Admin</h2>
       <div class="input-group">
-        <input
-          v-model="secret"
-          type="password"
-          placeholder="Mot de passe"
-          @keyup.enter="login"
-          autocomplete="current-password"
-        />
+        <input v-model="secret" type="password" placeholder="Mot de passe" @keyup.enter="login"
+          autocomplete="current-password" />
         <button class="btn-primary" @click="login" :disabled="isLoading">
           Entrer
         </button>
       </div>
-      <div v-if="statusMsg" class="login-status" :class="{ error: statusMsg.includes('⛔') || statusMsg.includes('Diag') }">
+      <div v-if="statusMsg" class="login-status"
+        :class="{ error: statusMsg.includes('⛔') || statusMsg.includes('Diag') }">
         {{ statusMsg }}
       </div>
     </div>
@@ -258,13 +347,8 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
           <div class="brand-group">
             <span class="brand">NORML FR ADMIN</span>
             <div class="lang-switcher">
-              <button
-                v-for="l in languages"
-                :key="l"
-                class="btn-lang"
-                :class="{ active: currentLang === l }"
-                @click="loadContent(l)"
-              >
+              <button v-for="l in languages" :key="l" class="btn-lang" :class="{ active: currentLang === l }"
+                @click="loadContent(l)">
                 {{ l.toUpperCase() }}
               </button>
             </div>
@@ -280,11 +364,7 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
             <button class="btn-secondary" @click="showRawJson = !showRawJson">
               {{ showRawJson ? 'Form' : 'JSON' }}
             </button>
-            <button
-              class="btn-primary"
-              @click="saveContent"
-              :disabled="isLoading"
-            >
+            <button class="btn-primary" @click="saveContent" :disabled="isLoading">
               {{ isLoading ? '...' : 'SAUVEGARDER' }}
             </button>
           </div>
@@ -292,50 +372,33 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
       </div>
 
       <div v-if="showRawJson" class="raw-mode">
-        <textarea
-          :value="JSON.stringify(cmsData, null, 2)"
-          @input="
-            (e) =>
-              (cmsData = JSON.parse((e.target as HTMLTextAreaElement).value))
-          "
-        ></textarea>
+        <textarea :value="JSON.stringify(cmsData, null, 2)" @input="
+          (e) =>
+            (cmsData = JSON.parse((e.target as HTMLTextAreaElement).value))
+        "></textarea>
       </div>
 
       <div v-else class="visual-mode">
         <div class="tabs-nav">
-          <button
-            :class="{ active: activeTab === 'general' }"
-            @click="activeTab = 'general'"
-          >
+          <button :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'">
             🏠 Général
           </button>
-          <button
-            :class="{ active: activeTab === 'ui' }"
-            @click="activeTab = 'ui'"
-          >
+          <button :class="{ active: activeTab === 'ui' }" @click="activeTab = 'ui'">
             🎨 UI
           </button>
           <div class="sep"></div>
-          <button
-            class="level-tab easy"
-            :class="{ active: activeTab === 'easy' }"
-            @click="activeTab = 'easy'"
-          >
+          <button class="level-tab easy" :class="{ active: activeTab === 'easy' }" @click="activeTab = 'easy'">
             🌱 Facile ({{ questionCount('easy') }})
           </button>
-          <button
-            class="level-tab medium"
-            :class="{ active: activeTab === 'medium' }"
-            @click="activeTab = 'medium'"
-          >
+          <button class="level-tab medium" :class="{ active: activeTab === 'medium' }" @click="activeTab = 'medium'">
             🌿 Moyen ({{ questionCount('medium') }})
           </button>
-          <button
-            class="level-tab hard"
-            :class="{ active: activeTab === 'hard' }"
-            @click="activeTab = 'hard'"
-          >
+          <button class="level-tab hard" :class="{ active: activeTab === 'hard' }" @click="activeTab = 'hard'">
             🌳 Expert ({{ questionCount('hard') }})
+          </button>
+          <div class="sep"></div>
+          <button class="results-tab" :class="{ active: activeTab === 'results' }" @click="switchTab('results')">
+            📊 Participations
           </button>
         </div>
 
@@ -345,27 +408,15 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
             <div class="form-section">
               <div class="form-group">
                 <label>Titre</label>
-                <input
-                  type="text"
-                  v-model="cmsData.start.title"
-                  autocomplete="off"
-                />
+                <input type="text" v-model="cmsData.start.title" autocomplete="off" />
               </div>
               <div class="form-group">
                 <label>Sous-titre</label>
-                <textarea
-                  v-model="cmsData.start.subtitle"
-                  rows="3"
-                  autocomplete="off"
-                ></textarea>
+                <textarea v-model="cmsData.start.subtitle" rows="3" autocomplete="off"></textarea>
               </div>
               <div class="form-group">
                 <label>Bouton</label>
-                <input
-                  type="text"
-                  v-model="cmsData.start.btn"
-                  autocomplete="off"
-                />
+                <input type="text" v-model="cmsData.start.btn" autocomplete="off" />
               </div>
             </div>
 
@@ -373,19 +424,11 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
             <div class="form-section">
               <div class="form-group">
                 <label>Titre Leaderboard</label>
-                <input
-                  type="text"
-                  v-model="cmsData.end.leaderboard_title"
-                  autocomplete="off"
-                />
+                <input type="text" v-model="cmsData.end.leaderboard_title" autocomplete="off" />
               </div>
               <div class="form-group">
                 <label>Tagline Partage</label>
-                <input
-                  type="text"
-                  v-model="cmsData.end.share_card.tagline"
-                  autocomplete="off"
-                />
+                <input type="text" v-model="cmsData.end.share_card.tagline" autocomplete="off" />
               </div>
             </div>
           </div>
@@ -394,149 +437,141 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
             <h3>Textes Jeu</h3>
             <div class="form-section grid-2">
               <div class="form-group">
-                <label>Correct</label
-                ><input
-                  type="text"
-                  v-model="cmsData.game.correct"
-                  autocomplete="off"
-                />
+                <label>Correct</label><input type="text" v-model="cmsData.game.correct" autocomplete="off" />
               </div>
               <div class="form-group">
-                <label>Incorrect</label
-                ><input
-                  type="text"
-                  v-model="cmsData.game.wrong"
-                  autocomplete="off"
-                />
+                <label>Incorrect</label><input type="text" v-model="cmsData.game.wrong" autocomplete="off" />
               </div>
               <div class="form-group">
-                <label>Label Info</label
-                ><input
-                  type="text"
-                  v-model="cmsData.game.argument_label"
-                  autocomplete="off"
-                />
+                <label>Label Info</label><input type="text" v-model="cmsData.game.argument_label" autocomplete="off" />
               </div>
               <div class="form-group">
-                <label>Btn Suivant</label
-                ><input
-                  type="text"
-                  v-model="cmsData.game.btn_next"
-                  autocomplete="off"
-                />
+                <label>Btn Suivant</label><input type="text" v-model="cmsData.game.btn_next" autocomplete="off" />
               </div>
             </div>
           </div>
 
+          <div v-if="activeTab === 'results'">
+            <div class="results-header">
+              <h3>Dernières Participations ({{ results.length }})</h3>
+              <div class="results-actions">
+                <button class="btn-secondary" @click="loadResults" :disabled="isLoadingResults">
+                  {{ isLoadingResults ? '...' : 'ACTUALISER' }}
+                </button>
+                <button class="btn-primary" @click="exportToCSV" :disabled="!results.length">
+                  EXPORTER CSV
+                </button>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table class="leads-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Horodatage</th>
+                    <th>Identité (Nom / Email / #)</th>
+                    <th>Résultats (Score / Niveau)</th>
+                    <th>Réseaux Sociaux</th>
+                    <th>Empreinte Système (Navigateur / User Agent)</th>
+                    <th>Traçabilité (IP / Referrer / UTM)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(res, idx) in results" :key="res._id" class="audit-row">
+                    <td class="mono-id">#{{ results.length - idx }}</td>
+                    <td class="date-cell">
+                      {{ new Date(res.createdAt || res.updatedAt).toLocaleDateString() }}<br />
+                      <small>{{ new Date(res.createdAt || res.updatedAt).toLocaleTimeString() }}</small>
+                    </td>
+                    <td class="name-cell">
+                      <div class="participant-box">
+                        <div class="name-line">
+                          <strong>{{ res.name }}</strong>
+                          <span v-if="res.memberId" class="mono-member">#{{ res.memberId }}</span>
+                        </div>
+                        <a :href="'mailto:' + res.email" class="email-audit">{{ res.email }}</a>
+                      </div>
+                    </td>
+                    <td class="score-cell">
+                      <div class="score-audit">
+                        <span class="score-val">{{ res.score }}</span>
+                        <span class="diff-tag" :class="res.difficulty">{{ res.difficulty }}</span>
+                      </div>
+                    </td>
+                    <td class="geo-cell">
+                      <div class="tech-box">
+                        <span class="city-text">{{ res.city || 'N/A' }} <i>{{ res.region }}</i></span>
+                        <code class="mono-ip">{{ res.ip }}</code>
+                      </div>
+                    </td>
+                    <td class="ua-cell">
+                      <div class="tech-box">
+                        <span class="browser-info">{{ getBrowserInfo(res.userAgent) }}</span>
+                        <div class="ua-tooltip-trigger">
+                          UA Details
+                          <div class="ua-tooltip-content">{{ res.userAgent }}</div>
+                        </div>
+                        <small class="res-info">Rés: {{ res.screenWidth }}px</small>
+                      </div>
+                    </td>
+                    <td class="source-cell">
+                      <div class="tech-box">
+                        <span class="ref-link" v-if="res.referrer">Ref: {{ res.referrer }}</span>
+                        <span class="utm-tag" v-if="res.utm_source">UTM: {{ res.utm_source }} / {{ res.utm_campaign ||
+                          '-' }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div v-if="!results.length && !isLoadingResults" class="empty-state">
+                Aucune participation pour le moment.
+              </div>
+            </div>
+          </div>
+          <!-- BLOC MANQUANT POUR LES QUESTIONS -->
           <div v-if="['easy', 'medium', 'hard'].includes(activeTab)">
-            <div class="questions-header">
-              <h3>Pool : {{ activeTab.toUpperCase() }}</h3>
-              <button class="btn-primary small" @click="addQuestion(activeTab)">
-                + Question
-              </button>
+            <div class="level-header">
+              <h3>Pool : {{ activeTab.toUpperCase() }} ({{ questionCount(activeTab) }} questions)</h3>
+              <button class="btn-primary" @click="addQuestion(activeTab)">+ AJOUTER UNE QUESTION</button>
             </div>
 
-            <div class="questions-list">
-              <div
-                v-for="(q, idx) in cmsData.questions_pool[activeTab]"
-                :key="activeTab + '-' + idx"
-                class="question-card"
-              >
-                <div class="card-top">
-                  <span class="idx">#{{ (idx as number) + 1 }}</span>
-
-                  <div class="cat-selector-group">
-                    <select
-                      v-if="creatingCategoryFor !== activeTab + '-' + idx"
-                      v-model="q.category"
-                      class="cat-input select"
-                      @change="
-                        (e) =>
-                          handleCategoryChange(
-                            (e.target as HTMLSelectElement).value,
-                            activeTab,
-                            idx as number
-                          )
-                      "
-                    >
-                      <option
-                        v-for="cat in availableCategories"
-                        :key="cat"
-                        :value="cat"
-                      >
-                        {{ cat }}
-                      </option>
-                      <option value="ADD_NEW">
-                        ➕ Ajouter une catégorie...
-                      </option>
-                    </select>
-
-                    <input
-                      v-else
-                      v-model="q.category"
-                      v-focus
-                      type="text"
-                      class="cat-input new-cat"
-                      placeholder="Nom de la catégorie..."
-                      @blur="creatingCategoryFor = null"
-                      @keyup.enter="creatingCategoryFor = null"
-                    />
-                  </div>
-
-                  <button
-                    class="btn-delete"
-                    @click="removeQuestion(activeTab, idx as number)"
-                  >
-                    🗑️
-                  </button>
+            <div v-for="(q, idx) in cmsData.questions_pool[activeTab]" :key="idx" class="question-edit-card">
+              <div class="q-card-header">
+                <span class="q-number">#{{ cmsData.questions_pool[activeTab].length - (idx as number) }}</span>
+                <div class="cat-selector-group">
+                  <select v-if="creatingCategoryFor !== activeTab + '-' + idx" v-model="q.category"
+                    @change="handleCategoryChange(($event.target as HTMLSelectElement).value, activeTab, idx as number)" class="cat-input">
+                    <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
+                    <option value="ADD_NEW">+ Nouvelle catégorie...</option>
+                  </select>
+                  <input v-else v-model="q.category" placeholder="Nom de la nouvelle catégorie..."
+                    class="cat-input new-cat" v-focus @blur="creatingCategoryFor = null"
+                    @keyup.enter="creatingCategoryFor = null" />
                 </div>
+                <button class="btn-delete" @click="removeQuestion(activeTab, idx as number)">SUPPRIMER</button>
+              </div>
 
-                <div class="form-group">
-                  <input
-                    type="text"
-                    v-model="q.question"
-                    class="q-input"
-                    placeholder="Question..."
-                    autocomplete="off"
-                  />
-                </div>
+              <div class="form-group">
+                <label>QUESTION</label>
+                <textarea v-model="q.question" rows="2"></textarea>
+              </div>
 
-                <div class="options-grid">
-                  <div
-                    v-for="(opt, optIdx) in q.options"
-                    :key="optIdx"
-                    class="opt-row"
-                    :class="{ 'is-correct': q.correct === optIdx }"
-                  >
-                    <input
-                      type="radio"
-                      :id="'radio-' + activeTab + '-' + idx + '-' + optIdx"
-                      :name="'correct-' + activeTab + '-' + idx"
-                      :value="optIdx"
-                      v-model="q.correct"
-                      autocomplete="off"
-                    />
-                    <input
-                      type="text"
-                      v-model="q.options[optIdx]"
-                      placeholder="Réponse..."
-                      autocomplete="off"
-                    />
-                  </div>
+              <div class="options-grid-edit">
+                <div v-for="(opt, oIdx) in q.options" :key="oIdx" class="opt-input-group">
+                  <input type="radio" :name="'correct-' + activeTab + '-' + idx" :value="oIdx" v-model="q.correct" />
+                  <input type="text" v-model="q.options[oIdx]" :placeholder="'Option ' + ((oIdx as number) + 1)" />
                 </div>
+              </div>
 
-                <div class="form-group">
-                  <label>Explication</label>
-                  <textarea
-                    v-model="q.explanation"
-                    rows="2"
-                    placeholder="Savoir..."
-                    autocomplete="off"
-                  ></textarea>
-                </div>
+              <div class="form-group mt-10">
+                <label>EXPLICATION (ARGUMENTAIRE)</label>
+                <textarea v-model="q.explanation" rows="2"></textarea>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -544,9 +579,6 @@ const handleCategoryChange = (val: string, level: string, idx: number) => {
 </template>
 
 <style scoped>
-
-
-
 .admin-wrapper {
   display: flex;
   justify-content: center;
@@ -570,12 +602,15 @@ button {
   background: var(--color-prohib-black);
   color: white;
   padding: 8px 16px;
+
   &:hover {
     background: color-mix(in srgb, var(--color-prohib-black), white 20%);
   }
+
   &:disabled {
     opacity: 0.5;
   }
+
   &.small {
     padding: 5px 10px;
     font-size: 0.75rem;
@@ -585,6 +620,7 @@ button {
 .btn-secondary {
   background: white;
   padding: 8px 16px;
+
   &:hover {
     background: #eee;
   }
@@ -596,6 +632,7 @@ button {
   border: 1px solid var(--color-error-red);
   padding: 4px 8px;
   font-size: 0.8rem;
+
   &:hover {
     background: var(--color-error-red);
     color: white;
@@ -606,6 +643,7 @@ button {
   background: #eee;
   border: 2px solid #ccc;
   padding: 8px;
+
   &:hover {
     border-color: var(--color-error-red);
     color: var(--color-error-red);
@@ -621,6 +659,7 @@ select {
   font-family: var(--font-main);
   font-size: 16px;
   border-radius: 4px;
+
   &:focus {
     border-color: var(--color-prohib-black);
     outline: none;
@@ -631,11 +670,13 @@ select {
 .cat-selector-group {
   flex: 1;
   display: flex;
+
   .cat-input {
     font-weight: bold;
     font-size: 0.9rem;
     padding: 5px 10px;
     height: 35px;
+
     &.new-cat {
       border: 2px solid var(--color-reg-green);
       background: #f0fff0;
@@ -650,6 +691,7 @@ select {
   padding: 30px;
   border: 2px solid var(--color-prohib-black);
   text-align: center;
+
   .input-group {
     display: flex;
     gap: 10px;
@@ -663,6 +705,7 @@ select {
   padding: 10px;
   border-radius: 4px;
   background: #f8f8f8;
+
   &.error {
     color: var(--color-error-red);
     background: rgba(255, 0, 0, 0.05);
@@ -685,29 +728,35 @@ select {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   .bar-header {
     display: flex;
     align-items: center;
     gap: 15px;
+
     .brand-group {
       display: flex;
       align-items: center;
       gap: 15px;
     }
+
     .brand {
       font-weight: 900;
       font-size: 1.1rem;
     }
   }
+
   .bar-actions {
     display: flex;
     align-items: center;
     gap: 10px;
+
     .status {
       font-weight: bold;
       color: var(--color-reg-green);
       font-size: 0.8rem;
     }
+
     .buttons-group {
       display: flex;
       gap: 10px;
@@ -720,23 +769,28 @@ select {
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 15px;
+
   button {
     background: #e0e0e0;
     border: 2px solid transparent;
     padding: 8px 12px;
     color: #666;
+
     &.active {
       background: white;
       border-color: var(--color-prohib-black);
       color: var(--color-prohib-black);
     }
   }
+
   .level-tab.easy.active {
     border-color: var(--color-light-green);
   }
+
   .level-tab.medium.active {
     border-color: var(--color-highlight-green);
   }
+
   .level-tab.hard.active {
     border-color: var(--color-reg-green);
   }
@@ -746,6 +800,7 @@ select {
   background: white;
   padding: 20px;
   border: 2px solid var(--color-prohib-black);
+
   h3 {
     border-bottom: 2px solid var(--color-prohib-black);
     padding-bottom: 5px;
@@ -753,8 +808,10 @@ select {
     text-transform: uppercase;
   }
 }
+
 .form-group {
   margin-bottom: 15px;
+
   label {
     display: block;
     font-weight: bold;
@@ -763,6 +820,7 @@ select {
     color: #666;
   }
 }
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -782,6 +840,7 @@ select {
   border: 2px solid #eee;
   padding: 15px;
   margin-bottom: 15px;
+
   .card-top {
     display: flex;
     align-items: center;
@@ -790,26 +849,31 @@ select {
     background: #f9f9f9;
     padding: 8px;
   }
+
   .q-input {
     font-size: 1rem;
     font-weight: bold;
     border: none;
     border-bottom: 2px solid #eee;
   }
+
   .options-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin: 10px 0;
+
     .opt-row {
       display: flex;
       align-items: center;
       gap: 5px;
       padding: 4px;
+
       &.is-correct {
         background: rgba(66, 185, 131, 0.1);
         border: 1px solid var(--color-reg-green);
       }
+
       input[type='radio'] {
         width: 20px;
         height: 20px;
@@ -822,20 +886,287 @@ select {
 @media (max-width: 768px) {
   .top-bar {
     flex-direction: column;
+
     .bar-header,
     .bar-actions {
       width: 100%;
     }
+
     .buttons-group {
       width: 100%;
+
       button {
         flex: 1;
       }
     }
   }
+
   .grid-2,
   .options-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0;
+    border: none;
+  }
+}
+
+.results-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid #eee;
+}
+
+.leads-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background: #f9f9f9;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .date-cell {
+    color: #888;
+    white-space: nowrap;
+  }
+
+  .mono-id {
+    font-family: monospace;
+    color: #444;
+    font-weight: bold;
+    border-right: 1px solid #ddd;
+    text-align: center;
+  }
+
+  .audit-row {
+    border-bottom: 1px solid #ddd;
+
+    &:hover {
+      background: #fdfdfd;
+    }
+  }
+
+  .participant-box {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    .name-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .mono-member {
+    font-family: monospace;
+    font-size: 0.75rem;
+    background: #eee;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+
+  .email-audit {
+    color: #2c3e50;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .social-labels {
+    display: flex;
+    gap: 4px;
+
+    span {
+      font-size: 0.6rem;
+      padding: 1px 3px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      color: #555;
+      font-weight: bold;
+      border-radius: 2px;
+    }
+  }
+
+  .score-audit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    .score-val {
+      font-size: 1rem;
+      font-weight: 900;
+      color: #2c3e50;
+    }
+
+    .diff-tag {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      border-radius: 2px;
+      padding: 1px 3px;
+      color: white;
+
+      &.easy {
+        background: #7f8c8d;
+      }
+
+      &.medium {
+        background: #34495e;
+      }
+
+      &.hard {
+        background: #2c3e50;
+      }
+    }
+  }
+
+  .tech-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75rem;
+
+    .mono-ip {
+      font-family: monospace;
+      color: #444;
+      font-size: 0.7rem;
+      background: #f8f8f8;
+      padding: 1px 2px;
+      width: fit-content;
+    }
+
+    .browser-info {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .raw-ua {
+      font-family: monospace;
+      font-size: 0.65rem;
+      color: #888;
+      word-break: break-all;
+      max-width: 200px;
+      line-height: 1.1;
+      max-height: 2.2em;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .res-info {
+      color: #999;
+      font-size: 0.65rem;
+    }
+
+    .ref-link,
+    .utm-tag {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+      color: #555;
+      border-left: 2px solid #ddd;
+      padding-left: 4px;
+      font-family: monospace;
+      font-size: 0.65rem;
+    }
+  }
+}
+
+.level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0;
+    border: none;
+  }
+}
+
+.question-edit-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  background: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .q-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  .q-number {
+    font-weight: bold;
+    color: #444;
+  }
+}
+
+.options-grid-edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 15px 0;
+
+  .opt-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fdfdfd;
+    padding: 8px;
+    border: 1px solid #eee;
+
+    input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  }
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.empty-state {
+  padding: 80px;
+  text-align: center;
+  color: #999;
+  font-family: monospace;
 }
 </style>

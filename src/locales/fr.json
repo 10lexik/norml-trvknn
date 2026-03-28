@@ -48,7 +48,9 @@
     "server_unavailable": "Serveur en maintenance.",
     "internal": "Erreur de traitement.",
     "email_required": "Un email est requis.",
-    "invalid_email": "L'email semble invalide."
+    "invalid_email": "L'email semble invalide.",
+    "rate_limit": "Trop de tentatives. Veuillez patienter une minute.",
+    "invalid_coherence": "Résultat incohérent détecté. Veuillez recommencer honnêtement."
   },
   "end": {
     "btn_retry": "🔄 Tenter un autre niveau",

@@ -69,13 +69,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown'
+    const userAgent = (req.headers['user-agent'] as string) || 'unknown'
+
     const client = await atlasClientPromise
     if (!client) return res.status(503).json({ error: T.db_client_missing })
     const collection = client
       .db(DEFAULTS.DB.NAME)
       .collection(DEFAULTS.DB.SCORES)
 
-    // 2. VÉRIFICATION D'UNICITÉ DU PSEUDO
+    // 2. SÉCURITÉ : RATE LIMIT (par IP)
+    const recentSubmissions = await collection.countDocuments({
+      ip,
+      updatedAt: { $gt: new Date(Date.now() - 60000) } // 1 minute
+    })
+
+    if (recentSubmissions >= 3) {
+      return res.status(429).json({ error: T.rate_limit || 'Trop de tentatives.' })
+    }
+
+    // 3. SÉCURITÉ : COHÉRENCE (Anti-Bot / Anti-Triche)
+    // - On rejette si le temps est trop court (< 1s par question en moyenne, ici < 15s pour le quizz complet)
+    // - On rejette si le score est parfait en un temps record (< 40s pour 20 questions)
+    const timeSpent = parseInt(time)
+    const isBotTime = timeSpent < 15 
+    const isSuspiciousScore = safeScore >= DEFAULTS.SCORE_LIMIT && timeSpent < 40
+    
+    if (isBotTime || isSuspiciousScore) {
+      return res.status(400).json({ error: T.invalid_coherence || 'Action suspecte.' })
+    }
+
+    // 4. VÉRIFICATION D'UNICITÉ DU PSEUDO
     const existingUser = await collection.findOne({ name: safeName })
 
     if (existingUser) {
@@ -98,35 +122,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           memberId: providedId,
           socials: safeSocials,
           time,
-          updatedAt: new Date()
+          ip,
+          userAgent,
+          updatedAt: new Date(),
+          // Tracking Géo (Vercel Headers)
+          city: req.headers['x-vercel-ip-city'] || null,
+          region: req.headers['x-vercel-ip-country-region'] || null,
+          country: req.headers['x-vercel-ip-country'] || null,
+          // Tracking Marketing (UTM)
+          utm_source: req.body.utm_source || null,
+          utm_medium: req.body.utm_medium || null,
+          utm_campaign: req.body.utm_campaign || null,
+          // Données client optionnelles
+          referrer: req.body.referrer || null,
+          screenWidth: req.body.screenWidth || null
         },
         $setOnInsert: { createdAt: new Date() }
       },
       { upsert: true }
     )
 
-    // 4. PURGE DU TOP 10
-    const survivors = await collection
-      .find({ difficulty })
-      .sort({ score: -1, time: 1 })
-      .limit(DEFAULTS.LB_LIMIT)
-      .project({ _id: 1 })
-      .toArray()
-
-    const survivorIds = survivors.map((doc) => doc._id)
-    if (survivorIds.length > 0) {
-      await collection.deleteMany({
-        difficulty,
-        _id: { $nin: survivorIds }
-      })
-    }
-
-    // 5. RETOUR DU TOP 10
+    // 4. RETOUR DU TOP 10 (SÉCURISÉ)
     const top10 = await collection
       .find({ difficulty })
       .sort({ score: -1, time: 1 })
       .limit(DEFAULTS.LB_LIMIT)
-      .project({ _id: 0 })
+      .project({ 
+        _id: 0, 
+        name: 1, 
+        score: 1, 
+        time: 1, 
+        socials: 1, 
+        memberId: 1 
+      })
       .toArray()
 
     res.status(200).json(top10)

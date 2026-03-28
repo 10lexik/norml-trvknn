@@ -105,6 +105,7 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
 
     ui.isSubmitting = true
     try {
+      const urlParams = new URLSearchParams(window.location.search)
       const payload = {
         name: form.name.trim(),
         email: form.email.trim(),
@@ -113,7 +114,13 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
         score,
         difficulty,
         time: timeMs,
-        socials: formatSocials(networks)
+        socials: formatSocials(networks),
+        referrer: document.referrer || 'direct',
+        screenWidth: window.screen.width,
+        // UTM tracking
+        utm_source: urlParams.get('utm_source'),
+        utm_medium: urlParams.get('utm_medium'),
+        utm_campaign: urlParams.get('utm_campaign')
       }
 
       const res = await fetch('/api/game/score', {
