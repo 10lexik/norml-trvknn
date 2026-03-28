@@ -111,7 +111,9 @@ const logout = () => {
 // --- LOGIQUE API ---
 const login = async () => {
   if (!secret.value) return
+  secret.value = secret.value.trim()
   isLoading.value = true
+  statusMsg.value = 'Connexion...'
   await loadContent(currentLang.value)
 }
 
@@ -138,7 +140,14 @@ const loadContent = async (lang: string) => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}))
-      statusMsg.value = errorData.error || `Erreur ${res.status}`
+      let msg = errorData.error || `Erreur ${res.status}`
+      
+      // Ajout du diagnostic si disponible
+      if (res.status === 403 && errorData.debug) {
+        msg += ` (Diag: Env=${errorData.debug.envLoaded ? 'OK' : 'MISSING'}, L=${errorData.debug.sentLen}/${errorData.debug.expectedLen})`
+      }
+      
+      statusMsg.value = msg
       isLoading.value = false
       return
     }

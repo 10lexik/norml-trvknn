@@ -1,41 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { clientPromise, DEFAULTS } from '../_core/_db'
 import { getApiText } from '../_core/_i18n'
-import fs from 'fs'
-import path from 'path'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lang =
     (req.query.lang as string) || (req.body.lang as string) || DEFAULTS.LANG
   const T = getApiText(lang)
 
-  // --- RÉCUPÉRATION DU SECRET (Méthode de secours incluse) ---
-  let adminSecret = process.env.ADMIN_SECRET
-
-  // Si on est en local et que ADMIN_SECRET est vide, on force la lecture du fichier
-  if (!adminSecret && process.env.NODE_ENV !== 'production') {
-    try {
-      const envPath = path.resolve(process.cwd(), '.env.local')
-      if (fs.existsSync(envPath)) {
-        const envContent = fs.readFileSync(envPath, 'utf8')
-        const match = envContent.match(/^ADMIN_SECRET=(.*)$/m)
-        if (match) adminSecret = match[1].trim()
-      }
-    } catch (err) {
-      console.error('Erreur lecture manuelle .env.local:', err)
-    }
-  }
-
-  const received = req.headers[DEFAULTS.HEADERS.ADMIN] as string
+  // --- RÉCUPÉRATION DU SECRET ---
+  // On nettoie systématiquement pour éviter les espaces ou retours à la ligne parasites
+  const adminSecret = (process.env.ADMIN_SECRET || '').trim()
+  const received = (req.headers[DEFAULTS.HEADERS.ADMIN] as string || '').trim()
 
   // --- VÉRIFICATION ---
-  if (!received || received !== adminSecret) {
+  if (!received || !adminSecret || received !== adminSecret) {
     console.error(
       `[AUTH_ERROR] Attendu: ${adminSecret ? 'Défini' : 'UNDEFINED'}, Reçu: ${received ? 'Défini' : 'VIDE'}`
     )
     return res.status(403).json({
       error: T.forbidden,
-      debug: { envLoaded: !!adminSecret, headerPresent: !!received }
+      debug: {
+        envLoaded: !!adminSecret,
+        headerPresent: !!received,
+        sentLen: received.length,
+        expectedLen: adminSecret.length
+      }
     })
   }
 
