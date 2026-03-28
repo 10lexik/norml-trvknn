@@ -17,8 +17,8 @@ const loadEnv = () => {
           const key = match[1]
           let val = (match[2] || '').trim()
           if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
-          // Nettoyage agressif des \n ou \r littéraux qui polluent l'URI
-          val = val.replace(/\\n/g, '').replace(/\\r/g, '').trim()
+          // Nettoyage ultra-robuste : enlève les \n, \r (littéraux ou non) et les espaces invisibles
+          val = val.replace(/\\n/g, '').replace(/\\r/g, '').replace(/[\n\r]/g, '').trim()
           if (!process.env[key]) process.env[key] = val
         }
       })
