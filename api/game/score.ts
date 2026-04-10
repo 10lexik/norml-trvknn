@@ -52,18 +52,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "L'email est invalide." })
     }
 
-    const providedId = memberId
-      ? String(memberId).trim().substring(0, DEFAULTS.NAME_MAX)
-      : ''
+    const providedId = memberId ? String(memberId).trim().substring(0, DEFAULTS.NAME_MAX) : ''
 
     const safeSocials: Record<string, string> = {}
     if (socials && typeof socials === 'object') {
       for (const key of DEFAULTS.SOCIALS) {
         if (socials[key] && typeof socials[key] === 'string') {
-          let url = socials[key]
-            .trim()
-            .substring(0, DEFAULTS.SOCIAL_MAX)
-            .replace(/[<>]/g, '')
+          const url = socials[key].trim().substring(0, DEFAULTS.SOCIAL_MAX).replace(/[<>]/g, '')
           if (url.length > 0) safeSocials[key] = url
         }
       }
@@ -74,9 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const client = await atlasClientPromise
     if (!client) return res.status(503).json({ error: T.db_client_missing })
-    const collection = client
-      .db(DEFAULTS.DB.NAME)
-      .collection(DEFAULTS.DB.SCORES)
+    const collection = client.db(DEFAULTS.DB.NAME).collection(DEFAULTS.DB.SCORES)
 
     // 2. SÉCURITÉ : RATE LIMIT (par IP)
     const recentSubmissions = await collection.countDocuments({
@@ -92,9 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // - On rejette si le temps est trop court (< 1s par question en moyenne, ici < 15s pour le quizz complet)
     // - On rejette si le score est parfait en un temps record (< 40s pour 20 questions)
     const timeSpent = parseInt(time)
-    const isBotTime = timeSpent < 15 
+    const isBotTime = timeSpent < 15
     const isSuspiciousScore = safeScore >= DEFAULTS.SCORE_LIMIT && timeSpent < 40
-    
+
     if (isBotTime || isSuspiciousScore) {
       return res.status(400).json({ error: T.invalid_coherence || 'Action suspecte.' })
     }
@@ -105,9 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existingUser) {
       // Si le nom existe mais que le memberId ne correspond pas -> Conflit (409)
       if (existingUser.memberId !== providedId) {
-        return res
-          .status(409)
-          .json({ error: T.name_taken || 'Pseudo déjà pris' })
+        return res.status(409).json({ error: T.name_taken || 'Pseudo déjà pris' })
       }
     }
 
@@ -147,13 +138,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .find({ difficulty })
       .sort({ score: -1, time: 1 })
       .limit(DEFAULTS.LB_LIMIT)
-      .project({ 
-        _id: 0, 
-        name: 1, 
-        score: 1, 
-        time: 1, 
-        socials: 1, 
-        memberId: 1 
+      .project({
+        _id: 0,
+        name: 1,
+        score: 1,
+        time: 1,
+        socials: 1,
+        memberId: 1
       })
       .toArray()
 
@@ -161,8 +152,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (e: any) {
     console.error(`[SCORE_SAVE_ERROR]`, e.message)
     const isValidationError = [T.params_missing, T.invalid_score].includes(e.message)
-    res.status(isValidationError ? 400 : 500).json({ 
-      error: `Erreur sauvegarde score : ${e.message || T.server_error}` 
+    res.status(isValidationError ? 400 : 500).json({
+      error: `Erreur sauvegarde score : ${e.message || T.server_error}`
     })
   }
 }

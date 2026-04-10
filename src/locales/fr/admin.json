@@ -1,0 +1,72 @@
+{
+  "login": {
+    "title": "🔐 Accès Admin",
+    "password_placeholder": "Mot de passe",
+    "btn_enter": "Entrer"
+  },
+  "topbar": {
+    "brand": "NORML FR ADMIN",
+    "btn_logout_title": "Déconnexion",
+    "view_form": "Form",
+    "view_json": "JSON",
+    "btn_save": "SAUVEGARDER"
+  },
+  "tabs": {
+    "general": "🏠 Général",
+    "ui": "🎨 UI",
+    "easy": "🌱 Facile",
+    "medium": "🌿 Moyen",
+    "hard": "🌳 Expert",
+    "results": "📊 Participations"
+  },
+  "general": {
+    "home_title": "Accueil",
+    "field_title": "Titre",
+    "field_subtitle": "Sous-titre",
+    "field_btn": "Bouton",
+    "end_title": "Fin",
+    "field_leaderboard_title": "Titre Leaderboard",
+    "field_share_tagline": "Tagline Partage"
+  },
+  "ui_texts": {
+    "game_title": "Textes Jeu",
+    "field_correct": "Correct",
+    "field_wrong": "Incorrect",
+    "field_info_label": "Label Info",
+    "field_btn_next": "Btn Suivant"
+  },
+  "results": {
+    "title": "Dernières Participations ({count})",
+    "btn_refresh": "ACTUALISER",
+    "btn_export": "EXPORTER CSV",
+    "col_rank": "#",
+    "col_timestamp": "Horodatage",
+    "col_identity": "Identité (Nom / Email / #)",
+    "col_results": "Résultats (Score / Niveau)",
+    "col_socials": "Réseaux Sociaux",
+    "col_system": "Empreinte Système (Navigateur / User Agent)",
+    "col_trace": "Traçabilité (IP / Referrer / UTM)",
+    "empty_state": "Aucune participation pour le moment."
+  },
+  "quiz_pool": {
+    "title": "Pool : {level} ({count} questions)",
+    "btn_add": "+ AJOUTER UNE QUESTION",
+    "btn_delete": "SUPPRIMER",
+    "field_question": "QUESTION",
+    "field_explanation": "EXPLICATION (ARGUMENTAIRE)",
+    "option_placeholder": "Option {number}",
+    "new_category_placeholder": "Nom de la nouvelle catégorie...",
+    "add_new_category": "+ Nouvelle catégorie..."
+  },
+  "messages": {
+    "saving": "Sauvegarde...",
+    "save_success": "✅ SAUVEGARDÉ",
+    "save_error": "❌ Erreur",
+    "tech_error": "❌ Erreur technique",
+    "logging_in": "Connexion...",
+    "confirm_delete": "Supprimer cette question ?",
+    "session_expired": "⚠️ Session expirée (inactivité).",
+    "network_db_error": "Erreur réseau/Base de données",
+    "results_load_error": "Erreur lors du chargement des résultats"
+  }
+}

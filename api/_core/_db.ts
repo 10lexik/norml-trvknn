@@ -18,14 +18,18 @@ const loadEnv = () => {
           let val = (match[2] || '').trim()
           if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
           // Nettoyage ultra-robuste : enlève les \n, \r (littéraux ou non) et les espaces invisibles
-          val = val.replace(/\\n/g, '').replace(/\\r/g, '').replace(/[\n\r]/g, '').trim()
+          val = val
+            .replace(/\\n/g, '')
+            .replace(/\\r/g, '')
+            .replace(/[\n\r]/g, '')
+            .trim()
           if (!process.env[key]) process.env[key] = val
         }
       })
     }
     parse(envPath)
     parse(localEnvPath)
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
@@ -57,16 +61,16 @@ export const DEFAULTS = {
 }
 
 const isProd = NODE_ENV === DEFAULTS.ENV.PROD
-const useLocalMongo = USE_LOCAL_DB === DEFAULTS.ENV.TRUE
-const uri = isProd ? MONGODB_URI : (useLocalMongo ? MONGODB_LOCAL_URI : MONGODB_URI)
+const useLocalFiles = USE_LOCAL_DB === DEFAULTS.ENV.TRUE
+const uri = isProd ? MONGODB_URI : MONGODB_URI // Never use local mongo URI per user request
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined
   var _atlasClientPromise: Promise<MongoClient> | undefined
 }
 
-// 1. Connexion principale (suit le réglage USE_LOCAL_DB)
-if (!global._mongoClientPromise && uri) {
+// 1. Connexion principale (Désactivée en mode local forcé pour éviter le timeout)
+if (!global._mongoClientPromise && uri && (!useLocalFiles || isProd)) {
   const conn = new MongoClient(uri, {
     family: DEFAULTS.MONGO.FAMILY as any,
     serverSelectionTimeoutMS: DEFAULTS.MONGO.TIMEOUT
@@ -93,15 +97,12 @@ export const clientPromise = global._mongoClientPromise
 export const atlasClientPromise = global._atlasClientPromise
 
 export const getData = async (lang: string) => {
-  // PLAN A : MongoDB (Atlas ou Local selon config)
+  // PLAN A : MongoDB (Atlas - Ignoré si mode local forcé hors prod)
   try {
-    if (clientPromise) {
+    if (clientPromise && (!useLocalFiles || isProd)) {
       const client = await clientPromise
       if (client) {
-        const doc = await client
-          .db(DEFAULTS.DB.NAME)
-          .collection(DEFAULTS.DB.TRIVIA)
-          .findOne({})
+        const doc = await client.db(DEFAULTS.DB.NAME).collection(DEFAULTS.DB.TRIVIA).findOne({})
         if (doc && doc[lang]) return doc[lang]
       }
     }
@@ -114,14 +115,9 @@ export const getData = async (lang: string) => {
 
   // PLAN B : Fallback Fichiers Locaux
   try {
-    const fileName = `${lang}${DEFAULTS.EXT_JSON}`
+    const fileName = `${lang}/quiz${DEFAULTS.EXT_JSON}`
     const possiblePaths = [
-      path.join(
-        process.cwd(),
-        DEFAULTS.DIRS.SRC,
-        DEFAULTS.DIRS.LOCALES,
-        fileName
-      ),
+      path.join(process.cwd(), DEFAULTS.DIRS.SRC, DEFAULTS.DIRS.LOCALES, fileName),
       path.resolve(__dirname, '../../src/locales', fileName),
       path.join(process.cwd(), DEFAULTS.DIRS.LOCALES, fileName)
     ]
@@ -130,7 +126,11 @@ export const getData = async (lang: string) => {
       if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'))
     }
 
-    if (!isProd && useLocalMongo) console.error(S.log_fallback_fail, possiblePaths)
+    if (!isProd && useLocalFiles) {
+      // Log léger en dev mode local
+    } else if (!isProd) {
+      console.error(S.log_fallback_fail, possiblePaths)
+    }
   } catch (e: any) {
     console.error(`${S.log_file_error}${e.message}`)
   }

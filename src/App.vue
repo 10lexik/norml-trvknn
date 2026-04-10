@@ -15,7 +15,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div id="app-container">
+  <div
+    id="app-container"
+    class="bg-poster-beige min-h-screen w-full antialiased"
+  >
     <AdminPanel v-if="isAdminMode" />
     <Quizz v-else />
   </div>

@@ -11,7 +11,7 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
     isSaved: false,
     leaderboard: [] as LeaderboardEntry[]
   })
-  
+
   const ui = reactive({
     nameError: null as string | null,
     emailError: null as string | null,
@@ -148,16 +148,18 @@ export function useLeaderboard(getI18nArray: (key: string) => any[], t: (key: st
         isUser: doc.name === form.name.trim(),
         socials: doc.socials || {}
       }))
-      
-      form.isSaved = true
-      localStorage.setItem('norml_user_infos', JSON.stringify({
-        name: form.name.trim(),
-        memberId: form.memberId.trim(),
-        socials: form.socials
-      }))
-      
-      onSuccess()
 
+      form.isSaved = true
+      localStorage.setItem(
+        'norml_user_infos',
+        JSON.stringify({
+          name: form.name.trim(),
+          memberId: form.memberId.trim(),
+          socials: form.socials
+        })
+      )
+
+      onSuccess()
     } catch (e: any) {
       onError(t('errors.fetch_fail'))
     } finally {

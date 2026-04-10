@@ -1,0 +1,151 @@
+{
+  "header": {
+    "brand": "NORML FRANCE ACADEMY",
+    "score_label": "STATUT"
+  },
+  "ui": {
+    "loading": "Génération de la session...",
+    "error_title": "Module indisponible",
+    "btn_retry": "Relancer"
+  },
+  "start": {
+    "title": "Cannabis En France : obtient ta Certification Citoyenne",
+    "subtitle": "Petite mise au point",
+    "intro": {
+      "p1": "Avoir une opinion est facile.\nAvoir raison est une autre histoire.",
+      "p2": "Êtes-vous prêt pour débattre de la\nrégulation du cannabis en France ?",
+      "p3": "Ne laissez plus de place au doute.\nTestez vos connaissances et visez le\n**20/20** pour décrocher votre\n**certification officielle**.",
+      "p4": "Affichez ce gage d'expertise sur\nvos réseaux et prouvez à votre\ncommunauté que vos arguments\nsont **solides et vérifiés**."
+    },
+    "btn_get_certified": "Obtenir ma certification →",
+    "btn_start": "Commencer ! →",
+    "choose_level": "Choisissez votre\nniveau de difficulté"
+  },
+  "levels": {
+    "easy": {
+      "label": "Novice",
+      "icon": "🌱"
+    },
+    "medium": {
+      "label": "Adhérent",
+      "icon": "🌿"
+    },
+    "hard": {
+      "label": "Expert",
+      "icon": "🌳"
+    }
+  },
+  "game": {
+    "letters": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correct": "✅ Acquis validé.",
+    "wrong": "❌ Idée reçue.",
+    "argument_label": "Le point de référence :",
+    "btn_next": "Question suivante →",
+    "btn_results": "Voir ma Certification",
+    "point_popup": "+1 PT"
+  },
+  "end": {
+    "btn_retry": "🔄 Tenter un autre niveau",
+    "btn_join": {
+      "text": "Valider mon statut (Adhérer) →",
+      "url": "https://www.norml.fr/boutique/adhesion-norml-france/"
+    },
+    "btn_save": "Obtenir mon certificat",
+    "btn_save_no_medal": "Voir le classement",
+    "btn_skip": "Terminer",
+    "placeholder_name": "Nom / Pseudo (Obligatoire)",
+    "placeholder_email": "E-mail (Confidentiel)",
+    "placeholder_id": "N° Adhérent (Facultatif)",
+    "rgpd_consent": "Je souhaite recevoir les actualités de NORML France (désabonnement en 1 clic)",
+    "optional_title": "FIGUREZ AU CLASSEMENT OFFICIEL",
+    "social_subtitle": "Partagez vos réseaux sociaux à côté de votre pseudo sur le leaderboard.",
+    "rgpd_global_disclaimer": "En validant, j'accepte que mon profil public figure au classement et j'approuve la {privacy_policy}. Mon email restera privé.",
+    "privacy_policy_title": "Politique de confidentialité",
+    "privacy_policy_text": "1. Données collectées\nNous recueillons votre pseudonyme, vos éventuels liens de réseaux sociaux (Instagram, X, Facebook), votre identifiant de membre, ainsi que vos statistiques d'utilisation (score, temps de réponse, difficulté). Des données techniques (adresse IP, navigateur) peuvent également être enregistrées.\n\n2. Finalités et Base Légale\nLe traitement a pour but :\n• L'établissement et l'affichage du classement public.\n• L'analyse statistique de l'engagement.\n• La transmission de vos coordonnées à nos partenaires tiers rigoureusement sélectionnés, à des fins de prospection et de communication d'offres ciblées.\n\n3. Conservation et Partage\nEn validant l'enregistrement de votre score, vous consentez explicitement à la collecte de ces données et à leur transfert éventuel à nos partenaires commerciaux. Les données sont conservées le temps nécessaire aux finalités décrites.\n\n4. Vos Droits (RGPD)\nVous disposez d'un droit d'accès, de rectification, d'opposition et de suppression de vos données. Pour l'exercer, contactez : info{'@'}norml.fr.",
+    "score_label": "SCORE FINAL",
+    "top_10": "🏆 MEILLEURS RÉSULTATS -",
+    "col_rank": "#",
+    "col_name": "Candidat",
+    "col_score": "Note",
+    "share_card": {
+      "tagline": "Cannabis : J'ai obtenu ma certification de connaissances avec NORML France.",
+      "website": "academy.norml.fr",
+      "certificate_subtitle": "Certification de Connaissances",
+      "medal_gold": "Médaille d'Or",
+      "medal_silver": "Médaille d'Argent",
+      "medal_bronze": "Médaille de Bronze",
+      "delivered_on": "Délivré le"
+    },
+    "share_modal": {
+      "title": "📤 Afficher ma légitimité",
+      "hint": "Partagez votre statut pour prouver votre niveau :",
+      "btn_close": "Fermer",
+      "networks": [
+        {
+          "id": "instagram",
+          "label": "Instagram",
+          "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='currentColor'><path d='M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z'/></svg>",
+          "url": "https://instagram.com",
+          "color": "#E1306C",
+          "baseUrl": "instagram.com"
+        },
+        {
+          "id": "x",
+          "label": "X / Twitter",
+          "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='currentColor'><path d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/></svg>",
+          "url": "https://x.com/intent/tweet?text={text}",
+          "color": "#000000",
+          "baseUrl": "x.com"
+        },
+        {
+          "id": "facebook",
+          "label": "Facebook",
+          "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='currentColor'><path d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z'/></svg>",
+          "url": "https://www.facebook.com/sharer/sharer.php?u={url}",
+          "color": "#1877F2",
+          "baseUrl": "facebook.com"
+        },
+        {
+          "id": "bluesky",
+          "label": "Bluesky",
+          "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 568 501' width='20' height='20' fill='currentColor'><path d='M123.121 33.664C188.241 82.553 258.281 181.68 284 234.873c25.719-53.192 95.759-152.32 160.879-201.209C491.866-1.611 568-28.906 568 57.947c0 17.346-9.945 145.713-15.778 166.555-20.275 72.453-94.155 90.933-159.875 79.748C507.222 322.758 536.444 388.317 473.333 453.337c-119.86 122.851-172.162-30.199-185.225-68.811-2.481-7.274-3.654-10.706-3.654-7.806 0-2.9-1.188.532-3.654 7.806C267.738 423.138 215.451 576.188 95.591 453.337 32.48 388.317 61.702 322.758 176.577 304.25 111.303 315.435 37.373 296.955 17.098 224.502 11.265 203.66 1.32 75.293 1.32 57.947 1.32-28.906 77.454-1.611 123.121 33.664Z'/></svg>",
+          "url": "https://bsky.app",
+          "color": "#0085ff",
+          "baseUrl": "bsky.app"
+        },
+        {
+          "id": "tiktok",
+          "label": "TikTok",
+          "icon": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='currentColor'><path d='M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.78a4.85 4.85 0 01-1.01-.09z'/></svg>",
+          "url": "https://www.tiktok.com",
+          "color": "#000000",
+          "baseUrl": "tiktok.com"
+        }
+      ]
+    },
+    "ranks": {
+      "expert": {
+        "title": "Maîtrise Parfaite",
+        "desc": "Un sans-faute impressionnant. Votre expertise sur le sujet est incontestable et extrêmement précieuse. NORML France a besoin de profils très pointus comme le vôtre pour porter des argumentaires solides et faire avancer le débat public."
+      },
+      "advanced": {
+        "title": "Légitimité Confirmée",
+        "desc": "Excellente maîtrise. Votre parole est crédible et nécessaire. Ne gardez pas ce savoir pour vous : l'adhésion à NORML France est le levier indispensable pour porter cette expertise dans le débat public."
+      },
+      "intermediate": {
+        "title": "Légitimité en Construction",
+        "desc": "Les bases sont là, mais des zones d'ombre persistent. Votre opinion a de la valeur, mais elle doit être affinée. Rejoindre NORML France est la meilleure façon de transformer ces acquis en véritable expertise."
+      },
+      "beginner": {
+        "title": "Besoin de Mise à Niveau",
+        "desc": "Le sujet est complexe et les idées reçues nombreuses. En l'état, votre opinion risque d'être contredite par les faits. Ce n'est pas une fatalité : l'adhésion à NORML France vous donnera les clés pour comprendre."
+      }
+    }
+  },
+  "ranks": null
+}

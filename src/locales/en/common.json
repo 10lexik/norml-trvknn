@@ -3,6 +3,7 @@
     "brand": "NORML ACADEMY",
     "score_label": "SCORE"
   },
+  "ui": null,
   "start": {
     "title": "Busting Myths",
     "subtitle": "Prohibition is failing. Test your knowledge.",
@@ -24,7 +25,10 @@
   },
   "end": {
     "btn_retry": "Play Again",
-    "btn_join": "Join NORML",
+    "btn_join": {
+      "text": "Join NORML",
+      "url": "https://www.norml.fr/join/"
+    },
     "btn_save": "Save Score",
     "btn_save_no_medal": "Save Score",
     "btn_skip": "Skip & Replay",
@@ -66,9 +70,5 @@
       "delivered_on": "Issued on"
     }
   },
-  "questions_pool": {
-    "easy": [],
-    "medium": [],
-    "hard": []
-  }
+  "ranks": null
 }

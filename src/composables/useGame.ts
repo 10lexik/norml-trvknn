@@ -33,7 +33,13 @@ export function useGame() {
 
   const playerPerformance = computed(() => {
     if (!state.questions.length) {
-      return { ratio: 0, percentage: 0, medal: null as null | 'gold' | 'silver' | 'bronze', rank: 'beginner', isSuccess: false }
+      return {
+        ratio: 0,
+        percentage: 0,
+        medal: null as null | 'gold' | 'silver' | 'bronze',
+        rank: 'beginner',
+        isSuccess: false
+      }
     }
     const ratio = state.score / state.questions.length
     const percentage = Math.round(ratio * 100)

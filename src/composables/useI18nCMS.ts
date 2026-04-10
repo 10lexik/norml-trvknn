@@ -2,17 +2,27 @@ import { useI18n } from 'vue-i18n'
 import { autoFixTypo } from '../utils/string'
 
 // Static fallbacks
-import fr from '../locales/fr.json'
-import en from '../locales/en.json'
-import es from '../locales/es.json'
+import { messages } from '../plugins/i18n'
 
 export function useI18nCMS() {
   const { t, tm, locale, setLocaleMessage } = useI18n()
-  
+
   // Set initial locales locally just in case
-  setLocaleMessage('fr', autoFixTypo(fr))
-  setLocaleMessage('en', autoFixTypo(en))
-  setLocaleMessage('es', autoFixTypo(es))
+  setLocaleMessage('fr', autoFixTypo(messages.fr))
+  setLocaleMessage('en', autoFixTypo(messages.en))
+  setLocaleMessage('es', autoFixTypo(messages.es))
+
+  const deepMerge = (target: any, source: any) => {
+    for (const key in source) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        if (!target[key]) target[key] = {}
+        deepMerge(target[key], source[key])
+      } else {
+        target[key] = source[key]
+      }
+    }
+    return target
+  }
 
   const hydrateContent = async () => {
     const forceLocal = (import.meta as any).env.VITE_FORCE_LOCAL_CONTENT === 'true'
@@ -25,8 +35,10 @@ export function useI18nCMS() {
       if (res.ok) {
         const remoteData = await res.json()
         if (remoteData && Object.keys(remoteData).length > 0) {
-          const cleanData = autoFixTypo(remoteData)
-          setLocaleMessage(locale.value, cleanData)
+          const current = { ...tm('') } as any // Get all current messages
+          const cleanRemote = autoFixTypo(remoteData)
+          const merged = deepMerge(current, cleanRemote)
+          setLocaleMessage(locale.value, merged)
         }
       }
     } catch (e) {
@@ -37,11 +49,7 @@ export function useI18nCMS() {
   // Wrapper for tm to return array (type safe)
   const getI18nArray = (key: string): any[] => {
     const d = tm(key)
-    return Array.isArray(d)
-      ? d
-      : d && typeof d === 'object'
-        ? Object.values(d)
-        : []
+    return Array.isArray(d) ? d : d && typeof d === 'object' ? Object.values(d) : []
   }
 
   return {

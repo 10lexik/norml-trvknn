@@ -5,12 +5,8 @@ import { getApiText } from '../_core/_i18n'
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rawLang = String(req.query.lang || DEFAULTS.LANG)
   const rawLevel = String(req.query.level || DEFAULTS.LEVEL)
-  const targetLang = DEFAULTS.ALLOWED_LANGS.includes(rawLang)
-    ? rawLang
-    : DEFAULTS.LANG
-  const targetLevel = DEFAULTS.ALLOWED_LEVELS.includes(rawLevel)
-    ? rawLevel
-    : DEFAULTS.LEVEL
+  const targetLang = DEFAULTS.ALLOWED_LANGS.includes(rawLang) ? rawLang : DEFAULTS.LANG
+  const targetLevel = DEFAULTS.ALLOWED_LEVELS.includes(rawLevel) ? rawLevel : DEFAULTS.LEVEL
 
   const T = getApiText(targetLang)
 
@@ -19,8 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!langData) throw new Error(T.lang_missing)
 
     const pool = langData.questions_pool?.[targetLevel]
-    if (!pool || pool.length === 0)
-      throw new Error(`${T.level_empty}${targetLevel}`)
+    if (!pool || pool.length === 0) throw new Error(`${T.level_empty}${targetLevel}`)
 
     const safeQuestions = pool
       .map((q: any, index: number) => ({

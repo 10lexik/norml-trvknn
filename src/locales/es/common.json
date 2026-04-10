@@ -3,6 +3,7 @@
     "brand": "ACADEMIA NORML",
     "score_label": "PUNTOS"
   },
+  "ui": null,
   "start": {
     "title": "Romper Mitos",
     "subtitle": "La prohibición falla. Ponte a prueba.",
@@ -24,7 +25,10 @@
   },
   "end": {
     "btn_retry": "Reintentar",
-    "btn_join": "Unirse",
+    "btn_join": {
+      "text": "Unirse",
+      "url": "https://www.norml.fr/join/"
+    },
     "btn_save": "Guardar",
     "btn_save_no_medal": "Guardar puntuación",
     "btn_skip": "Saltar y Jugar",
@@ -66,9 +70,5 @@
       "delivered_on": "Emitido el"
     }
   },
-  "questions_pool": {
-    "easy": [],
-    "medium": [],
-    "hard": []
-  }
+  "ranks": null
 }

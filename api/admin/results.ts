@@ -7,7 +7,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const T = getApiText(lang)
 
   // --- AUTHENTICATION (Same logic as manage.ts) ---
-  const cleaner = (s: string) => (s || '').trim().normalize('NFC').replace(/^["']|["']$/g, '')
+  const cleaner = (s: string) =>
+    (s || '')
+      .trim()
+      .normalize('NFC')
+      .replace(/^["']|["']$/g, '')
   const adminSecret = cleaner(process.env.ADMIN_SECRET as string)
   const received = cleaner(req.headers[DEFAULTS.HEADERS.ADMIN] as string)
 
@@ -18,16 +22,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const client = await atlasClientPromise
     if (!client) return res.status(503).json({ error: T.db_client_missing })
-    
-    const collection = client
-      .db(DEFAULTS.DB.NAME)
-      .collection(DEFAULTS.DB.SCORES)
+
+    const collection = client.db(DEFAULTS.DB.NAME).collection(DEFAULTS.DB.SCORES)
 
     // Fetch ALL results, sorted by date (newest first)
-    const results = await collection
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray()
+    const results = await collection.find({}).sort({ createdAt: -1 }).toArray()
 
     return res.status(200).json(results)
   } catch (e: any) {

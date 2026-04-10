@@ -1,0 +1,72 @@
+{
+  "login": {
+    "title": "🔐 Admin Access",
+    "password_placeholder": "Password",
+    "btn_enter": "Enter"
+  },
+  "topbar": {
+    "brand": "NORML Admin",
+    "btn_logout_title": "Logout",
+    "view_form": "Form",
+    "view_json": "JSON",
+    "btn_save": "SAVE"
+  },
+  "tabs": {
+    "general": "🏠 General",
+    "ui": "🎨 UI",
+    "easy": "🌱 Easy",
+    "medium": "🌿 Medium",
+    "hard": "🌳 Expert",
+    "results": "📊 Participation"
+  },
+  "general": {
+    "home_title": "Home",
+    "field_title": "Title",
+    "field_subtitle": "Subtitle",
+    "field_btn": "Button",
+    "end_title": "End",
+    "field_leaderboard_title": "Leaderboard Title",
+    "field_share_tagline": "Share Tagline"
+  },
+  "ui_texts": {
+    "game_title": "Game Texts",
+    "field_correct": "Correct",
+    "field_wrong": "Incorrect",
+    "field_info_label": "Info Label",
+    "field_btn_next": "Next Btn"
+  },
+  "results": {
+    "title": "Latest Participations ({count})",
+    "btn_refresh": "REFRESH",
+    "btn_export": "EXPORT CSV",
+    "col_rank": "#",
+    "col_timestamp": "Timestamp",
+    "col_identity": "Identity (Name / Email / #)",
+    "col_results": "Results (Score / Level)",
+    "col_socials": "Social Networks",
+    "col_system": "System Fingerprint (Browser / User Agent)",
+    "col_trace": "Traceability (IP / Referrer / UTM)",
+    "empty_state": "No participations yet."
+  },
+  "quiz_pool": {
+    "title": "Pool: {level} ({count} questions)",
+    "btn_add": "+ ADD A QUESTION",
+    "btn_delete": "DELETE",
+    "field_question": "QUESTION",
+    "field_explanation": "EXPLANATION (ARGUMENT)",
+    "option_placeholder": "Option {number}",
+    "new_category_placeholder": "New category name...",
+    "add_new_category": "+ New category..."
+  },
+  "messages": {
+    "saving": "Saving...",
+    "save_success": "✅ SAVED",
+    "save_error": "❌ Error",
+    "tech_error": "❌ Technical Error",
+    "logging_in": "Logging in...",
+    "confirm_delete": "Delete this question?",
+    "session_expired": "⚠️ Session expired (inactivity).",
+    "network_db_error": "Network/Database error",
+    "results_load_error": "Error loading results"
+  }
+}

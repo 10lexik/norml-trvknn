@@ -16,6 +16,7 @@ import StartScreen from './quizz/StartScreen.vue'
 import GameScreen from './quizz/GameScreen.vue'
 import EndScreen from './quizz/EndScreen.vue'
 import ShareCard from './quizz/ShareCard.vue'
+import Header from './ui/Header.vue'
 
 // UI Global State (Loading / Errors specific to the API)
 const uiIsLoading = ref(true)
@@ -35,11 +36,24 @@ const {
   progress,
   playerPerformance,
   rankInfo,
-  medalInfo, prepareNewQuestion, resetGame } = useGame()
-const { form, uiLeader, initLeaderboard, saveScore, validateName, validateEmail, clearNameError, clearEmailError } = useLeaderboard(getI18nArray, t)
+  medalInfo,
+  prepareNewQuestion,
+  resetGame
+} = useGame()
+const {
+  form,
+  uiLeader,
+  initLeaderboard,
+  saveScore,
+  validateEmail,
+  clearNameError,
+  clearEmailError
+} = useLeaderboard(getI18nArray, t)
 
-const availableLocales = ['fr', 'en', 'es']
-const LEVEL_IDS = ['easy', 'medium', 'hard']
+const clearAllErrors = () => {
+  clearEmailError()
+  clearNameError()
+}
 
 // Share Modal State
 const visibleNetworks = ref<string[]>([])
@@ -47,7 +61,9 @@ const showShareModal = ref(false)
 const isGenerating = ref(false)
 const generatedImageUrl = ref<string | null>(null)
 
-const socialNetworks = computed(() => getI18nArray('end.share_modal.networks') as UnifiedNetworkConfig[])
+const socialNetworks = computed(
+  () => getI18nArray('end.share_modal.networks') as UnifiedNetworkConfig[]
+)
 
 onMounted(async () => {
   try {
@@ -58,20 +74,13 @@ onMounted(async () => {
   initLeaderboard()
   // Synchronise form.socials avec visibleNetworks
   visibleNetworks.value = Object.keys(form.socials).filter((k) => form.socials[k])
-  
+
   // DEV Fallback: Auto-fill email and name to avoid typing on every test
   if (import.meta.env.DEV) {
-      form.name = form.name || 'AdminTest'
-      form.email = form.email || 'test@norml.fr'
+    form.name = form.name || 'AdminTest'
+    form.email = form.email || 'test@norml.fr'
   }
 })
-
-const setLang = async (l: string) => {
-  locale.value = l
-  uiIsLoading.value = true
-  await hydrateContent()
-  uiIsLoading.value = false
-}
 
 const startGame = async (difficulty: string) => {
   resetGame()
@@ -80,22 +89,22 @@ const startGame = async (difficulty: string) => {
   game.difficulty = difficulty
   form.isSaved = false
   showShareModal.value = false
-  
+
   try {
     const res = await fetch(`/api/game/start?lang=${locale.value}&level=${difficulty}`)
     if (!res.ok) throw new Error(t('errors.fetch_fail'))
     const data = await res.json()
     if (!data || data.length === 0) throw new Error(t('errors.no_questions'))
-    
+
     game.questions = data
     prepareNewQuestion()
-    
+
     // reset step helper
     game.selectedAnswer = null
     game.hasAnswered = false
     game.showPointPopup = false
     uiVerifyingIdx.value = null
-    
+
     // Track event
     if (window.mixpanel) {
       window.mixpanel.track('quiz_started', {
@@ -106,7 +115,7 @@ const startGame = async (difficulty: string) => {
     game.status = 'playing'
     // Scroll au sommet pour le début du quiz
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  } catch (e: any) {
+  } catch {
     uiError.value = t('errors.server_unavailable')
   } finally {
     uiIsLoading.value = false
@@ -115,11 +124,11 @@ const startGame = async (difficulty: string) => {
 
 const selectAnswer = async (domIndex: number, visualIndex: number) => {
   if (game.hasAnswered || uiIsChecking.value) return
-  
+
   uiIsChecking.value = true
   uiVerifyingIdx.value = visualIndex
   game.selectedAnswer = game.shuffledOptions[visualIndex].originalIndex
-  
+
   try {
     const res = await fetch('/api/game/check', {
       method: 'POST',
@@ -130,7 +139,7 @@ const selectAnswer = async (domIndex: number, visualIndex: number) => {
       })
     })
     const result = await res.json()
-    
+
     // On valide la vraie reponse coté composable
     game.questions[game.currentQIndex].correct = result.correctIndex
     // Update data with exact answer if correct
@@ -157,7 +166,7 @@ const nextQuestion = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     // Confettis uniquement pour les réussites via performance isSuccess DRY !
     if (playerPerformance.value.isSuccess) fireConfetti()
-    
+
     // Track completing
     if (window.mixpanel) {
       window.mixpanel.track('quiz_completed', {
@@ -189,26 +198,28 @@ const toggleNetwork = (id: string) => {
 }
 
 const handleSaveScore = () => {
-  if (!validateEmail()) return;
+  if (!validateEmail()) return
 
   const timeSpent = Math.floor((endTime.value - startTime.value) / 1000)
-  
+
   saveScore(
-    game.difficulty, 
-    game.score, 
+    game.difficulty,
+    game.score,
     timeSpent,
     socialNetworks.value,
-    () => { 
-        // Track save score
-        if (window.mixpanel) {
-          window.mixpanel.track('score_saved', {
-            score: game.score,
-            level: game.difficulty,
-            opt_in: form.consent
-          })
-        }
-    }, 
-    (err) => { uiError.value = err }
+    () => {
+      // Track save score
+      if (window.mixpanel) {
+        window.mixpanel.track('score_saved', {
+          score: game.score,
+          level: game.difficulty,
+          opt_in: form.consent
+        })
+      }
+    },
+    (err) => {
+      uiError.value = err
+    }
   )
 }
 
@@ -257,35 +268,19 @@ const reloadPage = () => window.location.reload()
 </script>
 
 <template>
-  <div class="quiz-module">
-    <header class="quiz-header">
-      <!-- <div class="header-top">
-        <div class="lang-switcher" :class="{ 'is-hidden': game.status !== 'start' }">
-          <button
-            v-for="l in availableLocales"
-            :key="l"
-            :class="{ active: locale === l }"
-            @click="setLang(l)"
-          >
-            {{ l.toUpperCase() }}
-          </button>
-        </div>
-        <div class="score-display" v-if="game.status !== 'start'">
-          <span class="level-badge" :class="game.difficulty">{{ t('levels.' + game.difficulty + '.label') }}</span>
-          <span class="score-value">{{ game.score }} / {{ game.questions.length }}</span>
-        </div>
-      </div> -->
-      <div class="logo-area">
-        <img src="../assets/img/logo.svg" :alt="t('header.brand')" class="main-logo" />
-      </div>
-      <div class="progress-bar" v-if="game.status === 'playing'">
-        <div class="fill" :style="{ width: progress + '%' }"></div>
-      </div>
-    </header>
+  <div class="font-main flex h-screen w-full flex-col items-center overflow-hidden select-none">
+    <Header
+      :is-simple="game.status === 'start'"
+      :difficulty="game.status !== 'start' ? game.difficulty : null"
+      :score="game.score"
+      :total="game.questions.length"
+      :progress="progress"
+      :show-progress="game.status === 'playing'"
+    />
 
     <StartScreen
       v-if="game.status === 'start'"
-      :isLoading="uiIsLoading"
+      :is-loading="uiIsLoading"
       :error="uiError"
       @start="startGame"
       @retry="reloadPage"
@@ -295,58 +290,60 @@ const reloadPage = () => window.location.reload()
       v-else-if="game.status === 'playing'"
       :question="currentQuestion"
       :options="game.shuffledOptions"
-      :hasAnswered="game.hasAnswered"
-      :isCorrect="isCorrect"
-      :isLastQuestion="isLastQuestion"
-      :isChecking="uiIsChecking"
-      :selectedAnswer="game.selectedAnswer"
-      :showPointPopup="game.showPointPopup"
-      :verifyingIdx="uiVerifyingIdx"
+      :has-answered="game.hasAnswered"
+      :is-correct="isCorrect"
+      :is-last-question="isLastQuestion"
+      :is-checking="uiIsChecking"
+      :selected-answer="game.selectedAnswer"
+      :show-point-popup="game.showPointPopup"
+      :verifying-idx="uiVerifyingIdx"
       @select="selectAnswer"
       @next="nextQuestion"
     />
 
     <EndScreen
       v-else-if="game.status === 'end'"
+      v-model:name-model="form.name"
+      v-model:email-model="form.email"
+      v-model:consent-model="form.consent"
+      v-model:member-id-model="form.memberId"
+      v-model:socials-model="form.socials"
       :score="game.score"
       :total="game.questions.length"
-      :rankInfo="rankInfo"
-      :hasMedal="!!medalInfo.medal"
-      :isSaved="form.isSaved"
+      :rank-info="rankInfo"
+      :has-medal="!!medalInfo.medal"
+      :is-saved="form.isSaved"
       :leaderboard="form.leaderboard"
-      :nameError="uiLeader.nameError"
-      :emailError="uiLeader.emailError"
-      :isSubmitting="uiLeader.isSubmitting"
-      v-model:nameModel="form.name"
-      v-model:emailModel="form.email"
-      v-model:consentModel="form.consent"
-      v-model:memberIdModel="form.memberId"
-      v-model:socialsModel="form.socials"
-      :socialNetworks="socialNetworks"
-      :visibleNetworks="visibleNetworks"
-      :isGenerating="isGenerating"
-      :showShareModal="showShareModal"
-      :generatedImageUrl="generatedImageUrl"
+      :name-error="uiLeader.nameError"
+      :email-error="uiLeader.emailError"
+      :is-submitting="uiLeader.isSubmitting"
+      :social-networks="socialNetworks"
+      :visible-networks="visibleNetworks"
+      :is-generating="isGenerating"
+      :show-share-modal="showShareModal"
+      :generated-image-url="generatedImageUrl"
       :medal="medalInfo.medal"
       @save="handleSaveScore"
-      @clearError="clearEmailError(); clearNameError()"
-      @toggleNetwork="toggleNetwork"
+      @clear-error="clearAllErrors"
+      @toggle-network="toggleNetwork"
       @restart="resetGame"
       @share="generateShare"
-      @closeModal="showShareModal = false"
+      @close-modal="showShareModal = false"
       @download="handleShareClick"
-      @clearInputSocial="clearInputSocial"
+      @clear-input-social="clearInputSocial"
     />
 
     <!-- Render headless ShareCard for html2canvas -->
-    <ShareCard
-      ref="shareCardRef"
-      :score="game.score"
-      :total="game.questions.length"
-      :rankTitle="rankInfo.title"
-      :rankDesc="rankInfo.desc"
-      :medal="medalInfo.medal"
-      :difficulty="game.difficulty"
-    />
+    <div class="vh-hidden">
+      <ShareCard
+        ref="shareCardRef"
+        :score="game.score"
+        :total="game.questions.length"
+        :rank-title="rankInfo.title"
+        :rank-desc="rankInfo.desc"
+        :medal="medalInfo.medal"
+        :difficulty="game.difficulty"
+      />
+    </div>
   </div>
 </template>

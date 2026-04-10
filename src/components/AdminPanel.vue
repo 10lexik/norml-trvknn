@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import Button from './ui/Button.vue'
+
+const { t } = useI18n()
 
 // --- CONSTANTES ---
 const STORAGE_KEY = 'norml_admin_secret'
@@ -77,7 +81,7 @@ const resetInactivityTimer = () => {
   if (!isAuthenticated.value) return
   if (inactivityTimer) clearTimeout(inactivityTimer)
   inactivityTimer = setTimeout(() => {
-    alert('⚠️ Session expirée (inactivité).')
+    alert(t('messages.session_expired'))
     logout()
   }, INACTIVITY_LIMIT)
 }
@@ -114,9 +118,12 @@ const logout = () => {
 const login = async () => {
   if (!secret.value) return
   // Nettoyage ultra-agressif (espaces, normalisation accents, guillemets parasites)
-  secret.value = secret.value.trim().normalize('NFC').replace(/^["']|["']$/g, '')
+  secret.value = secret.value
+    .trim()
+    .normalize('NFC')
+    .replace(/^["']|["']$/g, '')
   isLoading.value = true
-  statusMsg.value = 'Connexion...'
+  statusMsg.value = t('messages.logging_in')
   await loadContent(currentLang.value)
 }
 
@@ -151,8 +158,7 @@ const loadContent = async (lang: string) => {
     }
 
     const data = await res.json()
-    if (!data.questions_pool)
-      data.questions_pool = { easy: [], medium: [], hard: [] }
+    if (!data.questions_pool) data.questions_pool = { easy: [], medium: [], hard: [] }
 
     cmsData.value = data
     isAuthenticated.value = true
@@ -163,7 +169,7 @@ const loadContent = async (lang: string) => {
     statusMsg.value = ''
   } catch (e: any) {
     console.error(e)
-    statusMsg.value = 'Erreur réseau/Base de données'
+    statusMsg.value = t('messages.network_db_error')
   } finally {
     isLoading.value = false
   }
@@ -172,7 +178,7 @@ const loadContent = async (lang: string) => {
 const saveContent = async () => {
   try {
     isLoading.value = true
-    statusMsg.value = 'Sauvegarde...'
+    statusMsg.value = t('messages.saving')
     const res = await fetch('/api/admin/manage', {
       method: 'POST',
       headers: {
@@ -186,16 +192,16 @@ const saveContent = async () => {
     })
 
     if (res.ok) {
-      statusMsg.value = `✅ SAUVEGARDÉ`
+      statusMsg.value = t('messages.save_success')
       localStorage.setItem(STORAGE_TIME_KEY, new Date().getTime().toString())
       resetInactivityTimer()
       setTimeout(() => (statusMsg.value = ''), 3000)
     } else {
       const errorData = await res.json().catch(() => ({}))
-      statusMsg.value = `❌ ${errorData.error || 'Erreur'}`
+      statusMsg.value = `❌ ${errorData.error || t('messages.save_error')}`
     }
-  } catch (e) {
-    statusMsg.value = '❌ Erreur technique'
+  } catch {
+    statusMsg.value = t('messages.tech_error')
   } finally {
     isLoading.value = false
   }
@@ -220,7 +226,7 @@ const addQuestion = (difficulty: string) => {
 }
 
 const removeQuestion = (difficulty: string, index: number) => {
-  if (confirm('Supprimer cette question ?')) {
+  if (confirm(t('messages.confirm_delete'))) {
     cmsData.value.questions_pool[difficulty].splice(index, 1)
   }
 }
@@ -241,7 +247,7 @@ const loadResults = async () => {
     if (res.ok) {
       results.value = await res.json()
     } else {
-      statusMsg.value = 'Erreur lors du chargement des résultats'
+      statusMsg.value = t('messages.results_load_error')
     }
   } catch (e) {
     console.error(e)
@@ -272,8 +278,33 @@ const getBrowserInfo = (ua: string) => {
 const exportToCSV = () => {
   if (!results.value.length) return
 
-  const headers = ['Date', 'Nom', 'Email', 'Score', 'Difficulté', 'Secondes', 'IP', 'Ville', 'Région', 'Pays', 'Navigateur', 'User Agent', 'Referrer', 'Largeur Écran', 'UTM Source', 'UTM Medium', 'UTM Campaign', 'Instagram', 'X', 'Facebook', 'Bluesky', 'TikTok', 'Consentement', 'Membre ID']
-  const rows = results.value.map(r => [
+  const headers = [
+    'Date',
+    'Nom',
+    'Email',
+    'Score',
+    'Difficulté',
+    'Secondes',
+    'IP',
+    'Ville',
+    'Région',
+    'Pays',
+    'Navigateur',
+    'User Agent',
+    'Referrer',
+    'Largeur Écran',
+    'UTM Source',
+    'UTM Medium',
+    'UTM Campaign',
+    'Instagram',
+    'X',
+    'Facebook',
+    'Bluesky',
+    'TikTok',
+    'Consentement',
+    'Membre ID'
+  ]
+  const rows = results.value.map((r) => [
     new Date(r.createdAt || r.updatedAt).toLocaleString(),
     r.name,
     r.email,
@@ -302,7 +333,7 @@ const exportToCSV = () => {
 
   const csvContent = [
     headers.join(';'),
-    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -326,141 +357,255 @@ const switchTab = (tab: string) => {
 
 <template>
   <div class="admin-wrapper">
-    <div v-if="!isAuthenticated" class="login-container">
-      <h2>🔐 Accès Admin</h2>
+    <div
+      v-if="!isAuthenticated"
+      class="login-container"
+    >
+      <h2>{{ t('login.title') }}</h2>
       <div class="input-group">
-        <input v-model="secret" type="password" placeholder="Mot de passe" @keyup.enter="login"
-          autocomplete="current-password" />
-        <button class="btn-primary" @click="login" :disabled="isLoading">
-          Entrer
-        </button>
+        <input
+          v-model="secret"
+          type="password"
+          :placeholder="t('login.password_placeholder')"
+          autocomplete="current-password"
+          @keyup.enter="login"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          :is-loading="isLoading"
+          @click="login"
+        >
+          {{ t('login.btn_enter') }}
+        </Button>
       </div>
-      <div v-if="statusMsg" class="login-status"
-        :class="{ error: statusMsg.includes('⛔') || statusMsg.includes('Diag') }">
+      <div
+        v-if="statusMsg"
+        class="login-status"
+        :class="{ error: statusMsg.includes('⛔') || statusMsg.includes('Diag') }"
+      >
         {{ statusMsg }}
       </div>
     </div>
 
-    <div v-else class="dashboard">
+    <div
+      v-else
+      class="dashboard"
+    >
       <div class="top-bar">
         <div class="bar-header">
           <div class="brand-group">
-            <span class="brand">NORML FR ADMIN</span>
+            <span class="brand">{{ t('topbar.brand') }}</span>
             <div class="lang-switcher">
-              <button v-for="l in languages" :key="l" class="btn-lang" :class="{ active: currentLang === l }"
-                @click="loadContent(l)">
+              <button
+                v-for="l in languages"
+                :key="l"
+                class="btn-lang"
+                :class="{ active: currentLang === l }"
+                @click="loadContent(l)"
+              >
                 {{ l.toUpperCase() }}
               </button>
             </div>
           </div>
-          <button class="btn-logout" @click="logout" title="Déconnexion">
+          <Button
+            variant="ghost"
+            class="p-2 text-xl"
+            :title="t('topbar.btn_logout_title')"
+            @click="logout"
+          >
             🚪
-          </button>
+          </Button>
         </div>
 
         <div class="bar-actions">
-          <span class="status" v-if="statusMsg">{{ statusMsg }}</span>
+          <span
+            v-if="statusMsg"
+            class="status"
+            >{{ statusMsg }}</span
+          >
           <div class="buttons-group">
-            <button class="btn-secondary" @click="showRawJson = !showRawJson">
-              {{ showRawJson ? 'Form' : 'JSON' }}
-            </button>
-            <button class="btn-primary" @click="saveContent" :disabled="isLoading">
-              {{ isLoading ? '...' : 'SAUVEGARDER' }}
-            </button>
+            <Button
+              variant="secondary"
+              size="xs"
+              @click="showRawJson = !showRawJson"
+            >
+              {{ showRawJson ? t('topbar.view_form') : t('topbar.view_json') }}
+            </Button>
+            <Button
+              variant="primary"
+              size="xs"
+              :is-loading="isLoading"
+              @click="saveContent"
+            >
+              {{ t('topbar.btn_save') }}
+            </Button>
           </div>
         </div>
       </div>
 
-      <div v-if="showRawJson" class="raw-mode">
-        <textarea :value="JSON.stringify(cmsData, null, 2)" @input="
-          (e) =>
-            (cmsData = JSON.parse((e.target as HTMLTextAreaElement).value))
-        "></textarea>
+      <div
+        v-if="showRawJson"
+        class="raw-mode"
+      >
+        <textarea
+          :value="JSON.stringify(cmsData, null, 2)"
+          @input="(e) => (cmsData = JSON.parse((e.target as HTMLTextAreaElement).value))"
+        />
       </div>
 
-      <div v-else class="visual-mode">
+      <div
+        v-else
+        class="visual-mode"
+      >
         <div class="tabs-nav">
-          <button :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'">
-            🏠 Général
+          <button
+            v-for="tab in [
+              { id: 'general', icon: '🏠', label: t('tabs.general') },
+              { id: 'ui', icon: '🎨', label: t('tabs.ui') }
+            ]"
+            :key="tab.id"
+            :class="{ active: activeTab === tab.id }"
+            @click="activeTab = tab.id"
+          >
+            {{ tab.label }}
           </button>
-          <button :class="{ active: activeTab === 'ui' }" @click="activeTab = 'ui'">
-            🎨 UI
+
+          <div class="sep" />
+
+          <button
+            v-for="lvl in [
+              { id: 'easy', icon: '🌱', label: t('tabs.easy') },
+              { id: 'medium', icon: '🌿', label: t('tabs.medium') },
+              { id: 'hard', icon: '🌳', label: t('tabs.hard') }
+            ]"
+            :key="lvl.id"
+            :class="['level-tab', lvl.id, { active: activeTab === lvl.id }]"
+            @click="activeTab = lvl.id"
+          >
+            {{ lvl.label }} ({{ questionCount(lvl.id) }})
           </button>
-          <div class="sep"></div>
-          <button class="level-tab easy" :class="{ active: activeTab === 'easy' }" @click="activeTab = 'easy'">
-            🌱 Facile ({{ questionCount('easy') }})
-          </button>
-          <button class="level-tab medium" :class="{ active: activeTab === 'medium' }" @click="activeTab = 'medium'">
-            🌿 Moyen ({{ questionCount('medium') }})
-          </button>
-          <button class="level-tab hard" :class="{ active: activeTab === 'hard' }" @click="activeTab = 'hard'">
-            🌳 Expert ({{ questionCount('hard') }})
-          </button>
-          <div class="sep"></div>
-          <button class="results-tab" :class="{ active: activeTab === 'results' }" @click="switchTab('results')">
-            📊 Participations
+
+          <div class="sep" />
+
+          <button
+            class="results-tab"
+            :class="{ active: activeTab === 'results' }"
+            @click="switchTab('results')"
+          >
+            {{ t('tabs.results') }}
           </button>
         </div>
 
         <div class="content-area">
           <div v-if="activeTab === 'general' && cmsData.start">
-            <h3>Accueil</h3>
+            <h3>{{ t('general.home_title') }}</h3>
             <div class="form-section">
               <div class="form-group">
-                <label>Titre</label>
-                <input type="text" v-model="cmsData.start.title" autocomplete="off" />
+                <label>{{ t('general.field_title') }}</label>
+                <input
+                  v-model="cmsData.start.title"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Sous-titre</label>
-                <textarea v-model="cmsData.start.subtitle" rows="3" autocomplete="off"></textarea>
+                <label>{{ t('general.field_subtitle') }}</label>
+                <textarea
+                  v-model="cmsData.start.subtitle"
+                  rows="3"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Bouton</label>
-                <input type="text" v-model="cmsData.start.btn" autocomplete="off" />
+                <label>{{ t('general.field_btn') }}</label>
+                <input
+                  v-model="cmsData.start.btn"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
             </div>
 
-            <h3>Fin</h3>
+            <h3>{{ t('general.end_title') }}</h3>
             <div class="form-section">
               <div class="form-group">
-                <label>Titre Leaderboard</label>
-                <input type="text" v-model="cmsData.end.leaderboard_title" autocomplete="off" />
+                <label>{{ t('general.field_leaderboard_title') }}</label>
+                <input
+                  v-model="cmsData.end.leaderboard_title"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Tagline Partage</label>
-                <input type="text" v-model="cmsData.end.share_card.tagline" autocomplete="off" />
+                <label>{{ t('general.field_share_tagline') }}</label>
+                <input
+                  v-model="cmsData.end.share_card.tagline"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
             </div>
           </div>
 
           <div v-if="activeTab === 'ui' && cmsData.game">
-            <h3>Textes Jeu</h3>
+            <h3>{{ t('ui_texts.game_title') }}</h3>
             <div class="form-section grid-2">
               <div class="form-group">
-                <label>Correct</label><input type="text" v-model="cmsData.game.correct" autocomplete="off" />
+                <label>{{ t('ui_texts.field_correct') }}</label
+                ><input
+                  v-model="cmsData.game.correct"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Incorrect</label><input type="text" v-model="cmsData.game.wrong" autocomplete="off" />
+                <label>{{ t('ui_texts.field_wrong') }}</label
+                ><input
+                  v-model="cmsData.game.wrong"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Label Info</label><input type="text" v-model="cmsData.game.argument_label" autocomplete="off" />
+                <label>{{ t('ui_texts.field_info_label') }}</label
+                ><input
+                  v-model="cmsData.game.argument_label"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
               <div class="form-group">
-                <label>Btn Suivant</label><input type="text" v-model="cmsData.game.btn_next" autocomplete="off" />
+                <label>{{ t('ui_texts.field_btn_next') }}</label
+                ><input
+                  v-model="cmsData.game.btn_next"
+                  type="text"
+                  autocomplete="off"
+                />
               </div>
             </div>
           </div>
 
           <div v-if="activeTab === 'results'">
             <div class="results-header">
-              <h3>Dernières Participations ({{ results.length }})</h3>
+              <h3>{{ t('results.title', { count: results.length }) }}</h3>
               <div class="results-actions">
-                <button class="btn-secondary" @click="loadResults" :disabled="isLoadingResults">
-                  {{ isLoadingResults ? '...' : 'ACTUALISER' }}
-                </button>
-                <button class="btn-primary" @click="exportToCSV" :disabled="!results.length">
-                  EXPORTER CSV
-                </button>
+                <Button
+                  variant="secondary"
+                  size="xs"
+                   :is-loading="isLoadingResults"
+                  @click="loadResults"
+                >
+                  {{ t('results.btn_refresh') }}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="xs"
+                  :disabled="!results.length"
+                  @click="exportToCSV"
+                >
+                  {{ t('results.btn_export') }}
+                </Button>
               </div>
             </div>
 
@@ -468,40 +613,60 @@ const switchTab = (tab: string) => {
               <table class="leads-table">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Horodatage</th>
-                    <th>Identité (Nom / Email / #)</th>
-                    <th>Résultats (Score / Niveau)</th>
-                    <th>Réseaux Sociaux</th>
-                    <th>Empreinte Système (Navigateur / User Agent)</th>
-                    <th>Traçabilité (IP / Referrer / UTM)</th>
+                    <th>{{ t('results.col_rank') }}</th>
+                    <th>{{ t('results.col_timestamp') }}</th>
+                    <th>{{ t('results.col_identity') }}</th>
+                    <th>{{ t('results.col_results') }}</th>
+                    <th>{{ t('results.col_socials') }}</th>
+                    <th>{{ t('results.col_system') }}</th>
+                    <th>{{ t('results.col_trace') }}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(res, idx) in results" :key="res._id" class="audit-row">
+                  <tr
+                    v-for="(res, idx) in results"
+                    :key="res._id"
+                    class="audit-row"
+                  >
                     <td class="mono-id">#{{ results.length - idx }}</td>
                     <td class="date-cell">
                       {{ new Date(res.createdAt || res.updatedAt).toLocaleDateString() }}<br />
-                      <small>{{ new Date(res.createdAt || res.updatedAt).toLocaleTimeString() }}</small>
+                      <small>{{
+                        new Date(res.createdAt || res.updatedAt).toLocaleTimeString()
+                      }}</small>
                     </td>
                     <td class="name-cell">
                       <div class="participant-box">
                         <div class="name-line">
                           <strong>{{ res.name }}</strong>
-                          <span v-if="res.memberId" class="mono-member">#{{ res.memberId }}</span>
+                          <span
+                            v-if="res.memberId"
+                            class="mono-member"
+                            >#{{ res.memberId }}</span
+                          >
                         </div>
-                        <a :href="'mailto:' + res.email" class="email-audit">{{ res.email }}</a>
+                        <a
+                          :href="'mailto:' + res.email"
+                          class="email-audit"
+                          >{{ res.email }}</a
+                        >
                       </div>
                     </td>
                     <td class="score-cell">
                       <div class="score-audit">
                         <span class="score-val">{{ res.score }}</span>
-                        <span class="diff-tag" :class="res.difficulty">{{ res.difficulty }}</span>
+                        <span
+                          class="diff-tag"
+                          :class="res.difficulty"
+                          >{{ res.difficulty }}</span
+                        >
                       </div>
                     </td>
                     <td class="geo-cell">
                       <div class="tech-box">
-                        <span class="city-text">{{ res.city || 'N/A' }} <i>{{ res.region }}</i></span>
+                        <span class="city-text"
+                          >{{ res.city || 'N/A' }} <i>{{ res.region }}</i></span
+                        >
                         <code class="mono-ip">{{ res.ip }}</code>
                       </div>
                     </td>
@@ -517,61 +682,130 @@ const switchTab = (tab: string) => {
                     </td>
                     <td class="source-cell">
                       <div class="tech-box">
-                        <span class="ref-link" v-if="res.referrer">Ref: {{ res.referrer }}</span>
-                        <span class="utm-tag" v-if="res.utm_source">UTM: {{ res.utm_source }} / {{ res.utm_campaign ||
-                          '-' }}</span>
+                        <span
+                          v-if="res.referrer"
+                          class="ref-link"
+                          >Ref: {{ res.referrer }}</span
+                        >
+                        <span
+                          v-if="res.utm_source"
+                          class="utm-tag"
+                          >UTM: {{ res.utm_source }} / {{ res.utm_campaign || '-' }}</span
+                        >
                       </div>
                     </td>
                   </tr>
                 </tbody>
               </table>
-              <div v-if="!results.length && !isLoadingResults" class="empty-state">
-                Aucune participation pour le moment.
+              <div
+                v-if="!results.length && !isLoadingResults"
+                class="empty-state"
+              >
+                {{ t('results.empty_state') }}
               </div>
             </div>
           </div>
           <!-- BLOC MANQUANT POUR LES QUESTIONS -->
           <div v-if="['easy', 'medium', 'hard'].includes(activeTab)">
             <div class="level-header">
-              <h3>Pool : {{ activeTab.toUpperCase() }} ({{ questionCount(activeTab) }} questions)</h3>
-              <button class="btn-primary" @click="addQuestion(activeTab)">+ AJOUTER UNE QUESTION</button>
+              <h3>
+                {{ t('quiz_pool.title', { level: activeTab.toUpperCase(), count: questionCount(activeTab) }) }}
+              </h3>
+              <Button
+                variant="primary"
+                size="xs"
+                @click="addQuestion(activeTab)"
+              >
+                {{ t('quiz_pool.btn_add') }}
+              </Button>
             </div>
 
-            <div v-for="(q, idx) in cmsData.questions_pool[activeTab]" :key="idx" class="question-edit-card">
+            <div
+              v-for="(q, idx) in cmsData.questions_pool[activeTab]"
+              :key="idx"
+              class="question-edit-card"
+            >
               <div class="q-card-header">
-                <span class="q-number">#{{ cmsData.questions_pool[activeTab].length - (idx as number) }}</span>
+                <span class="q-number"
+                  >#{{ cmsData.questions_pool[activeTab].length - (idx as number) }}</span
+                >
                 <div class="cat-selector-group">
-                  <select v-if="creatingCategoryFor !== activeTab + '-' + idx" v-model="q.category"
-                    @change="handleCategoryChange(($event.target as HTMLSelectElement).value, activeTab, idx as number)" class="cat-input">
-                    <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
-                    <option value="ADD_NEW">+ Nouvelle catégorie...</option>
+                  <select
+                    v-if="creatingCategoryFor !== activeTab + '-' + idx"
+                    v-model="q.category"
+                    class="cat-input"
+                    @change="
+                      handleCategoryChange(
+                        ($event.target as HTMLSelectElement).value,
+                        activeTab,
+                        idx as number
+                      )
+                    "
+                  >
+                    <option
+                      v-for="cat in availableCategories"
+                      :key="cat"
+                      :value="cat"
+                    >
+                      {{ cat }}
+                    </option>
+                    <option value="ADD_NEW">{{ t('quiz_pool.add_new_category') }}</option>
                   </select>
-                  <input v-else v-model="q.category" placeholder="Nom de la nouvelle catégorie..."
-                    class="cat-input new-cat" v-focus @blur="creatingCategoryFor = null"
-                    @keyup.enter="creatingCategoryFor = null" />
+                  <input
+                    v-else
+                    v-model="q.category"
+                    v-focus
+                    :placeholder="t('quiz_pool.new_category_placeholder')"
+                    class="cat-input new-cat"
+                    @blur="creatingCategoryFor = null"
+                    @keyup.enter="creatingCategoryFor = null"
+                  />
                 </div>
-                <button class="btn-delete" @click="removeQuestion(activeTab, idx as number)">SUPPRIMER</button>
+                <button
+                  class="btn-delete"
+                  @click="removeQuestion(activeTab, idx as number)"
+                >
+                  {{ t('quiz_pool.btn_delete') }}
+                </button>
               </div>
 
               <div class="form-group">
-                <label>QUESTION</label>
-                <textarea v-model="q.question" rows="2"></textarea>
+                <label>{{ t('quiz_pool.field_question') }}</label>
+                <textarea
+                  v-model="q.question"
+                  rows="2"
+                />
               </div>
 
               <div class="options-grid-edit">
-                <div v-for="(opt, oIdx) in q.options" :key="oIdx" class="opt-input-group">
-                  <input type="radio" :name="'correct-' + activeTab + '-' + idx" :value="oIdx" v-model="q.correct" />
-                  <input type="text" v-model="q.options[oIdx]" :placeholder="'Option ' + ((oIdx as number) + 1)" />
+                <div
+                  v-for="(opt, oIdx) in q.options"
+                  :key="oIdx"
+                  class="opt-input-group"
+                >
+                  <input
+                    v-model="q.correct"
+                    type="radio"
+                    :name="'correct-' + activeTab + '-' + idx"
+                    :value="oIdx"
+                  />
+                  <input
+                    v-model="q.options[oIdx]"
+                    type="text"
+                    :placeholder="t('quiz_pool.option_placeholder', { number: (oIdx as number) + 1 })"
+                  />
                 </div>
               </div>
 
               <div class="form-group mt-10">
-                <label>EXPLICATION (ARGUMENTAIRE)</label>
-                <textarea v-model="q.explanation" rows="2"></textarea>
+                <label>{{ t('quiz_pool.field_explanation') }}</label>
+                <textarea
+                  v-model="q.explanation"
+                  rows="2"
+                />
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -1151,7 +1385,7 @@ select {
     padding: 8px;
     border: 1px solid #eee;
 
-    input[type="radio"] {
+    input[type='radio'] {
       width: 18px;
       height: 18px;
       cursor: pointer;

@@ -5,43 +5,43 @@ export const fireConfetti = (duration = 2000) => {
   const end = Date.now() + duration
   const colors = ['#e4e9d5', '#2E8A42', '#d4af37', '#ffffff', '#fbb03b']
 
-    ; (function frame() {
-      // Top corners
-      confetti({
-        particleCount: colors.length,
-        angle: 315,
-        spread: 100,
-        origin: { x: 0, y: 0 },
-        colors: colors,
-        disableForReducedMotion: true
-      })
-      confetti({
-        particleCount: colors.length,
-        angle: 225,
-        spread: 100,
-        origin: { x: 1, y: 0 },
-        colors: colors,
-        disableForReducedMotion: true
-      })
-      // Bottom corners
-      confetti({
-        particleCount: colors.length,
-        angle: 45,
-        spread: 100,
-        origin: { x: 0, y: 1 },
-        colors: colors,
-        disableForReducedMotion: true
-      })
-      confetti({
-        particleCount: colors.length,
-        angle: 135,
-        spread: 100,
-        origin: { x: 1, y: 1 },
-        colors: colors,
-        disableForReducedMotion: true
-      })
-      if (Date.now() < end) requestAnimationFrame(frame)
-    })()
+  ;(function frame() {
+    // Top corners
+    confetti({
+      particleCount: colors.length,
+      angle: 315,
+      spread: 100,
+      origin: { x: 0, y: 0 },
+      colors: colors,
+      disableForReducedMotion: true
+    })
+    confetti({
+      particleCount: colors.length,
+      angle: 225,
+      spread: 100,
+      origin: { x: 1, y: 0 },
+      colors: colors,
+      disableForReducedMotion: true
+    })
+    // Bottom corners
+    confetti({
+      particleCount: colors.length,
+      angle: 45,
+      spread: 100,
+      origin: { x: 0, y: 1 },
+      colors: colors,
+      disableForReducedMotion: true
+    })
+    confetti({
+      particleCount: colors.length,
+      angle: 135,
+      spread: 100,
+      origin: { x: 1, y: 1 },
+      colors: colors,
+      disableForReducedMotion: true
+    })
+    if (Date.now() < end) requestAnimationFrame(frame)
+  })()
 }
 
 export const generateShareImage = async (element: HTMLElement | null): Promise<string> => {
@@ -51,7 +51,7 @@ export const generateShareImage = async (element: HTMLElement | null): Promise<s
   await document.fonts.ready
 
   const clone = element.cloneNode(true) as HTMLElement
-  
+
   // Appliquer une classe spécifique pour les correctifs CSS (ex: remplacer drop-shadow par box-shadow)
   clone.classList.add('html2canvas-capturing')
 
@@ -69,7 +69,7 @@ export const generateShareImage = async (element: HTMLElement | null): Promise<s
   })
 
   document.body.appendChild(clone)
-  
+
   // Attendre un peu pour le rendu initial et le chargement des images du clone
   await new Promise((resolve) => setTimeout(resolve, 500))
 

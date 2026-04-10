@@ -1,5 +1,4 @@
-@import "tailwindcss";
-@import "./quizz.css";
+@import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@400;600;700;800&display=swap');
 
 /* ============================================================
@@ -7,7 +6,8 @@
    ============================================================ */
 @font-face {
   font-family: 'Platform';
-  src: url('/fonts/platform/Platform-Regular-Web.woff2') format('woff2'),
+  src:
+    url('/fonts/platform/Platform-Regular-Web.woff2') format('woff2'),
     url('/fonts/platform/Platform-Regular-Web.woff') format('woff');
   font-weight: 400;
   font-style: normal;
@@ -16,7 +16,8 @@
 
 @font-face {
   font-family: 'Platform';
-  src: url('/fonts/platform/Platform-RegularItalic-Web.woff2') format('woff2'),
+  src:
+    url('/fonts/platform/Platform-RegularItalic-Web.woff2') format('woff2'),
     url('/fonts/platform/Platform-RegularItalic-Web.woff') format('woff');
   font-weight: 400;
   font-style: italic;
@@ -25,7 +26,8 @@
 
 @font-face {
   font-family: 'Platform';
-  src: url('/fonts/platform/Platform-Medium-Web.woff2') format('woff2'),
+  src:
+    url('/fonts/platform/Platform-Medium-Web.woff2') format('woff2'),
     url('/fonts/platform/Platform-Medium-Web.woff') format('woff');
   font-weight: 500;
   font-style: normal;
@@ -34,7 +36,8 @@
 
 @font-face {
   font-family: 'Platform';
-  src: url('/fonts/platform/Platform-Bold-Web.woff2') format('woff2'),
+  src:
+    url('/fonts/platform/Platform-Bold-Web.woff2') format('woff2'),
     url('/fonts/platform/Platform-Bold-Web.woff') format('woff');
   font-weight: 700;
   font-style: normal;
@@ -43,7 +46,8 @@
 
 @font-face {
   font-family: 'Platform';
-  src: url('/fonts/platform/Platform-BoldItalic-Web.woff2') format('woff2'),
+  src:
+    url('/fonts/platform/Platform-BoldItalic-Web.woff2') format('woff2'),
     url('/fonts/platform/Platform-BoldItalic-Web.woff') format('woff');
   font-weight: 700;
   font-style: italic;
@@ -54,10 +58,10 @@
    DESIGN TOKENS — équivalents des variables SCSS du projet
    ============================================================ */
 @theme {
-  /* Couleurs */
+  /* Couleurs Mockup */
   --color-poster-beige: #e4e9d5;
   --color-prohib-black: #141414;
-  --color-reg-green: #2E8A42;
+  --color-reg-green: #2e8a42;
   --color-highlight-green: #4caf50;
   --color-light-green: #8bc34a;
   --color-error-red: #d32f2f;
@@ -68,6 +72,9 @@
   /* Typographie */
   --font-main: 'Platform', 'Space Grotesk', sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
+
+  /* Espacements & Bordures */
+  --border-width-3: 3px;
 }
 
 /* ============================================================
@@ -79,13 +86,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-
-  * {
-    box-sizing: border-box;
-  }
+  font-family: var(--font-main);
+  background-color: var(--color-poster-beige);
+  color: var(--color-prohib-black);
 }
 
-/* Forcer le gras sur tous les titres car Tailwind les reset par défaut */
+#app {
+  min-height: 100vh;
+  width: 100%;
+}
+
 h1,
 h2,
 h3,
@@ -93,32 +103,22 @@ h4,
 h5,
 h6 {
   font-weight: 700;
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
-#app-container {
-  font-family: var(--font-main);
-  background-color: var(--color-poster-beige);
-  color: var(--color-prohib-black);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: radial-gradient(#d0d6c0 1px, transparent 1px);
-  background-size: 20px 20px;
-  width: 100%;
+/* Utilitaires de masquage pour les composants headless */
+.vh-hidden {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
-.screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  animation: fadeIn 0.4s ease;
-
-  @media (min-width: 601px) {
-    padding: 0;
-  }
+[v-cloak] {
+  display: none !important;
 }
 
 /* ============================================================

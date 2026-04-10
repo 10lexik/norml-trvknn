@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    mixpanel: any;
+    mixpanel: any
   }
 }
 
