@@ -58,19 +58,18 @@ const badgeColor = computed(() => {
 <template>
   <div
     ref="cardElRef"
-    class="share-card-hidden"
-    :class="[medal ? `medal-${medal}` : '', { 'is-preview': mode === 'preview' }]"
+    class="share-card-root"
+    :class="[medal ? `is-medal-${medal}` : '', { 'is-preview': mode === 'preview' }]"
   >
     <div class="cert-inner">
       <!-- BLOC MÉDAILLE -->
       <div class="cert-medal-block">
-        <!-- Médaille SVG Externe -->
         <div class="medal-glow" />
         <img
           v-if="medalImageSrc"
           :src="medalImageSrc"
           class="medal-image"
-          alt="Médaille du Quizz"
+          alt="Médaille"
         />
 
         <div class="cert-badge-container">
@@ -102,24 +101,13 @@ const badgeColor = computed(() => {
           </svg>
         </div>
 
-        <div
-          class="cert-score-big"
-          :style="{ color: `var(--medal-color-primary)` }"
-        >
-          {{ score
-          }}<span
-            class="small"
-            :style="{ color: `var(--medal-color-primary)`, opacity: 0.6 }"
-            >/{{ total }}</span
-          >
+        <div class="cert-score-big">
+          {{ score }}<span class="score-total">/{{ total }}</span>
         </div>
       </div>
 
       <!-- TITRE DU RANG -->
-      <div
-        class="cert-rank-title"
-        :style="{ color: `var(--medal-color-primary)` }"
-      >
+      <div class="cert-rank-title">
         {{ rankTitle }}
       </div>
 
@@ -133,3 +121,109 @@ const badgeColor = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@reference "../../styles/main.css";
+
+.share-card-root {
+  --medal-color-primary: #bf8970;
+  --medal-color-glow: rgba(191, 137, 112, 0.3);
+
+  &.is-medal-gold {
+    --medal-color-primary: #fbb03b;
+    --medal-color-glow: rgba(251, 176, 59, 0.4);
+  }
+
+  &.is-medal-silver {
+    --medal-color-primary: #c0c0c0;
+    --medal-color-glow: rgba(192, 192, 192, 0.3);
+  }
+
+  @apply bg-prohib-black relative flex flex-col items-center justify-center overflow-hidden p-20 text-center;
+
+  width: 1200px;
+  height: 1200px;
+  color: white;
+
+  &.is-preview {
+    @apply h-auto w-full p-8;
+
+    aspect-ratio: 1/1;
+  }
+
+  & .cert-inner {
+    @apply flex w-full max-w-[1000px] flex-col items-center gap-12;
+  }
+
+  & .cert-medal-block {
+    @apply relative mb-4 flex flex-col items-center justify-center;
+
+    & .medal-glow {
+      @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--medal-color-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    & .medal-image {
+      @apply relative z-10;
+
+      width: 599px;
+      height: auto;
+      filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.9));
+    }
+
+    & .cert-badge-container {
+      @apply mt-4 flex w-3/4 items-center justify-center;
+
+      & svg {
+        max-width: 100%;
+        height: auto;
+      }
+    }
+
+    & .cert-score-big {
+      @apply font-mono relative z-10 mt-8 font-black leading-none;
+
+      font-size: 5.5rem;
+      color: var(--medal-color-primary);
+
+      & .score-total {
+        @apply align-baseline opacity-60;
+
+        font-size: inherit;
+      }
+    }
+  }
+
+  & .cert-rank-title {
+    @apply font-black uppercase leading-tight;
+
+    font-size: 4.8rem;
+    letter-spacing: 5px;
+    color: var(--medal-color-primary);
+  }
+
+  & .cert-footer {
+    @apply mt-auto flex w-full flex-col items-center gap-2 pb-8;
+
+    & .cert-footer-site {
+      @apply font-black uppercase;
+
+      font-size: 2.5rem;
+      letter-spacing: 6px;
+      color: var(--medal-color-primary);
+    }
+
+    & .cert-footer-date {
+      @apply opacity-50;
+
+      font-size: 2.6rem;
+      letter-spacing: 1px;
+    }
+  }
+}
+</style>

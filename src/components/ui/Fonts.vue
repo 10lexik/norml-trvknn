@@ -14,7 +14,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   tag: 'p',
   variant: 'body',
-  color: '', // default to inherit or text-prohib-black
+  color: '',
   centered: false,
   uppercase: false,
   noBalance: false
@@ -28,43 +28,22 @@ const processedContent = computed(() => {
   return props.content.replace(/\*\*(.*?)\*\*/g, (_, match) => {
     const rotation = counter % 2 === 0 ? '-0.5deg' : '0.5deg'
     counter++
-    return `<span class="font-black bg-prohib-black text-white px-1.5 py-0.5 inline-block mx-0.5" style="transform: rotate(${rotation}) skew(-10deg)">${match}</span>`
+    return `<span class="font-highlight" style="transform: rotate(${rotation}) skew(-10deg)">${match}</span>`
   })
-})
-
-const variantClasses = computed(() => {
-  switch (props.variant) {
-    case 'h1':
-      return 'text-4xl md:text-5xl font-black leading-[1.05] tracking-tight'
-    case 'h2':
-      return 'text-xl md:text-2xl font-black'
-    case 'intro':
-      return 'text-3xl md:text-4xl font-black border-b-[6px] pb-2 self-start leading-none'
-    case 'body':
-      return 'text-base md:text-lg font-medium tracking-tight'
-    case 'explanation':
-      return 'text-xl font-medium leading-relaxed'
-    case 'ui':
-      return 'font-bold'
-    case 'caption':
-      return 'text-sm opacity-70'
-    default:
-      return ''
-  }
 })
 </script>
 
 <template>
   <component
     :is="tag"
-    class="transition-all duration-300"
+    class="font-component"
     :class="[
-      variantClasses,
+      `is-variant-${variant}`,
       color,
-      { 'text-center': centered },
-      { uppercase: uppercase },
+      { 'is-centered': centered },
+      { 'is-uppercase': uppercase },
       {
-        'text-balance': !noBalance && (variant === 'h1' || variant === 'h2' || variant === 'intro')
+        'is-balanced': !noBalance && (variant === 'h1' || variant === 'h2' || variant === 'intro')
       }
     ]"
   >
@@ -78,14 +57,53 @@ const variantClasses = computed(() => {
 </template>
 
 <style scoped>
-/* Ensure custom font inheritance if needed */
-h1 {
-  line-height: 1.05;
-  word-spacing: -0.05em;
+@reference "../../styles/main.css";
+
+.font-component {
+  @apply transition-all duration-300;
+
+  &.is-variant-h1 {
+    @apply text-4xl md:text-5xl font-black leading-[1.05] tracking-tight;
+  }
+  &.is-variant-h2 {
+    @apply text-xl md:text-2xl font-black;
+  }
+  &.is-variant-intro {
+    @apply text-3xl md:text-4xl font-black border-b-[6px] pb-2 self-start leading-none;
+  }
+  &.is-variant-body {
+    @apply text-base md:text-lg font-medium tracking-tight;
+  }
+  &.is-variant-explanation {
+    @apply text-xl font-medium leading-relaxed;
+  }
+  &.is-variant-ui {
+    @apply font-bold;
+  }
+  &.is-variant-caption {
+    @apply text-sm opacity-70;
+  }
+
+  &.is-centered {
+    @apply text-center;
+  }
+  &.is-uppercase {
+    @apply uppercase;
+  }
+  &.is-balanced {
+    @apply text-balance;
+  }
+
+  /* Ensure custom font inheritance if needed */
+  & h1 {
+    line-height: 1.05;
+    word-spacing: -0.05em;
+  }
 }
 
-:deep(.font-black) {
-  display: inline-block;
+/* Highlighting pattern (**text**) */
+:deep(.font-highlight) {
+  @apply font-black bg-prohib-black text-white px-1.5 py-0.5 inline-block mx-0.5;
   line-height: normal;
 }
 </style>

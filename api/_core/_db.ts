@@ -35,7 +35,7 @@ const loadEnv = () => {
 }
 if (!process.env.MONGODB_URI) loadEnv()
 
-const { NODE_ENV, USE_LOCAL_DB, MONGODB_URI, MONGODB_LOCAL_URI } = process.env
+const { NODE_ENV, USE_LOCAL_DB, MONGODB_URI } = process.env
 const S = getApiText('fr')
 
 export const DEFAULTS = {
@@ -62,7 +62,7 @@ export const DEFAULTS = {
 
 const isProd = NODE_ENV === DEFAULTS.ENV.PROD
 const useLocalFiles = USE_LOCAL_DB === DEFAULTS.ENV.TRUE
-const uri = isProd ? MONGODB_URI : MONGODB_URI // Never use local mongo URI per user request
+const uri = MONGODB_URI
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined

@@ -674,3 +674,173 @@ const scrollToForm = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@reference "../../styles/main.css";
+
+.end-screen-wrapper {
+  @apply bg-poster-beige mx-auto flex w-full max-w-4xl flex-1 flex-col p-6 py-8 md:p-12;
+
+  & .end-screen-inner {
+    @apply flex flex-col items-center gap-8 md:gap-12;
+  }
+
+  /* SECTION SCORE */
+  & .score-badge-wrapper {
+    @apply relative mb-8 flex flex-col items-center;
+
+    & .crown-frame {
+      @apply absolute -top-12 left-1/2 w-24 -translate-y-1/2 -translate-x-1/2 opacity-0;
+      animation: crownDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.5s;
+    }
+
+    & .score-num-big {
+      @apply text-prohib-black font-mono text-[6rem] font-bold leading-none md:text-[8rem];
+      animation: scoreEntrance 0.6s ease-out backwards;
+
+      & .score-sep {
+        @apply opacity-20;
+      }
+    }
+
+    & .score-label {
+      @apply bg-reg-green mt-2 px-6 py-2 text-xl font-black tracking-widest text-white uppercase;
+    }
+  }
+
+  /* LEADERBOARD */
+  & .leaderboard-wrapper {
+    @apply flex w-full flex-col items-center;
+
+    & .leaderboard-container {
+      @apply w-full max-w-lg;
+      animation: slideUp 0.3s ease;
+
+      & .leaderboard-title {
+        @apply border-prohib-black mb-4 inline-block border-b-4 text-xs font-black uppercase tracking-widest;
+      }
+    }
+
+    & .leaderboard-scroll {
+      @apply border-prohib-black max-h-[300px] overflow-y-auto border-4 bg-white;
+    }
+
+    & .leaderboard-table {
+      @apply w-full border-collapse font-mono;
+
+      & thead th {
+        @apply bg-prohib-black sticky top-0 p-3 text-left text-[10px] font-black tracking-widest text-white uppercase;
+      }
+
+      & tbody tr {
+        @apply border-prohib-black/10 border-b;
+
+        & td {
+          @apply p-3 text-sm;
+        }
+
+        & .rank {
+          @apply w-12 text-center font-black;
+        }
+
+        &.current-user {
+          @apply bg-reg-green/5 border-l-4 border-l-reg-green font-bold;
+        }
+
+        & .name {
+          & .name-row {
+            @apply flex items-center gap-2;
+
+            & span:first-child {
+              @apply font-black uppercase;
+            }
+          }
+
+          & .social-icons {
+            @apply flex mt-1 gap-2 text-[10px] opacity-50;
+          }
+        }
+
+        & .score-val {
+          @apply text-reg-green text-right font-black;
+
+          & .time-spent {
+            @apply block text-[10px] font-medium opacity-40;
+          }
+        }
+      }
+    }
+  }
+
+  /* ACTIONS & MODALS */
+  & .final-actions {
+    @apply mt-8 flex w-full flex-col items-center gap-6;
+
+    & .link-join {
+      @apply border-prohib-black/20 hover:border-reg-green text-sm font-bold border-b-2 transition-colors;
+    }
+  }
+
+  & .share-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm;
+
+    & .share-modal-content {
+      @apply border-prohib-black relative w-full max-w-lg border-4 bg-white p-8 shadow-brutal-lg;
+      animation: fadeIn 0.3s ease-in-out;
+
+      & .modal-hint {
+        @apply mb-6 text-center text-xs font-bold uppercase tracking-widest opacity-50;
+      }
+
+      & .preview-img-container {
+        @apply border-prohib-black/10 mb-8 border-2 shadow-xl;
+      }
+
+      & .preview-img {
+        @apply block h-auto w-full;
+      }
+
+      & .share-buttons-row {
+        @apply mb-8 flex flex-wrap justify-center gap-4;
+
+        & .btn-network-circle {
+          @apply flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110 active:scale-95;
+
+          & .icon {
+            @apply flex h-6 w-6 items-center justify-center fill-current;
+          }
+        }
+      }
+
+      & .btn-close-modal {
+        @apply border-prohib-black w-full border-2 p-3 font-black uppercase transition-colors hover:bg-prohib-black hover:text-white;
+      }
+    }
+  }
+}
+
+/* ANIMATIONS */
+@keyframes crownDrop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(1.5);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes scoreEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>

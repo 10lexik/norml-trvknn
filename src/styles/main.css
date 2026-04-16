@@ -75,6 +75,42 @@
 
   /* Espacements & Bordures */
   --border-width-3: 3px;
+
+  /* Ombres Brutalisme (Valeurs d'origine restaurées) */
+  --shadow-brutal-xs: 2px 2px 0px 0px var(--color-prohib-black);
+  --shadow-brutal-sm: 4px 4px 0px 0px var(--color-prohib-black);
+  --shadow-brutal-sm-light: 4px 4px 0px 0px rgba(20, 20, 20, 0.1);
+  --shadow-brutal-md: 8px 8px 0px 0px var(--color-prohib-black);
+  --shadow-brutal-lg: 12px 12px 0px 0px var(--color-prohib-black);
+  --shadow-brutal-xl: 12px 12px 0px 0px var(--color-prohib-black);
+  --shadow-brutal-green: 8px 8px 0px 0px rgba(46, 138, 66, 0.4);
+  --shadow-brutal-soft: 8px 8px 0px 0px rgba(20, 20, 20, 0.2);
+  /* ============================================================
+     ANIMATIONS GLOBALES
+     ============================================================ */
+  --animate-fade-in: fadeIn 0.3s ease-in-out;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  --animate-slide-up: slideUp 0.3s ease-out;
+  @keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  --animate-pop-in: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  @keyframes popIn {
+    from { opacity: 0; transform: translate(-50%, 10px) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  }
+}
+
+/* Utilitaires structurels (remplace les hacks inline) */
+@utility bg-full-bleed-green {
+  box-shadow: 0 0 0 100vmax var(--color-reg-green);
+  clip-path: inset(0 -100vmax);
 }
 
 /* ============================================================
@@ -96,12 +132,7 @@ body {
   width: 100%;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.1;
   text-wrap: balance;
@@ -119,125 +150,4 @@ h6 {
 
 [v-cloak] {
   display: none !important;
-}
-
-/* ============================================================
-   ANIMATIONS GLOBALES
-   ============================================================ */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(10px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 10px) scale(0.9);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0) scale(1);
-  }
-}
-
-/* ============================================================
-   COMPOSANTS GLOBAUX
-   ============================================================ */
-
-/* Bouton principal (utilisé dans Quizz + AdminPanel) */
-.btn-primary {
-  background: var(--color-reg-green);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-family: var(--font-main);
-  font-weight: bold;
-  font-size: 1rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.2s;
-  display: inline-block;
-  text-align: center;
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-reg-green) 90%, black);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-/* Loader global */
-.loader-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: var(--color-reg-green);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
-}
-
-/* Bouton géant restart */
-.btn-giant-restart {
-  background: var(--color-prohib-black);
-  color: white;
-  border: 3px solid var(--color-prohib-black);
-  font-family: var(--font-main);
-  padding: 18px 40px;
-  font-weight: 900;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  width: 100%;
-  border-radius: 50px;
-  transition: all 0.2s ease;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-
-  @media (min-width: 601px) {
-    font-size: 1.2rem;
-  }
-
-  &:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
-    background: white;
-    color: var(--color-prohib-black);
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
 }

@@ -40,17 +40,17 @@ const goToStep = (step: Step) => {
   <!-- MAIN STEPS -->
   <div
     v-else
-    class="mx-auto flex w-full max-w-[400px] flex-1 flex-col px-6 py-8 md:py-16"
+    class="start-screen-wrapper"
   >
     <!-- Step: Welcome -->
     <div
       v-if="currentStep === 'welcome'"
-      class="flex flex-1 flex-col items-center justify-between pb-4 text-center"
+      class="step-welcome"
     >
       <Fonts
         tag="h1"
         variant="h1"
-        class="text-prohib-black mt-4"
+        class="title-welcome"
         :content="t('start.title')"
       />
 
@@ -59,7 +59,7 @@ const goToStep = (step: Step) => {
         size="lg"
         arrow
         is-simple
-        class="self-end"
+        class="btn-next"
         @click="goToStep('intro')"
       >
         {{ t('start.btn_get_certified').replace('→', '').trim() }}
@@ -69,18 +69,10 @@ const goToStep = (step: Step) => {
     <!-- Step: Intro (Mise au point) -->
     <div
       v-if="currentStep === 'intro'"
-      class="bg-reg-green -mx-6 flex flex-1 flex-col justify-between gap-6 px-6 py-10 text-white shadow-[0_0_0_100vmax_var(--color-reg-green)] [clip-path:inset(0_-100vmax)] md:px-12 md:py-16"
+      class="step-intro"
     >
-      <div class="space-y-6">
-        <Fonts
-          tag="h2"
-          variant="intro"
-          class="border-white text-white"
-        >
-          {{ t('start.subtitle') }}
-        </Fonts>
-
-        <div class="space-y-5">
+      <div class="intro-content">
+        <div class="intro-text-group">
           <Fonts
             v-for="(content, key) in tm('start.intro')"
             :key="key"
@@ -94,7 +86,7 @@ const goToStep = (step: Step) => {
         variant="ghost"
         size="lg"
         arrow
-        class="self-end text-white!"
+        class="btn-next-intro"
         @click="goToStep('difficulty')"
       >
         {{ t('start.btn_start').replace('→', '').trim() }}
@@ -104,11 +96,9 @@ const goToStep = (step: Step) => {
     <!-- Step: Difficulty -->
     <div
       v-if="currentStep === 'difficulty'"
-      class="flex flex-1 flex-col items-center justify-between pb-4"
+      class="step-difficulty"
     >
-      <div
-        class="bg-reg-green mt-4 -rotate-1 px-6 py-3 text-white shadow-[6px_6px_0px_0px_rgba(20,20,20,1)]"
-      >
+      <div class="difficulty-title-wrapper">
         <Fonts
           tag="h2"
           variant="h2"
@@ -119,7 +109,7 @@ const goToStep = (step: Step) => {
         </Fonts>
       </div>
 
-      <div class="grid w-full max-w-[280px] grid-cols-1 gap-4">
+      <div class="difficulty-grid">
         <Button
           v-for="(level, id) in tm('levels')"
           :key="id"
@@ -135,4 +125,57 @@ const goToStep = (step: Step) => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+@reference "../../styles/main.css";
+
+.start-screen-wrapper {
+  @apply flex h-full w-full max-w-[400px] flex-1 flex-col;
+
+  & .steps-container {
+    @apply flex flex-col items-center justify-center;
+  }
+
+  /* STEP 1: WELCOME */
+  & .step-welcome {
+    @apply flex h-full flex-col items-center justify-between text-center;
+
+    & .logo-big {
+      @apply mb-12 h-48 w-auto md:h-64;
+    }
+
+    & .welcome-title {
+      @apply text-prohib-black mb-6 text-4xl font-black uppercase md:text-6xl;
+    }
+
+    & .intro-text {
+      @apply text-prohib-black/60 mx-auto max-w-xl text-lg;
+    }
+  }
+
+  /* STEP 2: INTRO_TXT / INSTRUCTIONS */
+  & .step-intro {
+    @apply bg-reg-green bg-full-bleed-green -mx-6 flex flex-1 flex-col justify-between gap-6 px-6 py-10 text-white md:px-12 md:py-16;
+
+    & .btn-next-intro {
+      @apply self-end text-white!;
+    }
+  }
+
+  /* STEP 3: DIFFICULTY */
+  & .step-difficulty {
+    @apply flex flex-1 flex-col items-center justify-around;
+
+    & .difficulty-title-wrapper {
+      @apply bg-reg-green shadow-brutal-sm mt-4 -rotate-1 px-6 py-3 text-white;
+    }
+
+    & .difficulty-grid {
+      @apply grid w-full max-w-[280px] grid-cols-1 gap-4;
+    }
+  }
+
+  & .start-actions {
+    @apply mt-12 flex w-full flex-col gap-4;
+  }
+}
+</style>
