@@ -10,22 +10,11 @@ export const messages = {
   es
 }
 
-// --- CORRECTION TYPE-SAFE ---
-
-// 1. On récupère la langue brute ou 'en' par défaut
-const rawLang = navigator.language || 'en'
-
-// 2. On split. Si le tableau est vide ou si [0] est undefined, on force 'en'.
-// Le "|| 'en'" à la fin rassure TypeScript : userLang sera TOUJOURS une string.
-const userLang = rawLang.split('-')[0] || 'en'
-
-// 3. On vérifie si cette langue est supportée, sinon 'en'
-const defaultLocale = ['fr', 'en', 'es'].includes(userLang) ? userLang : 'en'
-
 const i18n = createI18n({
   legacy: false,
-  locale: defaultLocale,
-  fallbackLocale: 'en',
+  // On force le français par défaut tant que les autres langues ne sont pas prêtes
+  locale: 'fr',
+  fallbackLocale: 'fr',
   globalInjection: true,
   messages
 })
