@@ -103,6 +103,7 @@ const startGame = async (difficulty: string) => {
       })
     }
 
+    startTime.value = Date.now()
     game.status = 'playing'
     // Scroll au sommet pour le début du quiz
     window.scrollTo({ top: 0, behavior: 'smooth' })
