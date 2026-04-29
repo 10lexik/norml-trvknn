@@ -118,8 +118,6 @@
   }
 }
 
-
-
 /* ECRANS */
 .screen {
   width: 100%;
@@ -197,8 +195,6 @@
       font-size: 1.1rem;
     }
   }
-
-
 }
 
 .difficulty-selector {
@@ -484,7 +480,6 @@
 
 /* FIN & FORM */
 .end-screen {
-
   /* SCORE REDESIGN: CROWNING EFFECT */
   .score-badge-wrapper {
     width: 250px;
@@ -600,7 +595,7 @@
   position: relative;
   overflow: hidden;
 
-  +.share-modal-overlay .share-modal-content {
+  + .share-modal-overlay .share-modal-content {
     overflow: scroll;
     height: 100%;
 
@@ -628,7 +623,12 @@
     width: 60%;
     margin: 30px auto 25px auto;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 0, 0, 0.1),
+      transparent
+    );
   }
 
   .optional-title {
@@ -756,7 +756,7 @@
   color: #777;
   line-height: 1.4;
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     appearance: none;
     -webkit-appearance: none;
     width: 22px;
@@ -920,7 +920,7 @@
   flex-direction: column;
   align-items: center;
   gap: 15px;
-  margin-top: 10px;
+  margin: 10px 0 30px;
 }
 
 .top-actions {
@@ -993,12 +993,14 @@
     inset: 0;
     z-index: -1;
     opacity: 1;
-    background: linear-gradient(45deg,
-        #f09433 0%,
-        #e6683c 25%,
-        #dc2743 50%,
-        #cc2366 75%,
-        #bc1888 100%);
+    background: linear-gradient(
+      45deg,
+      #f09433 0%,
+      #e6683c 25%,
+      #dc2743 50%,
+      #cc2366 75%,
+      #bc1888 100%
+    );
     transition: opacity 0.4s ease;
   }
 
@@ -1084,7 +1086,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
   will-change: transform;
 
   .icon {
@@ -1179,7 +1183,7 @@
 
   &.medal-bronze {
     --medal-color-primary: #bf8970;
-    --medal-color-glow: rgba(191, 137, 112, 0.40);
+    --medal-color-glow: rgba(191, 137, 112, 0.4);
     --medal-color-border: #bf8970;
     --medal-color-accent: #e2b4a1;
     background: radial-gradient(ellipse at center, #180e04 0%, #0a0500 100%);
@@ -1236,7 +1240,11 @@
     width: 700px;
     height: 700px;
     border-radius: 50%;
-    background: radial-gradient(circle, var(--medal-color-glow) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      var(--medal-color-glow) 0%,
+      transparent 70%
+    );
     pointer-events: none;
   }
 
@@ -1305,7 +1313,12 @@
   .cert-divider-line {
     flex: 1;
     height: 2px;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
   }
 
   .cert-divider-dot {
@@ -1603,7 +1616,6 @@
     transform: scale(1);
   }
 }
-
 
 /* ============================================================
    SVG BADGE CONTAINER & LAYOUT FINAL

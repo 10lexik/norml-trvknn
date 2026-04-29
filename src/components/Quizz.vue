@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { fireConfetti, generateShareImage } from '../utils/canvas'
 import type { UnifiedNetworkConfig } from '../types/quizz'
 
@@ -29,13 +29,24 @@ const {
   state: game,
   startTime,
   endTime,
+  // Tracking
+  sessionId,
+  playerId,
+  questionDetails,
+  // Computed
   currentQuestion,
   isCorrect,
   isLastQuestion,
   progress,
   playerPerformance,
   rankInfo,
-  medalInfo, prepareNewQuestion, resetGame } = useGame()
+  medalInfo,
+  // Methods
+  prepareNewQuestion,
+  recordAnswer,
+  initTracking,
+  buildSessionPayload,
+  resetGame } = useGame()
 const { form, uiLeader, initLeaderboard, saveScore, validateName, validateEmail, clearNameError, clearEmailError } = useLeaderboard(getI18nArray, t)
 
 const availableLocales = ['fr', 'en', 'es']
@@ -48,6 +59,32 @@ const isGenerating = ref(false)
 const generatedImageUrl = ref<string | null>(null)
 
 const socialNetworks = computed(() => getI18nArray('end.share_modal.networks') as UnifiedNetworkConfig[])
+
+// --- Session Tracking Helpers ---
+
+/** Envoie les données de session au serveur */
+const sendSession = async (status: 'completed' | 'abandoned') => {
+  const payload = buildSessionPayload(status, locale.value)
+  try {
+    await fetch('/api/game/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+  } catch (e) {
+    console.error('[SESSION_SEND_ERROR]', e)
+  }
+}
+
+/** Envoie les données d'abandon via sendBeacon (fiable même si la page se ferme) */
+const sendAbandonBeacon = () => {
+  if (game.status !== 'playing') return
+  const payload = buildSessionPayload('abandoned', locale.value)
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+  navigator.sendBeacon('/api/game/session', blob)
+}
+
+// --- Lifecycle ---
 
 onMounted(async () => {
   try {
@@ -64,6 +101,13 @@ onMounted(async () => {
       form.name = form.name || 'AdminTest'
       form.email = form.email || 'test@norml.fr'
   }
+
+  // Abandon detection : envoie les données si l'utilisateur quitte pendant le quiz
+  window.addEventListener('beforeunload', sendAbandonBeacon)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', sendAbandonBeacon)
 })
 
 const setLang = async (l: string) => {
@@ -80,6 +124,9 @@ const startGame = async (difficulty: string) => {
   game.difficulty = difficulty
   form.isSaved = false
   showShareModal.value = false
+  
+  // Initialiser le tracking pour cette nouvelle session
+  initTracking()
   
   try {
     const res = await fetch(`/api/game/start?lang=${locale.value}&level=${difficulty}`)
@@ -142,6 +189,14 @@ const selectAnswer = async (domIndex: number, visualIndex: number) => {
     }
     game.questions[game.currentQIndex].explanation = result.explanation
     game.hasAnswered = true
+
+    // --- Tracking : enregistrer le détail de cette réponse ---
+    recordAnswer(
+      game.questions[game.currentQIndex]._id,
+      game.questions[game.currentQIndex].category || '',
+      result.correct,
+      game.shuffledOptions[visualIndex].originalIndex
+    )
   } catch (e) {
     console.error(e)
   } finally {
@@ -168,6 +223,9 @@ const nextQuestion = () => {
         isSuccess: playerPerformance.value.isSuccess
       })
     }
+
+    // --- Tracking : sauvegarder la session complète ---
+    sendSession('completed')
   } else {
     game.currentQIndex++
     game.selectedAnswer = null
@@ -199,6 +257,11 @@ const handleSaveScore = () => {
     game.score, 
     timeSpent,
     socialNetworks.value,
+    {
+      lang: locale.value,
+      sessionId: sessionId.value,
+      playerId: playerId.value
+    },
     () => { 
         // Track save score
         if (window.mixpanel) {

@@ -41,7 +41,7 @@ export const DEFAULTS = {
   EXT_JSON: '.json',
   RADIX: 10,
   DIRS: { LOCALES: 'locales', SRC: 'src' },
-  DB: { NAME: 'norml_trvknn', TRIVIA: 'trivia', SCORES: 'leaderboard' },
+  DB: { NAME: 'norml_trvknn', TRIVIA: 'trivia', SCORES: 'leaderboard', SESSIONS: 'sessions' },
   ENV: { PROD: 'production', TRUE: 'true' },
   ALLOWED_LANGS: ['fr', 'en', 'es'],
   ALLOWED_LEVELS: ['easy', 'medium', 'hard'],

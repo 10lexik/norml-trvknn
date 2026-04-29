@@ -23,7 +23,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memberId,
       socials,
       difficulty = DEFAULTS.LEVEL,
-      time
+      time,
+      // Liens vers la collection sessions
+      lang: bodyLang,
+      sessionId,
+      playerId
     } = req.body
 
     if (!name || score === undefined || !email) {
@@ -117,25 +121,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       {
         $max: { score: safeScore },
         $set: {
+          // ── Profil joueur ──
           email: safeEmail,
           consent: Boolean(consent),
           memberId: providedId,
           socials: safeSocials,
+
+          // ── Résultat ──
           time,
+          lang: bodyLang || DEFAULTS.LANG,
+
+          // ── Lien session (source analytics) ──
+          sessionId: sessionId || null,
+          playerId: playerId || null,
+
+          // ── Meta ──
           ip,
           userAgent,
-          updatedAt: new Date(),
-          // Tracking Géo (Vercel Headers)
-          city: req.headers['x-vercel-ip-city'] || null,
-          region: req.headers['x-vercel-ip-country-region'] || null,
-          country: req.headers['x-vercel-ip-country'] || null,
-          // Tracking Marketing (UTM)
-          utm_source: req.body.utm_source || null,
-          utm_medium: req.body.utm_medium || null,
-          utm_campaign: req.body.utm_campaign || null,
-          // Données client optionnelles
-          referrer: req.body.referrer || null,
-          screenWidth: req.body.screenWidth || null
+          updatedAt: new Date()
         },
         $setOnInsert: { createdAt: new Date() }
       },
