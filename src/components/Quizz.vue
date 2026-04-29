@@ -67,11 +67,15 @@ const socialNetworks = computed(() => getI18nArray('end.share_modal.networks') a
 const sendSession = async (status: 'completed' | 'abandoned') => {
   const payload = buildSessionPayload(status, locale.value)
   try {
-    await fetch('/api/game/session', {
+    const res = await fetch('/api/game/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
+    if (!res.ok) {
+      const err = await res.text()
+      console.error('[SESSION_API_ERROR]', res.status, err)
+    }
   } catch (e) {
     console.error('[SESSION_SEND_ERROR]', e)
   }
@@ -146,9 +150,13 @@ const startGame = async (difficulty: string) => {
     
     // Track event
     if (window.mixpanel) {
-      window.mixpanel.track('quiz_started', {
-        level: difficulty
-      })
+      try {
+        window.mixpanel.track('quiz_started', {
+          level: difficulty
+        })
+      } catch (e) {
+        console.error('Mixpanel error', e)
+      }
     }
 
     startTime.value = Date.now()
@@ -217,16 +225,26 @@ const nextQuestion = () => {
     // Scroll au sommet pour que l'utilisateur voie bien son score
     window.scrollTo({ top: 0, behavior: 'smooth' })
     // Confettis uniquement pour les réussites via performance isSuccess DRY !
-    if (playerPerformance.value.isSuccess) fireConfetti()
+    if (playerPerformance.value.isSuccess) {
+      try {
+        fireConfetti()
+      } catch (e) {
+        console.error('Confetti error', e)
+      }
+    }
     
     // Track completing
     if (window.mixpanel) {
-      window.mixpanel.track('quiz_completed', {
-        level: game.difficulty,
-        score: game.score,
-        total: game.questions.length,
-        isSuccess: playerPerformance.value.isSuccess
-      })
+      try {
+        window.mixpanel.track('quiz_completed', {
+          level: game.difficulty,
+          score: game.score,
+          total: game.questions.length,
+          isSuccess: playerPerformance.value.isSuccess
+        })
+      } catch (e) {
+        console.error('Mixpanel error', e)
+      }
     }
 
     // --- Tracking : sauvegarder la session complète ---
@@ -270,11 +288,13 @@ const handleSaveScore = () => {
     () => { 
         // Track save score
         if (window.mixpanel) {
-          window.mixpanel.track('score_saved', {
-            score: game.score,
-            level: game.difficulty,
-            opt_in: form.consent
-          })
+          try {
+            window.mixpanel.track('score_saved', {
+              score: game.score,
+              level: game.difficulty,
+              opt_in: form.consent
+            })
+          } catch (e) {}
         }
     }, 
     (err) => { uiError.value = err }
