@@ -124,8 +124,7 @@ export function useGame() {
   }
 
   /** Enregistre le détail d'une réponse pour le tracking */
-  const recordAnswer = (questionId: string, category: string, isCorrectAnswer: boolean, selectedIndex: number) => {
-    const responseTimeMs = Date.now() - questionStartTime.value
+  const recordAnswer = (questionId: string, category: string, isCorrectAnswer: boolean, selectedIndex: number, responseTimeMs: number) => {
     questionDetails.value.push({
       questionId,
       category,

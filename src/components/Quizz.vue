@@ -33,6 +33,7 @@ const {
   sessionId,
   playerId,
   questionDetails,
+  questionStartTime,
   // Computed
   currentQuestion,
   isCorrect,
@@ -164,6 +165,9 @@ const startGame = async (difficulty: string) => {
 const selectAnswer = async (domIndex: number, visualIndex: number) => {
   if (game.hasAnswered || uiIsChecking.value) return
   
+  // --- Tracking : figer le chrono avant la latence réseau ---
+  const timeToAnswerMs = Date.now() - questionStartTime.value
+
   uiIsChecking.value = true
   uiVerifyingIdx.value = visualIndex
   game.selectedAnswer = game.shuffledOptions[visualIndex].originalIndex
@@ -195,7 +199,8 @@ const selectAnswer = async (domIndex: number, visualIndex: number) => {
       game.questions[game.currentQIndex]._id,
       game.questions[game.currentQIndex].category || '',
       result.correct,
-      game.shuffledOptions[visualIndex].originalIndex
+      game.shuffledOptions[visualIndex].originalIndex,
+      timeToAnswerMs
     )
   } catch (e) {
     console.error(e)
